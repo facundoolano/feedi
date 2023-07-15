@@ -1,0 +1,15 @@
+[project]
+name = ""
+version = ""
+description = ""
+authors = [
+    {name = "Facundo Olano", email = "facundo.olano@gmail.com"},
+]
+dependencies = [
+    "flask>=2.3.2",
+    "feedparser>=6.0.10",
+]
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "AGPL"}
+
