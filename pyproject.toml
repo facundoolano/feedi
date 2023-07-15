@@ -13,3 +13,6 @@ requires-python = ">=3.11"
 readme = "README.md"
 license = {text = "AGPL"}
 
+
+[tool.pdm.scripts]
+serve = "flask --app src/feedi/app.py run"
