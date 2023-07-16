@@ -1,19 +1,30 @@
 <!doctype html>
-
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="static/css/bulma.min.css">
+    <title>Feedi</title>
+</head>
 <body>
-    <title>Hello from Flask</title>
-    <p>Hello, World!</p>
-
-    {% for entry in entries %}
-      <article>
-          <header>
-              [{{ entry.feed }}] <a href="{{ entry.link }}" target="_blank">{{ entry.title }}</a>
-              {{ entry.date | humanize }}
-          </header>
-        {{ entry.body | safe }}
-        <footer></footer>
-      </article>
-      <hr>
-      <br/>
-    {% endfor %}
+    <section class="section">
+        <div class="container is-max-desktop">
+            <div class="box">
+        {% for entry in entries %}
+        <article class="media">
+            <div class="media-content">
+                <div class="content">
+                    <p>
+                        [{{ entry.feed }}] <b><a href="{{ entry.url }}" target="_blank">{{ entry.title }}</a></b>
+                    <br/>
+                    {{ entry.body | safe }}
+                    </p>
+                </div>
+            </div>
+            <div class="media-right">
+                {{ entry.date | humanize }}
+            </div>
+        </article>
+        {% endfor %}
+            </div>
+        </div>
+    </section>
 </body>
