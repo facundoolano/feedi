@@ -1,0 +1,16 @@
+<!doctype html>
+
+<body>
+    <title>Hello from Flask</title>
+    <p>Hello, World!</p>
+
+    {% for entry in entries %}
+      <article>
+        <header>[{{ entry.feed }}] <a href="{{ entry.link }}" target="_blank">{{ entry.title }}</a></header>
+        {{ entry.body | safe }}
+        <footer>{{ entry.date }}</footer>
+      </article>
+      <hr>
+      <br/>
+    {% endfor %}
+</body>
