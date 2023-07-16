@@ -2,6 +2,7 @@ import datetime
 import os
 import time
 
+import favicon
 import feedparser
 from flask import Flask, render_template
 
@@ -59,9 +60,24 @@ def load_hardcoded_feeds(app):
     for feed_name, url in FEEDS.items():
         app.logger.info('fetching %s', feed_name)
         feed = feedparser.parse(url)
+
+        # TODO move somewhere else
+        # FIXME this logic is not solid enough for the current options
+        # also we need to more properly distinghuish between avatar and source icon
+        avatar = None
+        if 'image' in feed['feed']:
+            avatar = feed['feed']['image']['href']
+        elif 'webfeeds_icon' in feed['feed']:
+            avatar = feed['feed']['webfeeds_icon']
+        else:
+            avatar = favicon.get(feed['feed']['link'])[0].url
+
+        app.logger.debug('avatar is %s', avatar)
+
         for entry in feed['entries']:
             entries.append({'feed': feed_name,
                             'title': entry.get('title', '[no title]'),
+                            'avatar': avatar,
                             'url': entry['link'],
                             'body': entry['summary'],
                             'date': entry['published_parsed']})
