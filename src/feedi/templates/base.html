@@ -6,9 +6,12 @@
 
     {% for entry in entries %}
       <article>
-        <header>[{{ entry.feed }}] <a href="{{ entry.link }}" target="_blank">{{ entry.title }}</a></header>
+          <header>
+              [{{ entry.feed }}] <a href="{{ entry.link }}" target="_blank">{{ entry.title }}</a>
+              {{ entry.date | humanize }}
+          </header>
         {{ entry.body | safe }}
-        <footer>{{ entry.date }}</footer>
+        <footer></footer>
       </article>
       <hr>
       <br/>
