@@ -4,6 +4,7 @@ import time
 
 import favicon
 import feedparser
+import requests
 from flask import Flask, render_template
 
 
@@ -53,34 +54,44 @@ def load_hardcoded_feeds(app):
         "lobste.rs": "https://lobste.rs/rss",
         "Github": f"https://github.com/facundoolano.private.atom?token={GITHUB_TOKEN}",
         "ambito.com": "https://www.ambito.com/rss/pages/home.xml",
-        "Goodreads": f"https://www.goodreads.com/user/updates_rss/19714153?key={GOODREADS_TOKEN}"
+        "Goodreads": f"https://www.goodreads.com/home/index_rss/19714153?key={GOODREADS_TOKEN}"
     }
 
     entries = []
     for feed_name, url in FEEDS.items():
         app.logger.info('fetching %s', feed_name)
         feed = feedparser.parse(url)
-
-        # TODO move somewhere else
-        # FIXME this logic is not solid enough for the current options
-        # also we need to more properly distinghuish between avatar and source icon
-        avatar = None
-        if 'image' in feed['feed']:
-            avatar = feed['feed']['image']['href']
-        elif 'webfeeds_icon' in feed['feed']:
-            avatar = feed['feed']['webfeeds_icon']
-        else:
-            avatar = favicon.get(feed['feed']['link'])[0].url
-
-        app.logger.debug('avatar is %s', avatar)
-
+        icon = detect_feed_icon(app, feed)
         for entry in feed['entries']:
+            if 'link' not in entry or 'summary' not in entry:
+                app.logger.warn("entry seems malformed %s", entry)
+                continue
+
             entries.append({'feed': feed_name,
                             'title': entry.get('title', '[no title]'),
-                            'avatar': avatar,
-                            'url': entry['link'],
+                            'icon': icon,
+                            'url': entry.get('link'),
                             'body': entry['summary'],
                             'date': entry['published_parsed']})
 
     entries.sort(key=lambda e: e['date'], reverse=True)
     return entries
+
+
+def detect_feed_icon(app, feed):
+    href = None
+    if 'image' in feed['feed']:
+        href = feed['feed']['image']['href']
+    elif 'webfeeds_icon' in feed['feed']:
+        href = feed['feed']['webfeeds_icon']
+
+    if href:
+        if not requests.head(href).ok:
+            href = None
+
+    # if feed doesn't provide an image or it's not available, use the favicon instead
+    if not href:
+        href = favicon.get(feed['feed']['link'])[0].url
+
+    app.logger.debug('feed icon is %s', href)
+    return href
