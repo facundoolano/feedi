@@ -62,6 +62,7 @@ def load_hardcoded_feeds(app):
         app.logger.info('fetching %s', feed_name)
         feed = feedparser.parse(url)
         icon = detect_feed_icon(app, feed)
+
         for entry in feed['entries']:
             if 'link' not in entry or 'summary' not in entry:
                 app.logger.warn("entry seems malformed %s", entry)
@@ -70,7 +71,9 @@ def load_hardcoded_feeds(app):
             entries.append({'feed': feed_name,
                             'title': entry.get('title', '[no title]'),
                             'icon': icon,
-                            'url': entry.get('link'),
+                            'avatar': detect_entry_avatar(feed, entry),
+                            'author': entry.get('author'),
+                            'url': entry['link'],
                             'body': entry['summary'],
                             'date': entry['published_parsed']})
 
@@ -80,18 +83,28 @@ def load_hardcoded_feeds(app):
 
 def detect_feed_icon(app, feed):
     href = None
-    if 'image' in feed['feed']:
-        href = feed['feed']['image']['href']
-    elif 'webfeeds_icon' in feed['feed']:
-        href = feed['feed']['webfeeds_icon']
-
     if href:
         if not requests.head(href).ok:
             href = None
 
     # if feed doesn't provide an image or it's not available, use the favicon instead
     if not href:
-        href = favicon.get(feed['feed']['link'])[0].url
+        favicons = favicon.get(feed['feed']['link'])
+        app.logger.debug("icons: %s", favicons)
+        # if multiple formats, assume the .ico is the canonical one if present
+        favicons = [f for f in favicons if f.format == 'ico'] or favicons
+        href = favicons[0].url
 
     app.logger.debug('feed icon is %s', href)
     return href
+
+
+def detect_entry_avatar(feed, entry):
+    # FIXME this is brittle, we need to explicitly tell for each source type or even known source,
+    # how do we expect to find the avatar
+    url = (entry.get('media_thumbnail', [{}])[0].get('url') or feed['feed'].get('image', {}).get('href') or feed['feed'].get('webfeeds_icon'))
+    if url:
+        if not requests.head(url).ok:
+            url = None
+
+    return url

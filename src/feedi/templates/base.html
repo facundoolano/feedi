@@ -10,23 +10,26 @@
             <div class="box">
         {% for entry in entries %}
         <article class="media">
-            <figure class="media-left">
-                <p class="image is-32x32">
-                    <img src="{{ entry.icon }}" alt="{{ entry.feed }}">
-                </p>
+            {% if entry.avatar %}
+            <figure class="media-left image is-48x48">
+                <img src="{{ entry.avatar }}" alt="{{ entry.author }}" title="{{ entry.author }}">
             </figure>
+            {% endif %}
             <div class="media-content">
                 <div class="content">
                     <p>
-                        <b><a href="{{ entry.url }}" target="_blank">{{ entry.title }}</a></b>
+                        <b><a href="{{ entry.url }}" target="_blank">{{ entry.title | truncate(70) }}</a></b>
+                        <br/><small class="has-text-grey-light">{{ entry.date | humanize }} · {{ entry.feed}}</small>
                         <br/>
                     {{ entry.body | safe }}
                     </p>
                 </div>
             </div>
-            <div class="media-right">
-                {{ entry.date | humanize }}
-            </div>
+            <figure class="media-right">
+                <figure class="image is-24x24 is-overlay">
+                    <img src="{{ entry.icon }}" alt="{{ entry.feed }}" title="{{ entry.feed }}">
+                </figure>
+            </figure>
         </article>
         {% endfor %}
             </div>
