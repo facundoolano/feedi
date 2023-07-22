@@ -10,7 +10,7 @@
     <section class="section">
         <div class="container is-max-desktop">
         {% for entry in entries %}
-        <div class="card feed-entry">
+        <div class="card feed-entry is-radiusless">
             <div class="card-content">
                 <div class="media">
                     <figure class="media-left image is-48x48">
@@ -24,12 +24,15 @@
                         </p>
                     </div>
                     <div class="media-right">
-                        <span class="icon is-small"><i class="fas fa-trash-alt"></i></span>
-                        <span class="icon is-small"><i class="fas fa-thumbtack"></i></span>
+                        <a><span class="icon is-small"><i class="fas fa-trash-alt"></i></span></a>
+                    </div>
+                    <div class="media-right"></div>
+                    <div class="media-right">
+                        <a><span class="icon is-small"><i class="fas fa-thumbtack"></i></span></a>
                     </div>
                 </div>
 
-            <div class="content">
+                <div class="content is-clickable">
                 <p>
                     {{ entry.body | safe }}
                 </p>
@@ -46,7 +49,7 @@
                     <span class="icon is-small"><i class="fas fa-tag"></i></span>
                 </a>
                 <a class="level-item">
-                    <class="icon is-small"><i class="fas fa-ellipsis-h"></i></span>
+                    <span class="icon is-small"><i class="fas fa-ellipsis-h"></i></span>
                 </a>
             </nav>
             </div>

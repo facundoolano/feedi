@@ -1,12 +1,31 @@
+/* reduce margins */
+.feed-entry .card-content {
+    padding: .75rem 1.5rem
+}
+
+.feed-entry .content, .feed-entry .media {
+    margin-bottom: 0!important
+}
+
+/* entry effects on hover  */
 .feed-entry .card-content:hover {
     /* FIXME this should use SCSS variables */
-    background-color:  hsl(0, 0%, 96%)
+    /* background-color:  hsl(0, 0%, 96%) */
 }
 
-.feed-entry .card-content {
-    padding: 1rem 1.5rem
+.feed-entry a .icon {
+    visibility: hidden;
+    /* FIXME this should use SCSS variables */
+    /* gray lighter */
+    color: hsl(0, 0%, 86%)
 }
 
-.feed-entry .media {
-    margin-bottom: .25rem
+.feed-entry a:hover .icon {
+    /* FIXME this should use SCSS variables */
+    /* gray */
+    color: hsl(0, 0%, 29%)
+}
+
+.feed-entry:hover .icon {
+    visibility: visible;
 }
