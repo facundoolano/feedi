@@ -10,43 +10,47 @@
     <section class="section">
         <div class="container is-max-desktop">
         {% for entry in entries %}
-        <article class="media feed-entry">
-            <figure class="media-left image is-48x48">
-                <img class="is-rounded" src="{{ entry.avatar or entry.icon }}" alt="{{ entry.author or entry.feed}}" title="{{ entry.author or entry.feed }}">
-            </figure>
-            <div class="media-content is-clickable">
-                <div class="content">
-                    <p>
-                        <b><a href="{{ entry.url }}" target="_blank">{{ entry.title | truncate(70) }}</a></b>
-                        <br/><small class="has-text-grey-light">{{ entry.date | humanize }} · {{ entry.feed}}</small>
-                        <br/>
-                    {{ entry.body | safe }}
-                    </p>
+        <div class="card feed-entry">
+            <div class="card-content">
+                <div class="media">
+                    <figure class="media-left image is-48x48">
+                        <img class="is-rounded" src="{{ entry.avatar or entry.icon }}" alt="{{ entry.author or entry.feed}}" title="{{ entry.author or entry.feed }}">
+                    </figure>
+                    <div class="media-content">
+                        <p>
+                            <b><a href="{{ entry.url }}" target="_blank">{{ entry.title | truncate(70) }}</a></b>
+                            <br/>
+                            <small class="has-text-grey-light">{{ entry.date | humanize }} · {{ entry.feed}}</small>
+                        </p>
+                    </div>
+                    <div class="media-right">
+                        <span class="icon is-small"><i class="fas fa-trash-alt"></i></span>
+                        <span class="icon is-small"><i class="fas fa-thumbtack"></i></span>
+                    </div>
                 </div>
-                <nav class="level is-mobile">
-                    <a class="level-item">
-                        <span class="icon is-small"><i class="fas fa-comment-alt"></i></span>
-                    </a>
-                    <a class="level-item">
-                        <span class="icon is-small"><i class="fas fa-share-alt"></i></span>
-                    </a>
-                    <a class="level-item">
-                        <span class="icon is-small"><i class="fas fa-tag"></i></span>
-                    </a>
-                    <a class="level-item">
-                        <class="icon is-small"><i class="fas fa-ellipsis-h"></i></span>
-                    </a>
-                </nav>
-            </div>
-            <div class="media-right">
-                <span class="icon is-small"><i class="fas fa-trash-alt"></i></span>
-                <span class="icon is-small"><i class="fas fa-thumbtack"></i></span>
+
+            <div class="content">
+                <p>
+                    {{ entry.body | safe }}
+                </p>
             </div>
 
-            <div class="media-right">
-
+            <nav class="level is-mobile">
+                <a class="level-item">
+                    <span class="icon is-small"><i class="fas fa-comment-alt"></i></span>
+                </a>
+                <a class="level-item">
+                    <span class="icon is-small"><i class="fas fa-share-alt"></i></span>
+                </a>
+                <a class="level-item">
+                    <span class="icon is-small"><i class="fas fa-tag"></i></span>
+                </a>
+                <a class="level-item">
+                    <class="icon is-small"><i class="fas fa-ellipsis-h"></i></span>
+                </a>
+            </nav>
             </div>
-        </article>
+                    </div>
         {% endfor %}
             </div>
     </section>

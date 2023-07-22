@@ -2,11 +2,3 @@
 .feed-entry:hover {
     background-color:  hsl(0, 0%, 96%)
 }
-
-.media {
-    border-top: 1px solid rgba(219,219,219,.5);
-    margin-top: 0rem!important;
-    padding-top: 1rem;
-    padding-bottom: 1rem;
-    padding-left: .5rem
-}
