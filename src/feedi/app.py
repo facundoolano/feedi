@@ -7,11 +7,17 @@ import feedparser
 import requests
 from flask import Flask, render_template
 
+from feedi.database import db_session
+
 
 def create_app():
     app = Flask(__name__)
     app.config['feeds'] = load_hardcoded_feeds(app)
     app.config['TEMPLATES_AUTO_RELOAD'] = True
+
+    @app.teardown_appcontext
+    def shutdown_session(exception=None):
+        db_session.remove()
 
     @app.route("/")
     def hello_world():
