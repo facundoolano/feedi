@@ -13,19 +13,19 @@
     /* background-color:  hsl(0, 0%, 96%) */
 }
 
-.feed-entry a .icon {
+.feed-entry a .button {
     visibility: hidden;
     /* FIXME this should use SCSS variables */
     /* gray lighter */
     color: hsl(0, 0%, 86%)
 }
 
-.feed-entry a:hover .icon {
+.feed-entry a .button:hover {
     /* FIXME this should use SCSS variables */
-    /* gray */
+    /* gray dark */
     color: hsl(0, 0%, 29%)
 }
 
-.feed-entry:hover .icon {
+.feed-entry:hover .button {
     visibility: visible;
 }
