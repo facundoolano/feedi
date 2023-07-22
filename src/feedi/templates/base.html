@@ -1,6 +1,7 @@
 <!doctype html>
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="static/css/main.css">
     <link rel="stylesheet" href="static/css/bulma.min.css">
     <link rel="stylesheet" href="static/css/fontawesome.min.css">
     <title>Feedi</title>
@@ -8,9 +9,8 @@
 <body>
     <section class="section">
         <div class="container is-max-desktop">
-            <div class="box">
         {% for entry in entries %}
-        <article class="media">
+        <article class="media feed-entry">
             <figure class="media-left image is-48x48">
                 <img class="is-rounded" src="{{ entry.avatar or entry.icon }}" alt="{{ entry.author or entry.feed}}" title="{{ entry.author or entry.feed }}">
             </figure>
@@ -23,19 +23,15 @@
                     {{ entry.body | safe }}
                     </p>
                 </div>
-                <nav class="level">
+                <nav class="level is-mobile">
                     <a class="level-item">
                         <span class="icon is-small"><i class="fas fa-comment-alt"></i></span>
                     </a>
                     <a class="level-item">
-                        <span class="icon is-small"><i class="fas fa-tag"></i></span>
-                    </a>
-                    <a class="level-item">
-                        <span class="icon is-small"><i class="fas fa-trash-alt"></i></span>
-                    </a>
-
-                    <a class="level-item">
                         <span class="icon is-small"><i class="fas fa-share-alt"></i></span>
+                    </a>
+                    <a class="level-item">
+                        <span class="icon is-small"><i class="fas fa-tag"></i></span>
                     </a>
                     <a class="level-item">
                         <class="icon is-small"><i class="fas fa-ellipsis-h"></i></span>
@@ -43,14 +39,15 @@
                 </nav>
             </div>
             <div class="media-right">
-                <span class="icon is-small"><i class="fas fa-external-link-alt"></i></span>
-            </div>
-            <div class="media-right">
+                <span class="icon is-small"><i class="fas fa-trash-alt"></i></span>
                 <span class="icon is-small"><i class="fas fa-thumbtack"></i></span>
+            </div>
+
+            <div class="media-right">
+
             </div>
         </article>
         {% endfor %}
             </div>
-        </div>
     </section>
 </body>
