@@ -16,24 +16,22 @@
                     <figure class="media-left image is-48x48">
                         <img class="is-rounded" src="{{ entry.avatar or entry.icon }}" alt="{{ entry.author or entry.feed}}" title="{{ entry.author or entry.feed }}">
                     </figure>
-                    <div class="media-content">
+                    <div class="media-content is-clickable">
                         <p>
                             <b><a href="{{ entry.url }}" target="_blank">{{ entry.title | truncate(70) }}</a></b>
                             <br/>
                             <small class="has-text-grey-light">{{ entry.date | humanize }} · {{ entry.feed}}</small>
                         </p>
+                        <div class="content">
+                            <p>{{ entry.body | safe }}</p>
+                        </div>
                     </div>
+
                     <div class="media-right">
                         <a><span class="button is-white is-rounded"><i class="fas fa-trash-alt"></i></span></a>
                         <a><span class="button is-white is-rounded"><i class="fas fa-thumbtack"></i></span></a>
                     </div>
                 </div>
-
-                <div class="content is-clickable">
-                <p>
-                    {{ entry.body | safe }}
-                </p>
-            </div>
 
             <nav class="level is-mobile">
                 <a class="level-item">
