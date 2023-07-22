@@ -18,7 +18,7 @@
                     </figure>
                     <div class="media-content is-clickable">
                         <p>
-                            <b><a href="{{ entry.url }}" target="_blank">{{ entry.title | truncate(70) }}</a></b>
+                            <b><a class="feed-title" href="{{ entry.url }}" target="_blank">{{ entry.title }}</a></b>
                             <br/>
                             <small class="has-text-grey-light">{{ entry.date | humanize }} · {{ entry.feed}}</small>
                         </p>
@@ -30,21 +30,13 @@
                     <div class="media-right">
                         <a><span class="button is-white is-rounded"><i class="fas fa-trash-alt"></i></span></a>
                         <a><span class="button is-white is-rounded"><i class="fas fa-thumbtack"></i></span></a>
+                        <a><span class="button is-white is-rounded"><i class="fas fa-ellipsis-v"></i></span></a>
                     </div>
                 </div>
 
             <nav class="level is-mobile">
                 <a class="level-item">
-                    <span class="button is-white is-rounded"><i class="fas fa-comment-alt"></i></span>
-                </a>
-                <a class="level-item">
-                    <span class="button is-white is-rounded"><i class="fas fa-share-alt"></i></span>
-                </a>
-                <a class="level-item">
-                    <span class="button is-white is-rounded"><i class="fas fa-tag"></i></span>
-                </a>
-                <a class="level-item">
-                    <span class="button is-white is-rounded"><i class="fas fa-ellipsis-h"></i></span>
+                    <span class="button is-white is-rounded is-medium"><i class="fas fa-comment-alt"></i></span>
                 </a>
             </nav>
             </div>
