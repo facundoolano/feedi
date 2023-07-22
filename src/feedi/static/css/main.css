@@ -1,4 +1,12 @@
-/* FIXME this should use SCSS variables */
-.feed-entry:hover {
+.feed-entry .card-content:hover {
+    /* FIXME this should use SCSS variables */
     background-color:  hsl(0, 0%, 96%)
+}
+
+.feed-entry .card-content {
+    padding: 1rem 1.5rem
+}
+
+.feed-entry .media {
+    margin-bottom: .25rem
 }
