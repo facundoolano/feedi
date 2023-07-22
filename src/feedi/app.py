@@ -53,7 +53,7 @@ def load_hardcoded_feeds(app):
         "@grumpygamer": "https://mastodon.gamedev.place/@grumpygamer.rss",
         "lobste.rs": "https://lobste.rs/rss",
         "Github": f"https://github.com/facundoolano.private.atom?token={GITHUB_TOKEN}",
-        "ambito.com": "https://www.ambito.com/rss/pages/home.xml",
+        # "ambito.com": "https://www.ambito.com/rss/pages/home.xml",
         "Goodreads": f"https://www.goodreads.com/home/index_rss/19714153?key={GOODREADS_TOKEN}"
     }
 
