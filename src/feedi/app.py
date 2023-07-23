@@ -1,4 +1,5 @@
 import datetime
+import logging
 import time
 
 from flask import Flask, render_template
@@ -10,17 +11,17 @@ from feedi.database import db
 
 def create_app():
     app = Flask(__name__)
-    app.config['TEMPLATES_AUTO_RELOAD'] = True
 
+    # TODO manage via config
+    app.logger.setLevel(logging.DEBUG)
+
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
     # TODO review and organize db related setup code
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///feedi.db"
     db.init_app(app)
 
     with app.app_context():
         db.create_all()
-
-        # FIXME remove
-        parser.load_hardcoded_feeds(app)
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):
@@ -32,6 +33,10 @@ def create_app():
         entries = db.paginate(q, per_page=100).items
 
         return render_template('base.html', entries=entries)
+
+    @app.cli.command("feeds")
+    def load_test_feeds():
+        parser.load_test_feeds(app)
 
     # FIXME move somewhere else
     # TODO unit test this
@@ -50,8 +55,8 @@ def create_app():
             return f"{delta.days}d"
         elif delta < datetime.timedelta(days=365):
             # FIXME
-            return time.strftime("%b %d", dt)
+            return dt.strftime("%b %d")
         # FIXME
-        return time.strftime("%b %d, %Y", dt)
+        return dt.strftime("%b %d, %Y")
 
     return app

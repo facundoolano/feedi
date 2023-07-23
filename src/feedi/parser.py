@@ -10,9 +10,11 @@ import sqlalchemy.dialects.sqlite as sqlite
 import feedi.models as models
 from feedi.database import db
 
+# TODO parametrize in command
+UPDATE_AFTER_MINUTES = 60
 
-# FIXME use generic logging instead of depending form app
-def load_hardcoded_feeds(app):
+
+def load_test_feeds(app):
     """
     Temporary setup to get some feed data for protoype development.
     Will eventually be moved to a db.
@@ -36,7 +38,7 @@ def load_hardcoded_feeds(app):
         if db_feed:
             db_feed = db_feed[0]
 
-        if db_feed and db_feed.last_fetch and datetime.datetime.utcnow() - db_feed.last_fetch < datetime.timedelta(minutes=60):
+        if db_feed and db_feed.last_fetch and datetime.datetime.utcnow() - db_feed.last_fetch < datetime.timedelta(minutes=UPDATE_AFTER_MINUTES):
             app.logger.info('skipping up to date feed %s', feed_name)
             continue
 
@@ -50,7 +52,7 @@ def load_hardcoded_feeds(app):
             db.session.add(db_feed)
             app.logger.info('added %s', db_feed)
 
-        if 'updated_parsed' in feed and db_feed.last_fetch and datetime.datetime.utcnow() - to_datetime(feed['updated_parsed']) < datetime.timedelta(minutes=60):
+        if 'updated_parsed' in feed and db_feed.last_fetch and datetime.datetime.utcnow() - to_datetime(feed['updated_parsed']) < datetime.timedelta(minutes=UPDATE_AFTER_MINUTES):
             app.logger.info('skipping up to date feed %s', feed_name)
             continue
 

@@ -20,3 +20,4 @@ license = {text = "AGPL"}
 
 [tool.pdm.scripts]
 serve = "flask --app src/feedi/app.py run --debug --reload"
+feeds = "flask --app src/feedi/app.py feeds"
