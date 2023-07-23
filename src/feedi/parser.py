@@ -5,6 +5,7 @@ import time
 import favicon
 import feedparser
 import requests
+import sqlalchemy.dialects.sqlite as sqlite
 
 import feedi.models as models
 from feedi.database import db
@@ -40,6 +41,7 @@ def load_hardcoded_feeds(app):
             continue
 
         app.logger.info('fetching %s', feed_name)
+        last_fetch_time = datetime.datetime.utcnow()
         feed = feedparser.parse(url)
 
         if not db_feed:
@@ -58,17 +60,27 @@ def load_hardcoded_feeds(app):
                 app.logger.warn("entry seems malformed %s", entry)
                 continue
 
-            # TODO use type specific parsers
-            db.session.add(models.Entry(feed=db_feed,
-                                        title=entry.get('title', '[no title]'),
-                                        title_url=entry['link'],
-                                        avatar_url=detect_entry_avatar(feed, entry),
-                                        username=entry.get('author'),
-                                        body=entry['summary'],
-                                        remote_created=to_datetime(entry['published_parsed']),
-                                        remote_updated=to_datetime(entry['updated_parsed'])))
+            # TODO use type specific parsers here
+            values = dict(feed_id=db_feed.id,
+                          title=entry.get('title', '[no title]'),
+                          title_url=entry['link'],
+                          avatar_url=detect_entry_avatar(feed, entry),
+                          username=entry.get('author'),
+                          body=entry['summary'],
+                          remote_id=entry['id'],
+                          remote_created=to_datetime(entry['published_parsed']),
+                          remote_updated=to_datetime(entry['updated_parsed']),
+                          # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
+                          updated=last_fetch_time)
 
-        db_feed.last_fetch = datetime.datetime.utcnow()
+            # upsert to handle already seen entries.
+            db.session.execute(
+                sqlite.insert(models.Entry).
+                values(**values).
+                on_conflict_do_update(("feed_id", "remote_id"), set_=values)
+            )
+
+        db_feed.last_fetch = last_fetch_time
 
     db.session.commit()
 

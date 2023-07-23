@@ -26,6 +26,8 @@ class Feed(db.Model):
 
     last_fetch = sa.Column(sa.TIMESTAMP)
 
+    entries = sa.orm.relationship("Entry", back_populates="feed")
+
     def __repr__(self):
         return f'<Feed {self.name}>'
 
@@ -40,8 +42,8 @@ class Entry(db.Model):
     id = sa.Column(sa.Integer, primary_key=True)
 
     feed_id = sa.orm.mapped_column(sa.ForeignKey("feeds.id"))
-    feed = sa.orm.relationship("Feed", backref="entries")
-    remote_id = sa.Column(sa.String)
+    feed = sa.orm.relationship("Feed", back_populates="entries")
+    remote_id = sa.Column(sa.String, nullable=False)
 
     title = sa.Column(sa.String, nullable=False)
     title_url = sa.Column(sa.String, nullable=False)
