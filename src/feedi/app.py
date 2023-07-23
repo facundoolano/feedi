@@ -7,20 +7,31 @@ import feedparser
 import requests
 from flask import Flask, render_template
 
-from feedi.database import db_session
+import feedi.models as models
+from feedi.database import db
 
 
 def create_app():
     app = Flask(__name__)
-    app.config['feeds'] = load_hardcoded_feeds(app)
     app.config['TEMPLATES_AUTO_RELOAD'] = True
+
+    # TODO review and organize db related setup code
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///feedi.db"
+    db.init_app(app)
+
+    with app.app_context():
+        db.create_all()
+
+        # FIXME remove
+        load_hardcoded_feeds(app)
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):
-        db_session.remove()
+        db.session.remove()
 
     @app.route("/")
     def hello_world():
+        # TODO query entries
         return render_template('base.html', entries=app.config['feeds'])
 
     # FIXME move somewhere else
@@ -29,7 +40,7 @@ def create_app():
     def humanize_date_filter(struct_time):
         "Pretty print a time.struct_time."
 
-        delta = datetime.datetime.utcnow() - datetime.datetime.fromtimestamp(time.mktime(struct_time))
+        delta = datetime.datetime.utcnow() - to_datetime(struct_time)
 
         if delta < datetime.timedelta(seconds=60):
             return f"{delta.seconds}s"
@@ -44,6 +55,10 @@ def create_app():
         return time.strftime("%b %d, %Y", struct_time)
 
     return app
+
+
+def to_datetime(struct_time):
+    return datetime.datetime.fromtimestamp(time.mktime(struct_time))
 
 
 def load_hardcoded_feeds(app):
@@ -63,43 +78,58 @@ def load_hardcoded_feeds(app):
         "Goodreads": f"https://www.goodreads.com/home/index_rss/19714153?key={GOODREADS_TOKEN}"
     }
 
-    entries = []
     for feed_name, url in FEEDS.items():
+
+        query = db.select(models.Feed).where(models.Feed.name == feed_name)
+        db_feed = db.session.execute(query).first()
+        if db_feed:
+            db_feed = db_feed[0]
+
+        if db_feed and db_feed.last_fetch and datetime.datetime.utcnow() - db_feed.last_fetch < datetime.timedelta(minutes=60):
+            # already got recent stuff
+            continue
+
         app.logger.info('fetching %s', feed_name)
         feed = feedparser.parse(url)
-        icon = detect_feed_icon(app, feed)
 
+        if not db_feed:
+            db_feed = models.Feed(name=feed_name, url=url, icon_url=detect_feed_icon(app, feed),
+                                  parser_type='default')
+            db.session.add(db_feed)
+            app.logger.info('added %s', db_feed)
+
+        if 'updated_parsed' in feed and db_feed.last_fetch and datetime.datetime.utcnow() - to_datetime(feed['updated_parsed']) < datetime.timedelta(minutes=60):
+            continue
+
+        app.logger.info('adding entries for %s', feed_name)
         for entry in feed['entries']:
             if 'link' not in entry or 'summary' not in entry:
                 app.logger.warn("entry seems malformed %s", entry)
                 continue
 
-            entries.append({'feed': feed_name,
-                            'title': entry.get('title', '[no title]'),
-                            'icon': icon,
-                            'avatar': detect_entry_avatar(feed, entry),
-                            'author': entry.get('author'),
-                            'url': entry['link'],
-                            'body': entry['summary'],
-                            'date': entry['published_parsed']})
+            # TODO use type specific parsers
+            db.session.add(models.Entry(feed=db_feed,
+                                        title=entry.get('title', '[no title]'),
+                                        title_url=entry['link'],
+                                        avatar_url=detect_entry_avatar(feed, entry),
+                                        username=entry.get('author'),
+                                        body=entry['summary'],
+                                        remote_created=to_datetime(entry['published_parsed']),
+                                        remote_updated=to_datetime(entry['updated_parsed'])))
 
-    entries.sort(key=lambda e: e['date'], reverse=True)
-    return entries
+        db_feed.last_fetch = datetime.datetime.utcnow()
+
+    db.session.commit()
 
 
 def detect_feed_icon(app, feed):
-    href = None
-    if href:
-        if not requests.head(href).ok:
-            href = None
+    # FIXME should consider a feed returned url instead of the favicon?
 
-    # if feed doesn't provide an image or it's not available, use the favicon instead
-    if not href:
-        favicons = favicon.get(feed['feed']['link'])
-        app.logger.debug("icons: %s", favicons)
-        # if multiple formats, assume the .ico is the canonical one if present
-        favicons = [f for f in favicons if f.format == 'ico'] or favicons
-        href = favicons[0].url
+    favicons = favicon.get(feed['feed']['link'])
+    app.logger.debug("icons: %s", favicons)
+    # if multiple formats, assume the .ico is the canonical one if present
+    favicons = [f for f in favicons if f.format == 'ico'] or favicons
+    href = favicons[0].url
 
     app.logger.debug('feed icon is %s', href)
     return href
