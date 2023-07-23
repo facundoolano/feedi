@@ -14,13 +14,13 @@
             <div class="card-content">
                 <div class="media">
                     <figure class="media-left image is-48x48">
-                        <img class="is-rounded" src="{{ entry.avatar or entry.icon }}" alt="{{ entry.author or entry.feed}}" title="{{ entry.author or entry.feed }}">
+                        <img class="is-rounded" src="{{ entry.avatar_url or entry.feed.icon_url }}" alt="{{ entry.username or entry.feed.name}}" title="{{ entry.username or entry.feed.name }}">
                     </figure>
                     <div class="media-content is-clickable">
                         <p>
-                            <b><a class="feed-title" href="{{ entry.url }}" target="_blank">{{ entry.title }}</a></b>
+                            <b><a class="feed-title" href="{{ entry.title_url }}" target="_blank">{{ entry.title }}</a></b>
                             <br/>
-                            <small class="has-text-grey-light">{{ entry.date | humanize }} · {{ entry.feed}}</small>
+                            <small class="has-text-grey-light">{{ entry.remote_updated | humanize }} · {{ entry.feed.name}}</small>
                         </p>
                         <div class="content">
                             <p>{{ entry.body | safe }}</p>

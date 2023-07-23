@@ -31,16 +31,17 @@ def create_app():
 
     @app.route("/")
     def hello_world():
-        # TODO query entries
-        return render_template('base.html', entries=app.config['feeds'])
+        q = db.select(models.Entry).order_by(models.Entry.remote_updated.desc())
+        entries = db.paginate(q, per_page=100).items
+
+        return render_template('base.html', entries=entries)
 
     # FIXME move somewhere else
     # TODO unit test this
     @app.template_filter('humanize')
-    def humanize_date_filter(struct_time):
-        "Pretty print a time.struct_time."
+    def humanize_date_filter(date):
 
-        delta = datetime.datetime.utcnow() - to_datetime(struct_time)
+        delta = datetime.datetime.utcnow() - date
 
         if delta < datetime.timedelta(seconds=60):
             return f"{delta.seconds}s"
@@ -51,8 +52,10 @@ def create_app():
         elif delta < datetime.timedelta(days=8):
             return f"{delta.days}d"
         elif delta < datetime.timedelta(days=365):
-            return time.strftime("%b %d", struct_time)
-        return time.strftime("%b %d, %Y", struct_time)
+            # FIXME
+            return time.strftime("%b %d", date)
+        # FIXME
+        return time.strftime("%b %d, %Y", date)
 
     return app
 
