@@ -34,9 +34,14 @@ def create_app():
 
         return render_template('base.html', entries=entries)
 
-    @app.cli.command("feeds")
-    def load_test_feeds():
-        parser.load_test_feeds(app)
+    # TODO add with a function instead of force decorating
+    @app.cli.command("sync")
+    def sync_feeds():
+        parser.sync_all_feeds(app)
+
+    @app.cli.command("testfeeds")
+    def create_test_feeds():
+        parser.create_test_feeds(app)
 
     # FIXME move somewhere else
     # TODO unit test this

@@ -14,11 +14,7 @@ from feedi.database import db
 UPDATE_AFTER_MINUTES = 60
 
 
-def load_test_feeds(app):
-    """
-    Temporary setup to get some feed data for protoype development.
-    Will eventually be moved to a db.
-    """
+def create_test_feeds(app):
     GOODREADS_TOKEN = os.getenv("GOODREADS_TOKEN")
     GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
@@ -32,59 +28,68 @@ def load_test_feeds(app):
     }
 
     for feed_name, url in FEEDS.items():
-
         query = db.select(models.Feed).where(models.Feed.name == feed_name)
         db_feed = db.session.execute(query).first()
         if db_feed:
-            db_feed = db_feed[0]
-
-        if db_feed and db_feed.last_fetch and datetime.datetime.utcnow() - db_feed.last_fetch < datetime.timedelta(minutes=UPDATE_AFTER_MINUTES):
-            app.logger.info('skipping up to date feed %s', feed_name)
+            app.logger.info('skipping already existent %s', feed_name)
             continue
 
-        app.logger.info('fetching %s', feed_name)
-        last_fetch_time = datetime.datetime.utcnow()
         feed = feedparser.parse(url)
-
-        if not db_feed:
-            db_feed = models.Feed(name=feed_name, url=url, icon_url=detect_feed_icon(app, feed),
-                                  parser_type='default')
-            db.session.add(db_feed)
-            app.logger.info('added %s', db_feed)
-
-        if 'updated_parsed' in feed and db_feed.last_fetch and datetime.datetime.utcnow() - to_datetime(feed['updated_parsed']) < datetime.timedelta(minutes=UPDATE_AFTER_MINUTES):
-            app.logger.info('skipping up to date feed %s', feed_name)
-            continue
-
-        app.logger.info('adding entries for %s', feed_name)
-        for entry in feed['entries']:
-            if 'link' not in entry or 'summary' not in entry:
-                app.logger.warn("entry seems malformed %s", entry)
-                continue
-
-            # TODO use type specific parsers here
-            values = dict(feed_id=db_feed.id,
-                          title=entry.get('title', '[no title]'),
-                          title_url=entry['link'],
-                          avatar_url=detect_entry_avatar(feed, entry),
-                          username=entry.get('author'),
-                          body=entry['summary'],
-                          remote_id=entry['id'],
-                          remote_created=to_datetime(entry['published_parsed']),
-                          remote_updated=to_datetime(entry['updated_parsed']),
-                          # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
-                          updated=last_fetch_time)
-
-            # upsert to handle already seen entries.
-            db.session.execute(
-                sqlite.insert(models.Entry).
-                values(**values).
-                on_conflict_do_update(("feed_id", "remote_id"), set_=values)
-            )
-
-        db_feed.last_fetch = last_fetch_time
+        db_feed = models.Feed(name=feed_name, url=url, icon_url=detect_feed_icon(app, feed),
+                              parser_type='default')
+        db.session.add(db_feed)
+        app.logger.info('added %s', db_feed)
 
     db.session.commit()
+
+
+def sync_all_feeds(app):
+    db_feeds = db.session.execute(db.select(models.Feed)).all()
+    for (db_feed,) in db_feeds:
+        sync_feed(app, db_feed)
+
+    db.session.commit()
+
+
+def sync_feed(app, db_feed):
+    if db_feed.last_fetch and datetime.datetime.utcnow() - db_feed.last_fetch < datetime.timedelta(minutes=UPDATE_AFTER_MINUTES):
+        app.logger.info('skipping up to date feed %s', db.name)
+        return
+
+    app.logger.info('fetching %s', db_feed.name)
+    db_feed.last_fetch = datetime.datetime.utcnow()
+    feed = feedparser.parse(db_feed.url)
+
+    if 'updated_parsed' in feed and db_feed.last_fetch and datetime.datetime.utcnow() - to_datetime(feed['updated_parsed']) < datetime.timedelta(minutes=UPDATE_AFTER_MINUTES):
+        app.logger.info('skipping up to date feed %s', db_feed.name)
+        return
+
+    app.logger.info('adding entries for %s', db_feed.name)
+    for entry in feed['entries']:
+        if 'link' not in entry or 'summary' not in entry:
+            app.logger.warn("entry seems malformed %s", entry)
+            continue
+
+        # TODO use type specific parsers here
+        values = dict(feed_id=db_feed.id,
+                      title=entry.get('title', '[no title]'),
+                      title_url=entry['link'],
+                      avatar_url=detect_entry_avatar(feed, entry),
+                      username=entry.get('author'),
+                      body=entry['summary'],
+                      remote_id=entry['id'],
+                      remote_created=to_datetime(entry['published_parsed']),
+                      remote_updated=to_datetime(entry['updated_parsed']),
+
+                      # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
+                      updated=db_feed.last_fetch)
+
+        # upsert to handle already seen entries.
+        db.session.execute(
+            sqlite.insert(models.Entry).
+            values(**values).
+            on_conflict_do_update(("feed_id", "remote_id"), set_=values)
+        )
 
 
 def to_datetime(struct_time):
