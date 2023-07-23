@@ -18,9 +18,6 @@ class Feed(db.Model):
     url = sa.Column(sa.String)
     icon_url = sa.Column(sa.String)
 
-    # FIXME select from known enums
-    parser_type = sa.Column(sa.String, nullable=False)
-
     created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
     updated = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 

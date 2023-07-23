@@ -20,6 +20,14 @@ license = {text = "AGPL"}
 
 [tool.pdm.scripts]
 serve = "flask --app src/feedi/app.py run --debug --reload"
-feeds = "flask --app src/feedi/app.py feeds"
 sync = "flask --app src/feedi/app.py sync"
 testfeeds = "flask --app src/feedi/app.py testfeeds"
+debug-feed = "flask --app src/feedi/app.py debug-feed"
+
+
+[tool.pdm.dev-dependencies]
+devel = [
+    "pyright>=1.1.318",
+]
+[tool.pyright]
+extraPaths = ["__pypackages__/<major.minor>/lib/"]

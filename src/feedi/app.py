@@ -1,7 +1,7 @@
 import datetime
 import logging
-import time
 
+import click
 from flask import Flask, render_template
 
 import feedi.models as models
@@ -42,6 +42,11 @@ def create_app():
     @app.cli.command("testfeeds")
     def create_test_feeds():
         parser.create_test_feeds(app)
+
+    @app.cli.command("debug-feed")
+    @click.argument('url')
+    def debug_feed(url):
+        parser.debug_feed(url)
 
     # FIXME move somewhere else
     # TODO unit test this
