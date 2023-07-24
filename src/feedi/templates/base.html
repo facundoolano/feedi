@@ -43,9 +43,11 @@
                                 </figure>
                             </div>
                             {% endif %}
+                            {% if entry.body %}
                             <div class="column">
-                                    <p>{{ entry.body | safe }}</p>
+                                <p>{{ entry.body | safe }}</p>
                             </div>
+                            {% endif %}
                         </div>
 
                     </div>
