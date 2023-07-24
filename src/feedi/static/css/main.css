@@ -1,14 +1,10 @@
 /* reduce margins */
 .feed-entry .card-content {
-    padding: 1rem
-}
-
-.feed-entry .content, .feed-entry .media {
-    margin-bottom: 0!important
+    padding: 1rem;
 }
 
 /* entry effects on hover  */
-.feed-entry .card-content:hover {
+.feed-entry .cnard-content:hover {
     /* FIXME this should use SCSS variables */
     /* background-color:  hsl(0, 0%, 96%) */
 }
@@ -28,4 +24,11 @@
 
 .feed-entry:hover .button {
     visibility: visible;
+}
+
+.media-url img {
+    width: 10rem!important;
+    height: 8rem!important;
+    border-radius: .75rem;
+    object-fit: cover;
 }

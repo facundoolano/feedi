@@ -30,7 +30,7 @@ def create_app():
     @app.route("/")
     def hello_world():
         q = db.select(models.Entry).order_by(models.Entry.remote_updated.desc())
-        entries = db.paginate(q, per_page=100).items
+        entries = db.paginate(q, per_page=1000).items
 
         return render_template('base.html', entries=entries)
 
