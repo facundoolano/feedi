@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import datetime
 import os
 import time
@@ -11,7 +13,7 @@ import feedi.models as models
 from feedi.database import db
 
 # TODO parametrize in command or app config
-UPDATE_AFTER_MINUTES = 15
+UPDATE_AFTER_MINUTES = 60
 
 
 class BaseParser:
@@ -60,8 +62,7 @@ class BaseParser:
         return entry.get('author')
 
     def parse_avatar_url(self, entry):
-        url = (entry.get('media_thumbnail', [{}])[0].get('url') or
-               self.feed['feed'].get('image', {}).get('href') or
+        url = (self.feed['feed'].get('image', {}).get('href') or
                self.feed['feed'].get('webfeeds_icon'))
 
         if url and not requests.head(url).ok:
@@ -86,10 +87,10 @@ class LinkAggregatorParser(BaseParser):
     TODO
     """
     @staticmethod
-    def is_compatible(feed_url, _feed_data):
+    def is_compatible(_feed_url, feed_data):
         # TODO test this with lemmy as well
         KNOWN_AGGREGATORS = ['lobste.rs', 'reddit.com', 'news.ycombinator.com']
-        return any([domain in feed_url for domain in KNOWN_AGGREGATORS])
+        return any([domain in feed_data['feed']['link'] for domain in KNOWN_AGGREGATORS])
 
 
 class MastodonUserParser(BaseParser):
@@ -190,7 +191,7 @@ def detect_feed_icon(app, feed):
 def debug_feed(url):
     feed = feedparser.parse(url)
     import pprint
-    pp = pprint.PrettyPrinter(depth=4)
+    pp = pprint.PrettyPrinter(depth=10)
     pp.pprint(feed)
 
 
@@ -204,7 +205,21 @@ def create_test_feeds(app):
         "lobste.rs": "https://lobste.rs/rss",
         "Github": f"https://github.com/facundoolano.private.atom?token={GITHUB_TOKEN}",
         # "ambito.com": "https://www.ambito.com/rss/pages/home.xml",
-        "Goodreads": f"https://www.goodreads.com/home/index_rss/19714153?key={GOODREADS_TOKEN}"
+        "Goodreads": f"https://www.goodreads.com/home/index_rss/19714153?key={GOODREADS_TOKEN}",
+        "TheVerge": "https://www.theverge.com/rss/tech/index.xml",
+        "ferd.ca": "https://ferd.ca/feed.rss",
+        "r/programming": "https://www.reddit.com/r/programming/top.rss",
+        "doctorow": "https://doctorow.medium.com/feed",
+        "The New Yorker culture": "https://www.newyorker.com/feed/culture",
+        "The New Yorker tech": "https://www.newyorker.com/feed/tech",
+        "hackernews": "https://hnrss.org/newest?points=100",
+        "DoubleFine": "https://www.doublefine.com/rss/news.rss",
+        "mixnmojo": "https://www.theadventurer.news/feed",
+        "Digital Antiquarian": "https://www.filfre.net/feed/rss/",
+        "olé boke": "http://www.ole.com.ar/rss/boca-juniors/",
+        "cinesargentinos": "http://feeds.feedburner.com/cinesargentinos-pelis",
+        "arstechnica": "https://feeds.arstechnica.com/arstechnica/features.xml",
+        "bytebytego": "https://blog.bytebytego.com/feed",
     }
 
     for feed_name, url in FEEDS.items():
@@ -215,8 +230,7 @@ def create_test_feeds(app):
             continue
 
         feed = feedparser.parse(url)
-        db_feed = models.Feed(name=feed_name, url=url, icon_url=detect_feed_icon(app, feed),
-                              parser_type='default')
+        db_feed = models.Feed(name=feed_name, url=url, icon_url=detect_feed_icon(app, feed))
         db.session.add(db_feed)
         app.logger.info('added %s', db_feed)
 

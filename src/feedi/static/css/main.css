@@ -1,6 +1,6 @@
 /* reduce margins */
 .feed-entry .card-content {
-    padding: .75rem 1.5rem
+    padding: 1rem
 }
 
 .feed-entry .content, .feed-entry .media {
