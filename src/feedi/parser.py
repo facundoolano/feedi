@@ -14,7 +14,7 @@ import feedi.models as models
 from feedi.database import db
 
 # TODO parametrize in command or app config
-UPDATE_AFTER_MINUTES = 60
+UPDATE_AFTER_MINUTES = 5
 
 
 class BaseParser:
@@ -63,12 +63,10 @@ class BaseParser:
         return entry.get('author')
 
     def parse_avatar_url(self, entry):
-        url = (self.feed['feed'].get('image', {}).get('href') or
-               self.feed['feed'].get('webfeeds_icon'))
-
-        if url and not requests.head(url).ok:
-            url = None
-        return url
+        url = entry.get('source', {}).get('icon')
+        if url and requests.head(url).ok:
+            self.logger.debug('found entry-level avatar %s', url)
+            return url
 
     def parse_body(self, entry):
         return entry['summary']
@@ -176,17 +174,18 @@ def to_datetime(struct_time):
     return datetime.datetime.fromtimestamp(time.mktime(struct_time))
 
 
-def detect_feed_icon(app, feed):
-    # FIXME should consider a feed returned url instead of the favicon?
+def detect_feed_icon(app, feed, url):
+    icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
+    if icon_url and requests.head(icon_url).ok:
+        app.logger.debug("using feed icon: %s", icon_url)
+    else:
+        favicons = favicon.get(feed['feed'].get('link', url))
+        # if multiple formats, assume the .ico is the canonical one if present
+        favicons = [f for f in favicons if f.format == 'ico'] or favicons
+        icon_url = favicons[0].url
+        app.logger.debug('using favicon %s', icon_url)
 
-    favicons = favicon.get(feed['feed']['link'])
-    app.logger.debug("icons: %s", favicons)
-    # if multiple formats, assume the .ico is the canonical one if present
-    favicons = [f for f in favicons if f.format == 'ico'] or favicons
-    href = favicons[0].url
-
-    app.logger.debug('feed icon is %s', href)
-    return href
+    return icon_url
 
 
 def debug_feed(url):
