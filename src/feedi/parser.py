@@ -26,13 +26,13 @@ class BaseParser:
               'media_url', 'remote_id', 'remote_created', 'remote_updated']
 
     @staticmethod
-    def is_compatible(feed_url, feed_data):
+    def is_compatible(_feed_url, _feed_data):
         """
         Returns whether this class knows how to parse entries from the given feed.
         The base parser should reasonably work with any rss feed.
         """
-        # FIXME this is confusing here
-        return False
+        # subclasses need to override this. This base class can be used directly without testing for compatibility
+        raise NotImplementedError
 
     # TODO review if this has a reasonable purpose vs just passing everything on the parse fun
     def __init__(self, feed, db_feed, logger):
@@ -88,8 +88,8 @@ class BaseParser:
         if 'media_thumbnail' in entry:
             return entry['media_thumbnail'][0]['url']
 
-        if 'media_content' in entry and entry['media_content']['type'] == 'image':
-            return entry['media_content']['url']
+        if 'media_content' in entry and entry['media_content'][0].get('type') == 'image':
+            return entry['media_content'][0]['url']
 
         # else try to extract it from the summary html
         soup = BeautifulSoup(entry['summary'], 'lxml')
@@ -143,6 +143,15 @@ class GithubFeedParser(BaseParser):
     def is_compatible(feed_url, _feed_data):
         return 'github.com' in feed_url and 'private.atom' in feed_url
 
+    def parse_body(self, _entry):
+        return None
+
+    def parse_avatar_url(self, entry):
+        return entry['media_thumbnail'][0]['url']
+
+    def parse_media_url(self, _entry):
+        return None
+
 
 class GoodreadsFeedParser(BaseParser):
     """
@@ -151,6 +160,12 @@ class GoodreadsFeedParser(BaseParser):
     @staticmethod
     def is_compatible(feed_url, _feed_data):
         return 'goodreads.com' in feed_url and '/home/index_rss' in feed_url
+
+    def parse_body(self, _entry):
+        return None
+
+    def parse_media_url(self, _entry):
+        return None
 
 
 def sync_all_feeds(app):
