@@ -2,13 +2,13 @@
 
 import csv
 import datetime
-import os
 import time
 
 import favicon
 import feedparser
 import requests
 import sqlalchemy.dialects.sqlite as sqlite
+from bs4 import BeautifulSoup
 
 import feedi.models as models
 from feedi.database import db
@@ -23,7 +23,7 @@ class BaseParser:
     """
 
     FIELDS = ['title', 'title_url', 'avatar_url', 'username', 'body',
-              'remote_id', 'remote_created', 'remote_updated']
+              'media_url', 'remote_id', 'remote_created', 'remote_updated']
 
     @staticmethod
     def is_compatible(feed_url, feed_data):
@@ -69,7 +69,38 @@ class BaseParser:
             return url
 
     def parse_body(self, entry):
-        return entry['summary']
+        soup = BeautifulSoup(entry['summary'], 'lxml')
+
+        # remove images in case there are any inside a paragraph
+        for tag in soup('img'):
+            tag.decompose()
+
+        # take the first couple of paragraphs that have text
+        result = ''
+        if soup.p:
+            result += str(soup.p.extract())
+        if soup.p:
+            result += '\n' + str(soup.p.extract())
+        return result
+
+    def parse_media_url(self, entry):
+        # first try to get it in standard feed fields
+        if 'media_thumbnail' in entry:
+            return entry['media_thumbnail'][0]['url']
+
+        if 'media_content' in entry and entry['media_content']['type'] == 'image':
+            return entry['media_content']['url']
+
+        # else try to extract it from the summary html
+        soup = BeautifulSoup(entry['summary'], 'lxml')
+        if soup.img:
+            return soup.img['src']
+
+        self.logger.debug('didnt found media in feed, trying with meta origin meta tags %s', entry['link'])
+        soup = BeautifulSoup(requests.get(entry['link']).content, 'lxml')
+        meta_tag = soup.find("meta", property="og:image", content=True) or soup.find("meta", property="twitter:image", content=True)
+        if meta_tag:
+            return meta_tag['content']
 
     def parse_remote_id(self, entry):
         return entry['id']

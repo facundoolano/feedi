@@ -12,6 +12,9 @@ dependencies = [
     "requests>=2.31.0",
     "sqlalchemy>=2.0.19",
     "flask-sqlalchemy>=3.0.5",
+    "readability-lxml>=0.8.1",
+    "beautifulsoup4>=4.12.2",
+    "lxml>=4.9.3",
 ]
 requires-python = ">=3.11"
 readme = "README.md"
@@ -28,6 +31,9 @@ debug-feed = "flask --app src/feedi/app.py debug-feed"
 [tool.pdm.dev-dependencies]
 devel = [
     "pyright>=1.1.318",
+]
+dev = [
+    "ipython>=8.14.0",
 ]
 [tool.pyright]
 extraPaths = ["__pypackages__/<major.minor>/lib/"]

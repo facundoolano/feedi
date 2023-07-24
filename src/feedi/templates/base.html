@@ -36,6 +36,13 @@
                 </div>
 
             </div>
+            {% if entry.media_url  %}
+            <div class="card-image">
+                <figure class="image is-4by3">
+                    <img src="{{ entry.media_url }}" alt="FIXME">
+                </figure>
+            </div>
+            {% endif %}
                     </div>
         {% endfor %}
             </div>
