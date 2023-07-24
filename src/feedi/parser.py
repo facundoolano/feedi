@@ -1,5 +1,6 @@
 # coding: utf-8
 
+import csv
 import datetime
 import os
 import time
@@ -196,42 +197,17 @@ def debug_feed(url):
 
 
 def create_test_feeds(app):
-    GOODREADS_TOKEN = os.getenv("GOODREADS_TOKEN")
-    GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+    with open('feeds.csv') as csv_file:
+        for feed_name, url in csv.reader(csv_file):
+            query = db.select(models.Feed).where(models.Feed.name == feed_name)
+            db_feed = db.session.execute(query).first()
+            if db_feed:
+                app.logger.info('skipping already existent %s', feed_name)
+                continue
 
-    FEEDS = {
-        "Apuntes Inchequeables": "https://facundoolano.github.io/feed.xml",
-        "@grumpygamer": "https://mastodon.gamedev.place/@grumpygamer.rss",
-        "lobste.rs": "https://lobste.rs/rss",
-        "Github": f"https://github.com/facundoolano.private.atom?token={GITHUB_TOKEN}",
-        # "ambito.com": "https://www.ambito.com/rss/pages/home.xml",
-        "Goodreads": f"https://www.goodreads.com/home/index_rss/19714153?key={GOODREADS_TOKEN}",
-        "TheVerge": "https://www.theverge.com/rss/tech/index.xml",
-        "ferd.ca": "https://ferd.ca/feed.rss",
-        "r/programming": "https://www.reddit.com/r/programming/top.rss",
-        "doctorow": "https://doctorow.medium.com/feed",
-        "The New Yorker culture": "https://www.newyorker.com/feed/culture",
-        "The New Yorker tech": "https://www.newyorker.com/feed/tech",
-        "hackernews": "https://hnrss.org/newest?points=100",
-        "DoubleFine": "https://www.doublefine.com/rss/news.rss",
-        "mixnmojo": "https://www.theadventurer.news/feed",
-        "Digital Antiquarian": "https://www.filfre.net/feed/rss/",
-        "olé boke": "http://www.ole.com.ar/rss/boca-juniors/",
-        "cinesargentinos": "http://feeds.feedburner.com/cinesargentinos-pelis",
-        "arstechnica": "https://feeds.arstechnica.com/arstechnica/features.xml",
-        "bytebytego": "https://blog.bytebytego.com/feed",
-    }
-
-    for feed_name, url in FEEDS.items():
-        query = db.select(models.Feed).where(models.Feed.name == feed_name)
-        db_feed = db.session.execute(query).first()
-        if db_feed:
-            app.logger.info('skipping already existent %s', feed_name)
-            continue
-
-        feed = feedparser.parse(url)
-        db_feed = models.Feed(name=feed_name, url=url, icon_url=detect_feed_icon(app, feed))
-        db.session.add(db_feed)
-        app.logger.info('added %s', db_feed)
+            feed = feedparser.parse(url)
+            db_feed = models.Feed(name=feed_name, url=url, icon_url=detect_feed_icon(app, feed, url))
+            db.session.add(db_feed)
+            app.logger.info('added %s', db_feed)
 
     db.session.commit()
