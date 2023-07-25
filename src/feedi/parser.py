@@ -23,7 +23,7 @@ class BaseParser:
     """
 
     FIELDS = ['title', 'title_url', 'avatar_url', 'username', 'body',
-              'media_url', 'remote_id', 'remote_created', 'remote_updated']
+              'media_url', 'remote_id', 'remote_created', 'remote_updated', 'entry_url', 'content_url']
 
     @staticmethod
     def is_compatible(_feed_url, _feed_data):
@@ -39,6 +39,27 @@ class BaseParser:
         self.feed = feed
         self.db_feed = db_feed
         self.logger = logger
+        self.response_cache = {}
+
+    # FIXME make this a proper cache of any sort of request, and cache all.
+    def request(self, url):
+        if url in self.response_cache:
+            self.logger.debug("using cached response %s", url)
+            return self.response_cache[url]
+
+        self.logger.debug("making request %s", url)
+        content = requests.get(url).content
+        self.response_cache[url] = content
+        return content
+
+    def fetch_meta(self, url, tag):
+        """
+        TODO
+        """
+        soup = BeautifulSoup(self.request(url), 'lxml')
+        meta_tag = soup.find("meta", property=tag, content=True)
+        if meta_tag:
+            return meta_tag['content']
 
     def parse(self, entry):
         """
@@ -58,6 +79,12 @@ class BaseParser:
 
     def parse_title_url(self, entry):
         return entry['link']
+
+    def parse_entry_url(self, entry):
+        return self.parse_title_url(entry)
+
+    def parse_content_url(self, entry):
+        return self.parse_title_url(entry)
 
     def parse_username(self, entry):
         return entry.get('author')
@@ -102,11 +129,7 @@ class BaseParser:
             return soup.img['src']
 
         parsed_dest_url = self.parse_title_url(entry)
-        self.logger.debug('didnt found media in feed, trying with destination meta tags %s', parsed_dest_url)
-        soup = BeautifulSoup(requests.get(parsed_dest_url).content, 'lxml')
-        meta_tag = soup.find("meta", property="og:image", content=True) or soup.find("meta", property="twitter:image", content=True)
-        if meta_tag:
-            return meta_tag['content']
+        return self.fetch_meta(parsed_dest_url, "og:image") or self.fetch_meta(parsed_dest_url, "twitter:image")
 
     def parse_remote_id(self, entry):
         return entry['id']
@@ -124,23 +147,33 @@ class BaseParser:
         return dt
 
 
-# TODO try to extract common functionality of aggregators into a base class.
-# e.g a template method for is link only vs has local content
-# and expected base domain
+# FIXME reduce duplication between aggregators
 class RedditParser(BaseParser):
     def is_compatible(_feed_url, feed_data):
         return 'reddit.com' in feed_data['feed']['link']
 
     def parse_body(self, entry):
-        # skip link-only posts
-        if '[link]' in entry['summary']:
-            return None
-        return entry['summary']
+        soup = BeautifulSoup(entry['summary'], 'lxml')
+        link_url = soup.find("a", string="[link]")
+        comments_url = soup.find("a", string="[comments]")
+
+        if link_url['href'] == comments_url['href']:
+            # this looks like it's a local reddit discussion
+            # return the summary instead of fetching description
+
+            # remove the links from the body first
+            link_url.decompose()
+            comments_url.decompose()
+            return str(soup)
+
+        return self.fetch_meta(link_url['href'], 'og:description')
 
     def parse_title_url(self, entry):
-        if '[link]' in entry['summary']:
-            soup = BeautifulSoup(entry['summary'], 'lxml')
-            return soup.find("a", string="[link]")['href']
+        soup = BeautifulSoup(entry['summary'], 'lxml')
+        return soup.find("a", string="[link]")['href']
+
+    def parse_entry_url(self, entry):
+        # this particular feed puts the reddit comments page in the link
         return entry['link']
 
 
@@ -151,8 +184,15 @@ class LobstersParser(BaseParser):
     def parse_body(self, entry):
         # skip link-only posts
         if 'Comments' in entry['summary']:
-            return None
+            url = self.parse_title_url(entry)
+            return self.fetch_meta(url, 'og:description')
         return entry['summary']
+
+    def parse_entry_url(self, entry):
+        if 'Comments' in entry['summary']:
+            soup = BeautifulSoup(entry['summary'], 'lxml')
+            return soup.find("a", string="Comments")['href']
+        return entry['link']
 
 
 class HackerNewsParser(BaseParser):
@@ -162,8 +202,15 @@ class HackerNewsParser(BaseParser):
     def parse_body(self, entry):
         # skip link-only posts
         if 'Article URL' in entry['summary']:
-            return None
+            url = self.parse_title_url(entry)
+            return self.fetch_meta(url, 'og:description')
         return entry['summary']
+
+    def parse_entry_url(self, entry):
+        if 'Article URL' in entry['summary']:
+            soup = BeautifulSoup(entry['summary'], 'lxml')
+            return soup.find(lambda tag: 'Comments URL' in tag.text).a['href']
+        return entry['link']
 
 
 class MastodonUserParser(BaseParser):
