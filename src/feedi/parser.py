@@ -75,12 +75,17 @@ class BaseParser:
         for tag in soup('img'):
             tag.decompose()
 
-        # take the first couple of paragraphs that have text
+        # there's text but it's not broken in paragraphs, take it as is
+        if soup.text and not soup.p:
+            return soup.text.strip()
+
+        # if there are paragraphs take the first few
         result = ''
         if soup.p:
             result += str(soup.p.extract())
         if soup.p:
             result += '\n' + str(soup.p.extract())
+
         return result
 
     def parse_media_url(self, entry):
