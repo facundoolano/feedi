@@ -207,10 +207,8 @@ class HackerNewsParser(BaseParser):
         return entry['summary']
 
     def parse_entry_url(self, entry):
-        if 'Article URL' in entry['summary']:
-            soup = BeautifulSoup(entry['summary'], 'lxml')
-            return soup.find(lambda tag: 'Comments URL' in tag.text).a['href']
-        return entry['link']
+        soup = BeautifulSoup(entry['summary'], 'lxml')
+        return soup.find(lambda tag: tag.name == 'p' and 'Comments URL' in tag.text).a['href']
 
 
 class MastodonUserParser(BaseParser):
@@ -240,6 +238,9 @@ class GithubFeedParser(BaseParser):
         return entry['media_thumbnail'][0]['url']
 
     def parse_media_url(self, _entry):
+        return None
+
+    def parse_entry_url(self, _entry):
         return None
 
 

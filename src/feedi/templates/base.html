@@ -29,7 +29,7 @@
                             <div class="column is-narrow">
                                 <a><span class="button is-white is-rounded"><i class="fas fa-trash-alt"></i></span></a>
                                 <a><span class="button is-white is-rounded"><i class="fas fa-thumbtack"></i></span></a>
-                                <a><span class="button is-white is-rounded"><i class="fas fa-comment-alt"></i></span></a>
+                                {% if entry.entry_url %}<a href="{{ entry.entry_url }}" target="_blank"><span class="button is-white is-rounded"><i class="fas fa-comment-alt"></i></span></a>{% endif %}
                                 <a><span class="button is-white is-rounded"><i class="fas fa-ellipsis-v"></i></span></a>
                             </div>
                         </div>
