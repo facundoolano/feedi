@@ -23,6 +23,9 @@ class Feed(db.Model):
 
     last_fetch = sa.Column(sa.TIMESTAMP)
 
+    etag = sa.Column(sa.String, doc="Etag received on last parsed rss, to prevent re-fetching if it hasn't changed.")
+    modified_header = sa.Column(sa.String, doc="Last-modified received on last parsed rss, to prevent re-fetching if it hasn't changed.")
+
     entries = sa.orm.relationship("Entry", back_populates="feed", cascade="all, delete-orphan")
 
     def __repr__(self):

@@ -269,14 +269,25 @@ def sync_all_feeds(app):
 
 def sync_feed(app, db_feed):
     if db_feed.last_fetch and datetime.datetime.utcnow() - db_feed.last_fetch < datetime.timedelta(minutes=UPDATE_AFTER_MINUTES):
-        app.logger.info('skipping up to date feed %s', db_feed.name)
+        app.logger.info('skipping recently synced feed %s', db_feed.name)
         return
 
     app.logger.info('fetching %s', db_feed.name)
-    db_feed.last_fetch = datetime.datetime.utcnow()
-    feed = feedparser.parse(db_feed.url)
 
-    if 'updated_parsed' in feed and db_feed.last_fetch and datetime.datetime.utcnow() - to_datetime(feed['updated_parsed']) < datetime.timedelta(minutes=UPDATE_AFTER_MINUTES):
+    # using standard feed headers to prevent re-fetching unchanged feeds
+    # https://feedparser.readthedocs.io/en/latest/http-etag.html
+    feed = feedparser.parse(db_feed.url, etag=db_feed.etag, modified=db_feed.modified_header)
+    if not feed['feed']:
+        app.logger.info('skipping empty feed %s %s', db_feed.name, feed.debug_message)
+        return
+    if hasattr(feed, 'etag'):
+        db_feed.etag = feed.etag
+    if hasattr(feed, 'modified'):
+        db_feed.modified_header = feed.modified
+
+    # also checking with the internal updated field
+    db_feed.last_fetch = datetime.datetime.utcnow()
+    if 'updated_parsed' in feed and datetime.datetime.utcnow() - to_datetime(feed['updated_parsed']) < datetime.timedelta(minutes=UPDATE_AFTER_MINUTES):
         app.logger.info('skipping up to date feed %s', db_feed.name)
         return
 
