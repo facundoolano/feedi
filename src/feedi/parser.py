@@ -112,10 +112,16 @@ class BaseParser:
         return entry['id']
 
     def parse_remote_created(self, entry):
-        return to_datetime(entry['published_parsed'])
+        dt = to_datetime(entry['published_parsed'])
+        if dt > datetime.datetime.utcnow():
+            raise ValueError("publication date is in the future")
+        return dt
 
     def parse_remote_updated(self, entry):
-        return to_datetime(entry['updated_parsed'])
+        dt = to_datetime(entry['updated_parsed'])
+        if dt > datetime.datetime.utcnow():
+            raise ValueError("publication date is in the future")
+        return dt
 
 
 # TODO try to extract common functionality of aggregators into a base class.
