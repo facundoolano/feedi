@@ -34,3 +34,8 @@
 .feed-header {
     margin-bottom:0!important
 }
+
+
+.card.feed-entry  {
+    box-shadow: 0 0 0 1px hsl(0, 0%, 90%);
+}
