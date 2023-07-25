@@ -14,7 +14,7 @@ import feedi.models as models
 from feedi.database import db
 
 # TODO parametrize in command or app config
-UPDATE_AFTER_MINUTES = 5
+UPDATE_AFTER_MINUTES = 15
 
 
 class BaseParser:
@@ -101,8 +101,9 @@ class BaseParser:
         if soup.img:
             return soup.img['src']
 
-        self.logger.debug('didnt found media in feed, trying with meta origin meta tags %s', entry['link'])
-        soup = BeautifulSoup(requests.get(entry['link']).content, 'lxml')
+        parsed_dest_url = self.parse_title_url(entry)
+        self.logger.debug('didnt found media in feed, trying with destination meta tags %s', parsed_dest_url)
+        soup = BeautifulSoup(requests.get(parsed_dest_url).content, 'lxml')
         meta_tag = soup.find("meta", property="og:image", content=True) or soup.find("meta", property="twitter:image", content=True)
         if meta_tag:
             return meta_tag['content']
@@ -117,15 +118,46 @@ class BaseParser:
         return to_datetime(entry['updated_parsed'])
 
 
-class LinkAggregatorParser(BaseParser):
-    """
-    TODO
-    """
-    @staticmethod
+# TODO try to extract common functionality of aggregators into a base class.
+# e.g a template method for is link only vs has local content
+# and expected base domain
+class RedditParser(BaseParser):
     def is_compatible(_feed_url, feed_data):
-        # TODO test this with lemmy as well
-        KNOWN_AGGREGATORS = ['lobste.rs', 'reddit.com', 'news.ycombinator.com']
-        return any([domain in feed_data['feed']['link'] for domain in KNOWN_AGGREGATORS])
+        return 'reddit.com' in feed_data['feed']['link']
+
+    def parse_body(self, entry):
+        # skip link-only posts
+        if '[link]' in entry['summary']:
+            return None
+        return entry['summary']
+
+    def parse_title_url(self, entry):
+        if '[link]' in entry['summary']:
+            soup = BeautifulSoup(entry['summary'], 'lxml')
+            return soup.find("a", string="[link]")['href']
+        return entry['link']
+
+
+class LobstersParser(BaseParser):
+    def is_compatible(_feed_url, feed_data):
+        return 'lobste.rs' in feed_data['feed']['link']
+
+    def parse_body(self, entry):
+        # skip link-only posts
+        if 'Comments' in entry['summary']:
+            return None
+        return entry['summary']
+
+
+class HackerNewsParser(BaseParser):
+    def is_compatible(_feed_url, feed_data):
+        return 'news.ycombinator.com' in feed_data['feed']['link']
+
+    def parse_body(self, entry):
+        # skip link-only posts
+        if 'Article URL' in entry['summary']:
+            return None
+        return entry['summary']
 
 
 class MastodonUserParser(BaseParser):
