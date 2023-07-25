@@ -48,6 +48,11 @@ def create_app():
     def debug_feed(url):
         parser.debug_feed(url)
 
+    @app.cli.command("delete-feed")
+    @click.argument('feed-name')
+    def delete_feed(feed_name):
+        parser.delete_feed(app, feed_name)
+
     # FIXME move somewhere else
     # TODO unit test this
     @app.template_filter('humanize')

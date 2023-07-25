@@ -26,6 +26,7 @@ serve = "flask --app src/feedi/app.py run --debug --reload"
 sync = "flask --app src/feedi/app.py sync"
 testfeeds = "flask --app src/feedi/app.py testfeeds"
 debug-feed = "flask --app src/feedi/app.py debug-feed"
+delete-feed = "flask --app src/feedi/app.py delete-feed"
 
 
 [tool.pdm.dev-dependencies]

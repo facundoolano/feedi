@@ -23,7 +23,7 @@ class Feed(db.Model):
 
     last_fetch = sa.Column(sa.TIMESTAMP)
 
-    entries = sa.orm.relationship("Entry", back_populates="feed")
+    entries = sa.orm.relationship("Entry", back_populates="feed", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f'<Feed {self.name}>'

@@ -14,7 +14,7 @@ import feedi.models as models
 from feedi.database import db
 
 # TODO parametrize in command or app config
-UPDATE_AFTER_MINUTES = 15
+UPDATE_AFTER_MINUTES = 60
 
 
 class BaseParser:
@@ -343,4 +343,10 @@ def create_test_feeds(app):
             db.session.add(db_feed)
             app.logger.info('added %s', db_feed)
 
+    db.session.commit()
+
+
+def delete_feed(app, feed_name):
+    query = db.delete(models.Feed).where(models.Feed.name == feed_name)
+    db.session.execute(query)
     db.session.commit()
