@@ -7,7 +7,6 @@
     <title>Feedi</title>
 </head>
 <body>
-    <section class="section">
         <div class="container is-max-desktop">
         {% for entry in entries %}
         <div class="card feed-entry is-radiusless">
@@ -19,7 +18,7 @@
                         </figure>
                     </div>
                     <div class="column">
-                        <div class="columns">
+                        <div class="columns feed-header">
                             <div class="column">
                             <p>
                                 <b><a class="feed-title" href="{{ entry.title_url }}" target="_blank">{{ entry.title }}</a></b>
@@ -37,9 +36,9 @@
 
                         <div class="columns">
                             {% if entry.media_url  %}
-                            <div class="column is-narrow">
-                                <figure class="image media-url">
-                                    <img src="{{ entry.media_url }}" alt="FIXME">
+                            <div class="column is-one-quarter">
+                                <figure class="image media-url is-5by3">
+                                    <img src="{{ entry.media_url }}" alt="article preview" onerror='this.parentNode.parentNode.style.display = "none"'>
                                 </figure>
                             </div>
                             {% endif %}
@@ -59,5 +58,4 @@
         </div>
         {% endfor %}
             </div>
-    </section>
 </body>

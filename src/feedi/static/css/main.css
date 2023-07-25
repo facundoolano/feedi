@@ -27,8 +27,10 @@
 }
 
 .media-url img {
-    width: 10rem!important;
-    height: 8rem!important;
     border-radius: .75rem;
     object-fit: cover;
+}
+
+.feed-header {
+    margin-bottom:0!important
 }
