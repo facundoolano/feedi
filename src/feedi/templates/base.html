@@ -12,52 +12,7 @@
     <div class="columns">
         <div class="column"></div>
         <div class="column is-half">
-            {% for entry in entries %}
-            <div class="card feed-entry is-radiusless">
-                <div class="card-content">
-                    <div class="columns">
-                        <div class="column is-narrow">
-                            <figure class="image is-32x32">
-                                <img class="is-rounded" src="{{ entry.avatar_url or entry.feed.icon_url }}" alt="{{ entry.username or entry.feed.name}}" title="{{ entry.username or entry.feed.name }}">
-                            </figure>
-                        </div>
-                        <div class="column">
-                            <div class="columns feed-header">
-                                <div class="column">
-                                    <p>
-                                        <b><a class="feed-title" href="{{ entry.title_url }}" target="_blank">{{ entry.title }}</a></b>
-                                        <br/>
-                                        <small class="has-text-grey-light">{{ entry.remote_updated | humanize }} · {{ entry.feed.name}}</small>
-                                    </p>
-                                </div>
-                                <div class="column is-narrow">
-                                    <a><span class="button is-white is-rounded"><i class="fas fa-trash-alt"></i></span></a>
-                                    <a><span class="button is-white is-rounded"><i class="fas fa-thumbtack"></i></span></a>
-                                    {% if entry.entry_url %}<a href="{{ entry.entry_url }}" target="_blank"><span class="button is-white is-rounded"><i class="fas fa-comment-alt"></i></span></a>{% endif %}
-                                    <a><span class="button is-white is-rounded"><i class="fas fa-ellipsis-v"></i></span></a>
-                                </div>
-                            </div>
-
-                            <div class="columns">
-                                {% if entry.media_url  %}
-                                <div class="column is-one-quarter media-url-container">
-                                    <figure class="image media-url is-5by3">
-                                        <img src="{{ entry.media_url }}" alt="article preview" onerror='this.parentNode.parentNode.style.display = "none"'>
-                                    </figure>
-                                </div>
-                                {% endif %}
-                                {% if entry.body %}
-                                <div class="column">
-                                    <p>{{ entry.body | safe }}</p>
-                                </div>
-                                {% endif %}
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
+            {% include "entries.html" %}
         </div>
         <div class="column is-one-quarter is-paddingless">
             <aside class="level side-bar">

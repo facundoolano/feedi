@@ -37,7 +37,6 @@ class Entry(db.Model):
     TODO
     """
     __tablename__ = 'entries'
-    __table_args__ = (sa.UniqueConstraint("feed_id", "remote_id"),)
 
     id = sa.Column(sa.Integer, primary_key=True)
 
@@ -59,7 +58,10 @@ class Entry(db.Model):
     created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
     updated = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
     remote_created = sa.Column(sa.TIMESTAMP, nullable=False)
-    remote_updated = sa.Column(sa.TIMESTAMP)
+    remote_updated = sa.Column(sa.TIMESTAMP, nullable=False)
+
+    __table_args__ = (sa.UniqueConstraint("feed_id", "remote_id"),
+                      sa.Index("entry_updated_ts", remote_updated.desc()))
 
     def __repr__(self):
         return f'<Entry {self.feed_id}/{self.remote_id}>'

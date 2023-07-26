@@ -27,12 +27,20 @@ def create_app():
     def shutdown_session(exception=None):
         db.session.remove()
 
-    @app.route("/")
-    def hello_world():
+    # TODO move views to another module
+    def get_entries_page(page):
+        # FIXME move this query to another module
+        PAGE_SIZE = 20
         q = db.select(models.Entry).order_by(models.Entry.remote_updated.desc())
-        entries = db.paginate(q, per_page=1000).items
+        return db.paginate(q, page=page, per_page=PAGE_SIZE)
 
-        return render_template('base.html', entries=entries)
+    @app.route("/")
+    def home():
+        return render_template('base.html', entries_page=get_entries_page(1))
+
+    @app.route("/entries/<int:page>/")
+    def entry_page(page):
+        return render_template('entries.html', entries_page=get_entries_page(page))
 
     # TODO add with a function instead of force decorating
     @app.cli.command("sync")
