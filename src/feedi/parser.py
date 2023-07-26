@@ -14,7 +14,7 @@ import feedi.models as models
 from feedi.database import db
 
 # TODO parametrize in command or app config
-UPDATE_AFTER_MINUTES = 60
+UPDATE_AFTER_MINUTES = 5
 
 
 class BaseParser:
@@ -268,7 +268,10 @@ def sync_all_feeds(app):
 
 
 def sync_feed(app, db_feed):
-    if db_feed.last_fetch and datetime.datetime.utcnow() - db_feed.last_fetch < datetime.timedelta(minutes=UPDATE_AFTER_MINUTES):
+    utcnow = datetime.datetime.utcnow()
+    previous_fetch = db_feed.last_fetch
+
+    if previous_fetch and utcnow - previous_fetch < datetime.timedelta(minutes=UPDATE_AFTER_MINUTES):
         app.logger.info('skipping recently synced feed %s', db_feed.name)
         return
 
@@ -280,14 +283,15 @@ def sync_feed(app, db_feed):
     if not feed['feed']:
         app.logger.info('skipping empty feed %s %s', db_feed.name, feed.debug_message)
         return
+
+    db_feed.last_fetch = utcnow
     if hasattr(feed, 'etag'):
         db_feed.etag = feed.etag
     if hasattr(feed, 'modified'):
         db_feed.modified_header = feed.modified
 
-    # also checking with the internal updated field
-    db_feed.last_fetch = datetime.datetime.utcnow()
-    if 'updated_parsed' in feed and datetime.datetime.utcnow() - to_datetime(feed['updated_parsed']) < datetime.timedelta(minutes=UPDATE_AFTER_MINUTES):
+    # also checking with the internal updated field in case feed doesn't support the standard headers
+    if previous_fetch and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) < previous_fetch:
         app.logger.info('skipping up to date feed %s', db_feed.name)
         return
 
@@ -301,6 +305,11 @@ def sync_feed(app, db_feed):
 
     app.logger.info('parsing %s with %s', db_feed.name, parser_cls)
     for entry in feed['entries']:
+        # again, don't try to process stuff that hasn't changed recently
+        if previous_fetch and 'updated_parsed' in entry and to_datetime(entry['updated_parsed']) < previous_fetch:
+            app.logger.info('skipping up to date entry %s', entry['link'])
+            continue
+
         try:
             values = parser.parse(entry)
         except Exception as e:
@@ -309,7 +318,7 @@ def sync_feed(app, db_feed):
 
         # upsert to handle already seen entries.
         # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
-        values['updated'] = db_feed.last_fetch
+        values['updated'] = utcnow
         values['feed_id'] = db_feed.id
         db.session.execute(
             sqlite.insert(models.Entry).
