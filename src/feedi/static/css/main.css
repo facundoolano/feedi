@@ -9,7 +9,7 @@
     /* background-color:  hsl(0, 0%, 96%) */
 }
 
-.feed-entry a .button {
+.feed-entry .button {
     visibility: hidden;
 }
 

@@ -17,10 +17,30 @@
                          </p>
                      </div>
                      <div class="column is-narrow">
-                         <a><span class="button is-white is-rounded"><i class="fas fa-trash-alt"></i></span></a>
-                         <a><span class="button is-white is-rounded"><i class="fas fa-thumbtack"></i></span></a>
-                         {% if entry.entry_url %}<a href="{{ entry.entry_url }}" target="_blank"><span class="button is-white is-rounded"><i class="fas fa-comment-alt"></i></span></a>{% endif %}
-                         <a><span class="button is-white is-rounded"><i class="fas fa-ellipsis-v"></i></span></a>
+                         <a class="button is-white is-rounded"><i class="fas fa-trash-alt"></i></a>
+                         <a class="button is-white is-rounded"><i class="fas fa-thumbtack"></i></a>
+                         {% if entry.entry_url %}<a href="{{ entry.entry_url }}" target="_blank" class="button is-white is-rounded"><i class="fas fa-comment-alt"></i></a>{% endif %}
+
+                         <div class="dropdown">
+                             <div class="dropdown-trigger">
+                                 <a class="button is-white is-rounded"
+                                    _="on click toggle .is-active on the closest .dropdown then
+                                           on click elsewhere remove .is-active from the closest .dropdown">
+                                     <i class="fas fa-ellipsis-v"></i>
+                                 </a>
+                             </div>
+                             <div class="dropdown-menu" role="menu">
+                                 <div class="dropdown-content">
+                                     <a class="dropdown-item"><span class="icon"><i class="fas fa-share"></i></span> Share</a>
+                                     <a class="dropdown-item"><span class="icon"><i class="fas fa-tag"></i></span> Tags</a>
+                                     <a class="dropdown-item"><span class="icon"><i class="fas fa-user-plus"></i></span> Add feed</a>
+                                     <hr class="dropdown-divider">
+                                     <a class="dropdown-item"><span class="icon"><i class="fas fa-bug"></i></span>  Debug entry</a>
+                                     <a class="dropdown-item"><span class="icon"><i class="fas fa-bug"></i></span>  Debug feed</a>
+                                 </div>
+                             </div>
+                         </div>
+
                      </div>
                  </div>
 
