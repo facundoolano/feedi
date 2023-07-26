@@ -1,4 +1,4 @@
-{% for entry in entries_page.items %}
+{% for entry in entries %}
  <div class="card feed-entry is-radiusless">
      <div class="card-content">
          <div class="columns">
@@ -62,7 +62,7 @@
          </div>
      </div>
  </div>
- {% endfor %}
- {% if entries_page.has_next %}
- <div hx-get="/entries/{{ entries_page.next_num  }}" hx-trigger="revealed" hx-swap="outerHTML"></div>
+ {% if loop.last %}
+ <div hx-get="/entries/after/{{ entry.remote_updated.timestamp()  }}" hx-trigger="revealed" hx-swap="outerHTML"></div>
  {% endif %}
+ {% endfor %}

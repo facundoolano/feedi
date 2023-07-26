@@ -35,26 +35,30 @@ def create_app():
         db.session.remove()
 
     # TODO move views to another module
+    ENTRY_PAGE_SIZE = 20
+
     @app.route("/")
     def home():
-        return render_template('base.html', entries_page=get_entries_page(1))
+        query = db.select(models.Entry).order_by(models.Entry.remote_updated.desc()).limit(ENTRY_PAGE_SIZE)
+        entries = [e for (e, ) in db.session.execute(query)]
+        return render_template('base.html', entries=entries)
 
-    @app.route("/entries/<int:page>/")
-    def entry_page(page):
-        return render_template('entries.html', entries_page=get_entries_page(page))
+    @app.route("/entries/after/<float:ts>/")
+    def entry_page(ts):
+        "Load a page of entries, older than the given timestamp. Used to implement infinite scrolling of the feed."
+        dt = datetime.datetime.fromtimestamp(ts)
+        query = db.select(models.Entry).filter(models.Entry.remote_updated < dt)\
+                                       .order_by(models.Entry.remote_updated.desc()).limit(ENTRY_PAGE_SIZE)
+        entries = [e for (e, ) in db.session.execute(query)]
+        return render_template('entries.html', entries=entries)
 
     @app.route("/session/hide_media/", methods=['POST'])
     def toggle_hide_media():
         session['hide_media'] = not session.get('hide_media', False)
         return '', 204
 
-    def get_entries_page(page):
-        # FIXME move this query to another module
-        PAGE_SIZE = 20
-        q = db.select(models.Entry).order_by(models.Entry.remote_updated.desc())
-        return db.paginate(q, page=page, per_page=PAGE_SIZE)
-
     # TODO add with a function instead of force decorating
+
     @app.cli.command("sync")
     def sync_feeds():
         parser.sync_all_feeds(app)
