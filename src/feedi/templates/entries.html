@@ -17,9 +17,9 @@
                          </p>
                      </div>
                      <div class="column is-narrow">
-                         <a class="button is-white is-rounded"><i class="fas fa-trash-alt"></i></a>
-                         <a class="button is-white is-rounded"><i class="fas fa-thumbtack"></i></a>
-                         {% if entry.entry_url %}<a href="{{ entry.entry_url }}" target="_blank" class="button is-white is-rounded"><i class="fas fa-comment-alt"></i></a>{% endif %}
+                         <a class="button is-white is-rounded" title="Remove entry"><i class="fas fa-trash-alt"></i></a>
+                         <a class="button is-white is-rounded" title="Pin entry"><i class="fas fa-thumbtack"></i></a>
+                         {% if entry.entry_url %}<a href="{{ entry.entry_url }}" target="_blank" class="button is-white is-rounded" title="Comment on source"><i class="fas fa-comment-alt"></i></a>{% endif %}
 
                          <div class="dropdown">
                              <div class="dropdown-trigger">
