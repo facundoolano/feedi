@@ -1,12 +1,17 @@
 import datetime
 import logging
+import os
 
 import click
-from flask import Flask, render_template
+from dotenv import load_dotenv
+from flask import Flask, render_template, session
 
 import feedi.models as models
 import feedi.parser as parser
 from feedi.database import db
+
+# load environment variables from an .env file
+load_dotenv()
 
 
 def create_app():
@@ -14,6 +19,8 @@ def create_app():
 
     # TODO manage via config
     app.logger.setLevel(logging.DEBUG)
+
+    app.secret_key = os.environ['FLASK_SECRET_KEY']
 
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     # TODO review and organize db related setup code
@@ -28,12 +35,6 @@ def create_app():
         db.session.remove()
 
     # TODO move views to another module
-    def get_entries_page(page):
-        # FIXME move this query to another module
-        PAGE_SIZE = 20
-        q = db.select(models.Entry).order_by(models.Entry.remote_updated.desc())
-        return db.paginate(q, page=page, per_page=PAGE_SIZE)
-
     @app.route("/")
     def home():
         return render_template('base.html', entries_page=get_entries_page(1))
@@ -41,6 +42,17 @@ def create_app():
     @app.route("/entries/<int:page>/")
     def entry_page(page):
         return render_template('entries.html', entries_page=get_entries_page(page))
+
+    @app.route("/session/hide_media/", methods=['POST'])
+    def toggle_hide_media():
+        session['hide_media'] = not session.get('hide_media', False)
+        return '', 204
+
+    def get_entries_page(page):
+        # FIXME move this query to another module
+        PAGE_SIZE = 20
+        q = db.select(models.Entry).order_by(models.Entry.remote_updated.desc())
+        return db.paginate(q, page=page, per_page=PAGE_SIZE)
 
     # TODO add with a function instead of force decorating
     @app.cli.command("sync")

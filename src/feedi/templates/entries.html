@@ -25,8 +25,8 @@
                  </div>
 
                  <div class="columns">
-                     {% if entry.media_url  %}
-                     <div class="column is-one-quarter media-url-container">
+                     {% if entry.media_url %}
+                     <div class="column is-one-quarter media-url-container {% if session.hide_media %}is-hidden{% endif %}">
                          <figure class="image media-url is-5by3">
                              <img src="{{ entry.media_url }}" alt="article preview" onerror='this.parentNode.parentNode.style.display = "none"'>
                          </figure>

@@ -18,7 +18,10 @@
             <aside class="level side-bar">
                 <div class="level-left">
                     <p class="level-item">
-                        <button class="button is-medium is-rounded is-light" _="on click toggle the *display of .media-url-container" title="toggle thumbnails"><i class="fas fa-images"></i></button>
+                        <button class="button is-medium is-rounded is-light {% if not session.hide_media %}toggled{% endif %}"
+                                hx-post="/session/hide_media/"
+                                _="on click toggle .is-hidden on .media-url-container then toggle .toggled on me"
+                                title="toggle thumbnails"><i class="fas fa-images"></i></button>
                     </p>
                 </div>
             </aside>

@@ -11,15 +11,6 @@
 
 .feed-entry a .button {
     visibility: hidden;
-    /* FIXME this should use SCSS variables */
-    /* gray lighter */
-    color: hsl(0, 0%, 86%)
-}
-
-.feed-entry a .button:hover {
-    /* FIXME this should use SCSS variables */
-    /* gray dark */
-    color: hsl(0, 0%, 29%)
 }
 
 .feed-entry:hover .button {
@@ -51,4 +42,14 @@
 
 .side-bar .button {
     margin-top: .25rem;
+}
+
+.button:not(.toggled) {
+    /* FIXME this should use SCSS variables */
+    color: hsl(0, 0%, 86%)!important
+}
+
+.button:not(.toggled):hover,  .button.toggled {
+    /* FIXME this should use SCSS variables */
+    color: hsl(0, 0%, 29%)!important
 }
