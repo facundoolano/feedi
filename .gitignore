@@ -163,3 +163,5 @@ cython_debug/
 
 # local list of feeds to import, don't check them into the repo
 feeds.csv
+
+.DS_Store
