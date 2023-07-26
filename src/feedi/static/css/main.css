@@ -39,3 +39,16 @@
 .card.feed-entry  {
     box-shadow: 0 0 0 1px hsl(0, 0%, 90%);
 }
+
+.side-bar {
+    position: sticky;
+    display: inline-block;
+    vertical-align: top;
+    /* max-height: 100vh; */
+    top: 0;
+    bottom: 0;
+}
+
+.side-bar .button {
+    margin-top: .25rem;
+}
