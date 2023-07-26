@@ -4,6 +4,8 @@
     <link rel="stylesheet" href="static/css/main.css">
     <link rel="stylesheet" href="static/css/bulma.min.css">
     <link rel="stylesheet" href="static/css/fontawesome.min.css">
+    <script src="static/js/htmx.min.js"></script>
+    <script src="static/js/hyperscript.min.js"></script>
     <title>Feedi</title>
 </head>
 <body class="has-background-light">
@@ -38,7 +40,7 @@
 
                             <div class="columns">
                                 {% if entry.media_url  %}
-                                <div class="column is-one-quarter">
+                                <div class="column is-one-quarter media-url-container">
                                     <figure class="image media-url is-5by3">
                                         <img src="{{ entry.media_url }}" alt="article preview" onerror='this.parentNode.parentNode.style.display = "none"'>
                                     </figure>
@@ -61,7 +63,7 @@
             <aside class="level side-bar">
                 <div class="level-left">
                     <p class="level-item">
-                        <a class="button is-medium is-rounded is-light" title="toggle thumbnails"><i class="fas fa-images"></i></a>
+                        <button class="button is-medium is-rounded is-light" _="on click toggle the *display of .media-url-container" title="toggle thumbnails"><i class="fas fa-images"></i></button>
                     </p>
                 </div>
             </aside>
