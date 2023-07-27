@@ -53,3 +53,7 @@
     /* FIXME this should use SCSS variables */
     color: hsl(0, 0%, 29%)!important
 }
+
+code{
+    white-space:pre-wrap
+    }
