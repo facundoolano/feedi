@@ -25,10 +25,8 @@
                      </div>
                      {% endif %}
                  </div>
-                 <div class="modal reader-modal">
-                     <div class="modal-background"
-                          _="on click remove .is-active from closest .reader-modal"
-                     ></div>
+                 <div class="modal reader-modal" _="on keyup[key is 'Escape'] elsewhere remove .is-active from me">
+                     <div class="modal-background" _="on click remove .is-active from closest .reader-modal"></div>
                      <div class="modal-content">
                          <div class="box">
                              <div class="columns">
