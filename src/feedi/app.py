@@ -73,9 +73,19 @@ def create_app():
 
     @app.route("/entries/<int:id>/content/", methods=['GET'])
     def fetch_entry_content(id):
-        entry = db.get_or_404(models.Entry, id)
+        result = db.session.execute(db.select(models.Entry).filter_by(id=id)).first()
+        if not result:
+            return flask.render_template("error_message.html", message="Entry not found")
+        (entry, ) = result
 
-        return "<p><strong>THIS IS CONTENT</strong> not so strong</p>", 200
+        try:
+            pass
+        except:
+            pass
+
+        # FIXME add functionality to render an html error message on failure
+        # return "<p><strong>THIS IS CONTENT</strong> not so strong</p>", 200
+        return flask.render_template("error_message.html", message="Error fetching article from source")
 
     @app.route("/session/hide_media/", methods=['POST'])
     def toggle_hide_media():
