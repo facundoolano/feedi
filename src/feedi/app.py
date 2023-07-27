@@ -109,7 +109,7 @@ def create_app():
 
     @app.route("/session/hide_media/", methods=['POST'])
     def toggle_hide_media():
-        flask.session['hide_media'] = not session.get('hide_media', False)
+        flask.session['hide_media'] = not flask.session.get('hide_media', False)
         return '', 204
 
     # TODO add with a function instead of force decorating
