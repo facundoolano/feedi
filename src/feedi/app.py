@@ -71,6 +71,12 @@ def create_app():
             mimetype='application/json'
         )
 
+    @app.route("/entries/<int:id>/content/", methods=['GET'])
+    def fetch_entry_content(id):
+        entry = db.get_or_404(models.Entry, id)
+
+        return "<p><strong>THIS IS CONTENT</strong> not so strong</p>", 200
+
     @app.route("/session/hide_media/", methods=['POST'])
     def toggle_hide_media():
         flask.session['hide_media'] = not session.get('hide_media', False)

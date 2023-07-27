@@ -11,7 +11,10 @@
                  {% include "entry_header.html" %}
 
                  <div class="columns is-clickable"
-                 _="on click add .is-active to next .reader-modal">
+                      hx-get="/entries/{{ entry.id }}/content"
+                      hx-trigger="click"
+                      hx-target="next .entry-content"
+                      _="on click add .is-active to next .reader-modal">
                      {% if entry.media_url %}
                      <div class="column is-one-quarter media-url-container {% if session.hide_media %}is-hidden{% endif %}">
                          <figure class="image media-url is-5by3">
@@ -36,11 +39,13 @@
                                      </figure>
                                  </div>
                                  <div class="column">
-                                     {% include "entry_header.html" %}
+                                     <div class="content">
+                                         {% include "entry_header.html" %}
+                                     </div>
                                  </div>
                              </div>
-                             <div class="content">
-                                 <p>{{ entry.body | safe }}</p>
+                             <div class="content entry-content">
+                                 <div class="has-text-centered"><button class="button is-loading is-large is-white htmx"></button></div>
                              </div>
                          </div>
                      </div>
