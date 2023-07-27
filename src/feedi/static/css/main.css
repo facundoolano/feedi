@@ -64,3 +64,16 @@ https://github.com/jgthms/bulma/blob/master/sass/components/modal.sass#L7C2-L7C2
 */
     width: 60%!important
 }
+
+/* some tweaks to make images look better inside the reader modal */
+
+img[src=""] {
+    display: none!important
+}
+
+.entry-content img {
+    max-width: 60%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
