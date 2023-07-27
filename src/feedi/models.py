@@ -52,7 +52,7 @@ class Entry(db.Model):
     user_url = sa.Column(sa.String)
     avatar_url = sa.Column(sa.String)
 
-    body = sa.Column(sa.String, doc="The content to be displayed in the feed. HTML is supported. For article entries, it would be an excerpt of the full article conent.")
+    body = sa.Column(sa.String, doc="The content to be displayed in the feed preview. HTML is supported. For article entries, it would be an excerpt of the full article content.")
     entry_url = sa.Column(sa.String, doc="The URL of this entry in the source. For link aggregators this would be the comments page.")
     content_url = sa.Column(sa.String, doc="The URL where the full content can be fetched or read. For link aggregators this would be the article redirect url.")
     media_url = sa.Column(sa.String, doc="URL of a media attachement or preview.")

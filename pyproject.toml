@@ -12,10 +12,10 @@ dependencies = [
     "requests>=2.31.0",
     "sqlalchemy>=2.0.19",
     "flask-sqlalchemy>=3.0.5",
-    "readability-lxml>=0.8.1",
     "beautifulsoup4>=4.12.2",
     "lxml>=4.9.3",
     "python-dotenv>=1.0.0",
+    "newspaper3k>=0.2.8",
 ]
 requires-python = ">=3.11"
 readme = "README.md"

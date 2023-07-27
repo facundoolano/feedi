@@ -4,6 +4,9 @@ import os
 
 import click
 import flask
+import lxml
+import newspaper
+import requests
 from dotenv import load_dotenv
 
 import feedi.models as models
@@ -62,6 +65,9 @@ def create_app():
             mimetype='application/json'
         )
 
+    def error_fragment(msg):
+        return flask.render_template("error_message.html", message=msg)
+
     @app.route("/entries/<int:id>/raw")
     def raw_entry(id):
         entry = db.get_or_404(models.Entry, id)
@@ -75,17 +81,31 @@ def create_app():
     def fetch_entry_content(id):
         result = db.session.execute(db.select(models.Entry).filter_by(id=id)).first()
         if not result:
-            return flask.render_template("error_message.html", message="Entry not found")
+            return error_fragment("Entry not found")
         (entry, ) = result
 
-        try:
-            pass
-        except:
-            pass
+        # TODO handle case if not html, eg if destination is a pdf
+        # TODO add error handling if requesting or parsing fails
+        return extract_article(entry.content_url)
 
-        # FIXME add functionality to render an html error message on failure
-        # return "<p><strong>THIS IS CONTENT</strong> not so strong</p>", 200
-        return flask.render_template("error_message.html", message="Error fetching article from source")
+    def extract_article(url):
+        # https://stackoverflow.com/questions/62943152/shortcomings-of-newspaper3k-how-to-scrape-only-article-html-python
+        config = newspaper.Config()
+        config.fetch_images = True
+        config.request_timeout = 30
+        config.keep_article_html = True
+        article = newspaper.Article(url, config=config)
+
+        article.download()
+        article.parse()
+
+        article_html = article.article_html
+
+        html = lxml.html.fromstring(article_html)
+        for tag in html.xpath('//*[@class]'):
+            tag.attrib.pop('class')
+
+        return lxml.html.tostring(html).decode('utf-8')
 
     @app.route("/session/hide_media/", methods=['POST'])
     def toggle_hide_media():

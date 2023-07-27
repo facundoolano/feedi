@@ -62,5 +62,5 @@ code{
     /* this is a hack and an arbitrary number should be changed in variable to work as is-half
 https://github.com/jgthms/bulma/blob/master/sass/components/modal.sass#L7C2-L7C21
 */
-    width: 50%!important
+    width: 60%!important
 }
