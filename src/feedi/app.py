@@ -3,8 +3,8 @@ import logging
 import os
 
 import click
+import flask
 from dotenv import load_dotenv
-from flask import Flask, render_template, session
 
 import feedi.models as models
 import feedi.parser as parser
@@ -15,7 +15,7 @@ load_dotenv()
 
 
 def create_app():
-    app = Flask(__name__)
+    app = flask.Flask(__name__)
 
     # TODO manage via config
     app.logger.setLevel(logging.DEBUG)
@@ -41,7 +41,7 @@ def create_app():
     def home():
         query = db.select(models.Entry).order_by(models.Entry.remote_updated.desc()).limit(ENTRY_PAGE_SIZE)
         entries = [e for (e, ) in db.session.execute(query)]
-        return render_template('base.html', entries=entries)
+        return flask.render_template('base.html', entries=entries)
 
     @app.route("/entries/after/<float:ts>/")
     def entry_page(ts):
@@ -50,11 +50,30 @@ def create_app():
         query = db.select(models.Entry).filter(models.Entry.remote_updated < dt)\
                                        .order_by(models.Entry.remote_updated.desc()).limit(ENTRY_PAGE_SIZE)
         entries = [e for (e, ) in db.session.execute(query)]
-        return render_template('entries.html', entries=entries)
+        return flask.render_template('entries.html', entries=entries)
+
+    @app.route("/feeds/<int:id>/raw")
+    def raw_feed(id):
+        feed = db.get_or_404(models.Feed, id)
+
+        return app.response_class(
+            response=feed.raw_data,
+            status=200,
+            mimetype='application/json'
+        )
+
+    @app.route("/entries/<int:id>/raw")
+    def raw_entry(id):
+        entry = db.get_or_404(models.Entry, id)
+        return app.response_class(
+            response=entry.raw_data,
+            status=200,
+            mimetype='application/json'
+        )
 
     @app.route("/session/hide_media/", methods=['POST'])
     def toggle_hide_media():
-        session['hide_media'] = not session.get('hide_media', False)
+        flask.session['hide_media'] = not session.get('hide_media', False)
         return '', 204
 
     # TODO add with a function instead of force decorating

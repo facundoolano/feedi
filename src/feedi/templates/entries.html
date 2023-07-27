@@ -35,8 +35,8 @@
                                      <a class="dropdown-item"><span class="icon"><i class="fas fa-tag"></i></span> Tags</a>
                                      <a class="dropdown-item"><span class="icon"><i class="fas fa-user-plus"></i></span> Add feed</a>
                                      <hr class="dropdown-divider">
-                                     <a class="dropdown-item"><span class="icon"><i class="fas fa-bug"></i></span>  Debug entry</a>
-                                     <a class="dropdown-item"><span class="icon"><i class="fas fa-bug"></i></span>  Debug feed</a>
+                                     <a class="dropdown-item" href="/entries/{{ entry.id }}/raw" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw entry data</a>
+                                     <a class="dropdown-item" href="/feeds/{{ entry.feed.id }}/raw" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw feed data</a>
                                  </div>
                              </div>
                          </div>

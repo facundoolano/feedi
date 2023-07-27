@@ -2,6 +2,7 @@
 
 import csv
 import datetime
+import json
 import time
 
 import favicon
@@ -289,6 +290,7 @@ def sync_feed(app, db_feed):
         db_feed.etag = feed.etag
     if hasattr(feed, 'modified'):
         db_feed.modified_header = feed.modified
+    db_feed.raw_data = json.dumps(feed['feed'])
 
     # also checking with the internal updated field in case feed doesn't support the standard headers
     if previous_fetch and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) < previous_fetch:
@@ -320,6 +322,7 @@ def sync_feed(app, db_feed):
         # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
         values['updated'] = utcnow
         values['feed_id'] = db_feed.id
+        values['raw_data'] = json.dumps(entry)
         db.session.execute(
             sqlite.insert(models.Entry).
             values(**values).
