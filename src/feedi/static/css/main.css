@@ -76,6 +76,8 @@ img[src=""] {
     display: block;
     margin-left: auto;
     margin-right: auto;
+    /* TODO make this more specific, maybe only after p */
+    padding-bottom: 1rem;
 }
 
 .entry-content {

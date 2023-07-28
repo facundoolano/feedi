@@ -1,12 +1,16 @@
+# coding: utf-8
+
 import datetime
 import logging
 import os
+import urllib
 
 import click
 import flask
 import lxml
 import newspaper
 import requests
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
 import feedi.models as models
@@ -85,8 +89,12 @@ def create_app():
         (entry, ) = result
 
         # TODO handle case if not html, eg if destination is a pdf
-        # TODO add error handling if requesting or parsing fails
-        return extract_article(entry.content_url)
+        # TODO instead of passing a string, try with a template passing the newspaper article object
+        # e.g. to preserve the author data, maybe show the top image
+        try:
+            return extract_article(entry.content_url)
+        except Exception as e:
+            return error_fragment(f"Error fetching article: {repr(e)}")
 
     def extract_article(url):
         # https://stackoverflow.com/questions/62943152/shortcomings-of-newspaper3k-how-to-scrape-only-article-html-python
@@ -99,13 +107,20 @@ def create_app():
         article.download()
         article.parse()
 
-        article_html = article.article_html
+        # TODO unit test this
+        # cleanup images from the article html
+        soup = BeautifulSoup(article.article_html, 'lxml')
+        for img in soup.find_all('img'):
+            src = img.get('src')
+            print(src, urllib.parse.urlparse(src).netloc)
+            if not src:
+                # skip images with missing src
+                img.decompose()
+            elif not urllib.parse.urlparse(src).netloc:
+                # fix paths of relative img urls by joining with the main articule url
+                img['src'] = urllib.parse.urljoin(url, src)
 
-        html = lxml.html.fromstring(article_html)
-        for tag in html.xpath('//*[@class]'):
-            tag.attrib.pop('class')
-
-        return lxml.html.tostring(html).decode('utf-8')
+        return str(soup)
 
     @app.route("/session/hide_media/", methods=['POST'])
     def toggle_hide_media():
