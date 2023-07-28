@@ -168,4 +168,12 @@ def create_app():
         # FIXME
         return dt.strftime("%b %d, %Y")
 
+    @app.template_filter('sanitize')
+    def sanitize_content(html):
+        # poor man's line truncating: reduce the amount of characters and let bs4 fix the html
+        if len(html) > 500:
+            html = html[:500] + '…'
+            html = str(BeautifulSoup(html, 'lxml'))
+        return html
+
     return app

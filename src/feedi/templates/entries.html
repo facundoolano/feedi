@@ -25,7 +25,7 @@
                      {% endif %}
                      {% if entry.body %}
                      <div class="column">
-                         <p>{{ entry.body | safe }}</p>
+                         <p>{{ entry.body | sanitize | safe }}</p>
                      </div>
                      {% endif %}
                  </div>
