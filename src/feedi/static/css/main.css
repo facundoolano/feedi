@@ -77,9 +77,17 @@ img[src=""] {
     margin-left: auto;
     margin-right: auto;
     /* TODO make this more specific, maybe only after p */
-    padding-bottom: 1rem;
+    padding-bottom: 2rem;
 }
 
 .entry-content {
-    padding: 0 2rem 2rem 2rem;
+    padding: 2rem 5rem 2rem;
+    font-size: 1.2rem;
+    line-height: 1.6;
+
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-font-smoothing: antialiased !important;
+    text-rendering: optimizelegibility !important;
+    letter-spacing: .03em;
 }
