@@ -159,7 +159,8 @@ class RedditParser(BaseParser):
             comments_url.decompose()
             return str(soup)
 
-        return self.fetch_meta(link_url['href'], 'og:description')
+        return (self.fetch_meta(link_url, 'og:description') or
+                self.fetch_meta(link_url, 'description'))
 
     def parse_title_url(self, entry):
         soup = BeautifulSoup(entry['summary'], 'lxml')
@@ -178,7 +179,8 @@ class LobstersParser(BaseParser):
         # skip link-only posts
         if 'Comments' in entry['summary']:
             url = self.parse_title_url(entry)
-            return self.fetch_meta(url, 'og:description')
+            return (self.fetch_meta(url, 'og:description') or
+                    self.fetch_meta(url, 'description'))
         return entry['summary']
 
     def parse_entry_url(self, entry):
@@ -196,7 +198,7 @@ class HackerNewsParser(BaseParser):
         # skip link-only posts
         if 'Article URL' in entry['summary']:
             url = self.parse_title_url(entry)
-            return self.fetch_meta(url, 'og:description')
+            return (self.fetch_meta(url, 'og:description') or self.fetch_meta(url, 'description'))
         return entry['summary']
 
     def parse_entry_url(self, entry):
@@ -234,6 +236,9 @@ class GithubFeedParser(BaseParser):
         return None
 
     def parse_entry_url(self, _entry):
+        return None
+
+    def parse_content_url(self, _entry):
         return None
 
 

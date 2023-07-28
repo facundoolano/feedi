@@ -25,6 +25,9 @@
                      {% endif %}
                      {% if entry.body %}
                      <div class="column">
+                         {% if entry.content_url and not entry.body %}
+                         <small>click to expand</small>
+                         {% endif %}
                          <p>{{ entry.body | sanitize | safe }}</p>
                      </div>
                      {% endif %}
