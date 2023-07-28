@@ -15,7 +15,8 @@ import feedi.models as models
 from feedi.database import db
 
 # TODO parametrize in command or app config
-UPDATE_AFTER_MINUTES = 5
+SKIP_RECENTLY_UPDATED_MINUTES = 30
+SKIP_OLDER_THAN_DAYS = 15
 
 
 class BaseParser:
@@ -272,7 +273,7 @@ def sync_feed(app, db_feed):
     utcnow = datetime.datetime.utcnow()
     previous_fetch = db_feed.last_fetch
 
-    if previous_fetch and utcnow - previous_fetch < datetime.timedelta(minutes=UPDATE_AFTER_MINUTES):
+    if previous_fetch and utcnow - previous_fetch < datetime.timedelta(minutes=SKIP_RECENTLY_UPDATED_MINUTES):
         app.logger.info('skipping recently synced feed %s', db_feed.name)
         return
 
@@ -309,7 +310,12 @@ def sync_feed(app, db_feed):
     for entry in feed['entries']:
         # again, don't try to process stuff that hasn't changed recently
         if previous_fetch and 'updated_parsed' in entry and to_datetime(entry['updated_parsed']) < previous_fetch:
-            app.logger.info('skipping up to date entry %s', entry['link'])
+            app.logger.debug('skipping up to date entry %s', entry['link'])
+            continue
+
+        # or that is too old
+        if 'published_parsed' in entry and datetime.datetime.now() - to_datetime(entry['published_parsed']) > datetime.timedelta(days=SKIP_OLDER_THAN_DAYS):
+            app.logger.debug('skipping old entry %s', entry['link'])
             continue
 
         try:
