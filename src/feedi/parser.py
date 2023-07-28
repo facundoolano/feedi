@@ -134,7 +134,7 @@ class BaseParser:
         return self.fetch_meta(parsed_dest_url, "og:image") or self.fetch_meta(parsed_dest_url, "twitter:image")
 
     def parse_remote_id(self, entry):
-        return entry['id']
+        return entry.get('id', entry['link'])
 
     def parse_remote_created(self, entry):
         dt = to_datetime(entry['published_parsed'])
