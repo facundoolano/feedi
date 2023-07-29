@@ -11,6 +11,7 @@ import requests
 import sqlalchemy.dialects.sqlite as sqlite
 from bs4 import BeautifulSoup
 
+import feedi.mastodon as mastodon
 import feedi.models as models
 from feedi.database import db
 
@@ -255,7 +256,7 @@ class GoodreadsFeedParser(BaseParser):
 
 
 def sync_all_feeds(app):
-    db_feeds = db.session.execute(db.select(models.Feed).filter_by(type=models.FeedTypes.RSS)).all()
+    db_feeds = db.session.execute(db.select(models.Feed).filter_by(type=models.Feed.TYPE_RSS)).all()
     for (db_feed,) in db_feeds:
         sync_rss_feed(app, db_feed)
 
@@ -356,15 +357,34 @@ def debug_feed(url):
 
 def create_test_feeds(app):
     with open('feeds.csv') as csv_file:
-        for feed_name, url in csv.reader(csv_file):
+        for attrs in csv.reader(csv_file):
+            feed_type = attrs[0]
+            feed_name = attrs[1]
             query = db.select(models.Feed).where(models.Feed.name == feed_name)
             db_feed = db.session.execute(query).first()
             if db_feed:
                 app.logger.info('skipping already existent %s', feed_name)
                 continue
 
-            feed = feedparser.parse(url)
-            db_feed = models.Feed(type=models.FeedTypes.RSS, name=feed_name, url=url, icon_url=detect_feed_icon(app, feed, url))
+            if feed_type == models.Feed.TYPE_RSS:
+                url = attrs[2]
+                feed = feedparser.parse(url)
+                db_feed = models.RssFeed(name=feed_name,
+                                         url=url,
+                                         icon_url=detect_feed_icon(app, feed, url))
+
+            elif feed_type == models.Feed.TYPE_MASTODON_ACCOUNT:
+                server_url = attrs[2]
+                access_token = attrs[3]
+
+                db_feed = models.MastodonAccount(name=feed_name,
+                                                 server_url=server_url,
+                                                 access_token=access_token,
+                                                 icon_url=mastodon.fetch_avatar(server_url, access_token))
+
+            else:
+                app.logger.error("unknown feed type %s", attrs[0])
+
             db.session.add(db_feed)
             app.logger.info('added %s', db_feed)
 

@@ -8,38 +8,51 @@ from feedi.database import db
 # TODO consider adding explicit support for url columns
 
 
-class FeedTypes(enum.Enum):
-    RSS = 'rss'
-    MASTODON_ACCOUNT = 'mastodon'
-
-
 class Feed(db.Model):
     """
     TODO
     """
     __tablename__ = 'feeds'
-    id = sa.Column(sa.Integer, primary_key=True)
 
-    type = sa.Column(sa.Enum(FeedTypes))
+    TYPE_RSS = 'rss'
+    TYPE_MASTODON_ACCOUNT = 'mastodon'
+
+    id = sa.Column(sa.Integer, primary_key=True)
+    type = sa.Column(sa.String, nullable=False)
 
     name = sa.Column(sa.String, unique=True)
-    url = sa.Column(sa.String)
     icon_url = sa.Column(sa.String)
 
     created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
     updated = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    last_fetch = sa.Column(sa.TIMESTAMP)
-
-    etag = sa.Column(sa.String, doc="Etag received on last parsed rss, to prevent re-fetching if it hasn't changed.")
-    modified_header = sa.Column(sa.String, doc="Last-modified received on last parsed rss, to prevent re-fetching if it hasn't changed.")
-
     entries = sa.orm.relationship("Entry", back_populates="feed", cascade="all, delete-orphan")
 
     raw_data = sa.Column(sa.String, doc="The original feed data received from the feed, as JSON")
 
+    __mapper_args__ = {'polymorphic_on': type,
+                       'polymorphic_identity': 'feed'}
+
     def __repr__(self):
         return f'<Feed {self.name}>'
+
+
+class RssFeed(Feed):
+    url = sa.Column(sa.String)
+    last_fetch = sa.Column(sa.TIMESTAMP)
+    etag = sa.Column(sa.String, doc="Etag received on last parsed rss, to prevent re-fetching if it hasn't changed.")
+    modified_header = sa.Column(sa.String, doc="Last-modified received on last parsed rss, to prevent re-fetching if it hasn't changed.")
+
+    __mapper_args__ = {'polymorphic_identity': 'rss'}
+
+
+class MastodonAccount(Feed):
+    # TODO this could be a fk to a separate table with client/secret
+    # to share the feedi app across accounts of that same server
+    server_url = sa.Column(sa.String)
+    access_token = sa.Column(sa.String)
+
+    __mapper_args__ = {'polymorphic_identity': 'mastodon'}
 
 
 class Entry(db.Model):
