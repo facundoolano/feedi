@@ -256,11 +256,47 @@ class GoodreadsFeedParser(BaseParser):
 
 
 def sync_all_feeds(app):
-    db_feeds = db.session.execute(db.select(models.Feed).filter_by(type=models.Feed.TYPE_RSS)).all()
+    db_feeds = db.session.execute(db.select(models.Feed)).all()
     for (db_feed,) in db_feeds:
-        sync_rss_feed(app, db_feed)
+        if db_feed.type == models.Feed.TYPE_RSS:
+            sync_rss_feed(app, db_feed)
+        elif db_feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
+            sync_mastodon_feed(app, db_feed)
+        else:
+            app.logger.error("unknown feed type %s", db_feed.type)
+            continue
 
-    db.session.commit()
+        db.session.commit()
+
+
+def sync_mastodon_feed(app, db_feed):
+
+    latest_entry = db_feed.entries.order_by(models.Entry.remote_updated.desc()).first()
+    args = {}
+    if latest_entry:
+        # there's some entry on db, this is not the first time we're syncing
+        # get all toots since the last seen one
+        args['newer_than'] = latest_entry.remote_id
+    else:
+        # if there isn't any entry yet, get the "first page" of toots from the timeline
+        # TODO make constant/config
+        args['limit'] = 50
+
+    app.logger.info("Fetching toots %s", args)
+    toots = mastodon.fetch_toots(server_url=db_feed.server_url,
+                                 access_token=db_feed.access_token,
+                                 **args)
+    utcnow = datetime.datetime.utcnow()
+    for values in toots:
+        # upsert to handle already seen entries.
+        # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
+        values['updated'] = utcnow
+        values['feed_id'] = db_feed.id
+        db.session.execute(
+            sqlite.insert(models.Entry).
+            values(**values).
+            on_conflict_do_update(("feed_id", "remote_id"), set_=values)
+        )
 
 
 def sync_rss_feed(app, db_feed):
@@ -384,6 +420,7 @@ def create_test_feeds(app):
 
             else:
                 app.logger.error("unknown feed type %s", attrs[0])
+                continue
 
             db.session.add(db_feed)
             app.logger.info('added %s', db_feed)

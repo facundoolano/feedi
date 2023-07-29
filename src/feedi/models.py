@@ -26,7 +26,7 @@ class Feed(db.Model):
     created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
     updated = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    entries = sa.orm.relationship("Entry", back_populates="feed", cascade="all, delete-orphan")
+    entries = sa.orm.relationship("Entry", back_populates="feed", cascade="all, delete-orphan", lazy='dynamic')
 
     raw_data = sa.Column(sa.String, doc="The original feed data received from the feed, as JSON")
 
@@ -83,6 +83,9 @@ class Entry(db.Model):
     remote_updated = sa.Column(sa.TIMESTAMP, nullable=False)
 
     raw_data = sa.Column(sa.String, doc="The original entry data received from the feed, as JSON")
+
+    # mastodon specific
+    reblogged_by = sa.Column(sa.String)
 
     __table_args__ = (sa.UniqueConstraint("feed_id", "remote_id"),
                       sa.Index("entry_updated_ts", remote_updated.desc()))
