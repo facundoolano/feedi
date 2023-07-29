@@ -255,14 +255,14 @@ class GoodreadsFeedParser(BaseParser):
 
 
 def sync_all_feeds(app):
-    db_feeds = db.session.execute(db.select(models.Feed)).all()
+    db_feeds = db.session.execute(db.select(models.Feed).filter_by(type=models.FeedTypes.RSS)).all()
     for (db_feed,) in db_feeds:
-        sync_feed(app, db_feed)
+        sync_rss_feed(app, db_feed)
 
     db.session.commit()
 
 
-def sync_feed(app, db_feed):
+def sync_rss_feed(app, db_feed):
     utcnow = datetime.datetime.utcnow()
     previous_fetch = db_feed.last_fetch
 
@@ -364,7 +364,7 @@ def create_test_feeds(app):
                 continue
 
             feed = feedparser.parse(url)
-            db_feed = models.Feed(name=feed_name, url=url, icon_url=detect_feed_icon(app, feed, url))
+            db_feed = models.Feed(type=models.FeedTypes.RSS, name=feed_name, url=url, icon_url=detect_feed_icon(app, feed, url))
             db.session.add(db_feed)
             app.logger.info('added %s', db_feed)
 

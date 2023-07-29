@@ -1,4 +1,5 @@
 import datetime
+import enum
 
 import sqlalchemy as sa
 
@@ -7,12 +8,19 @@ from feedi.database import db
 # TODO consider adding explicit support for url columns
 
 
+class FeedTypes(enum.Enum):
+    RSS = 'rss'
+    MASTODON_ACCOUNT = 'mastodon'
+
+
 class Feed(db.Model):
     """
     TODO
     """
     __tablename__ = 'feeds'
     id = sa.Column(sa.Integer, primary_key=True)
+
+    type = sa.Column(sa.Enum(FeedTypes))
 
     name = sa.Column(sa.String, unique=True)
     url = sa.Column(sa.String)
