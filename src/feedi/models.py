@@ -44,10 +44,9 @@ class Entry(db.Model):
 
     feed_id = sa.orm.mapped_column(sa.ForeignKey("feeds.id"))
     feed = sa.orm.relationship("Feed", back_populates="entries")
-    remote_id = sa.Column(sa.String, nullable=False)
+    remote_id = sa.Column(sa.String, nullable=False, doc="The identifier of this entry in its source feed.")
 
     title = sa.Column(sa.String, nullable=False)
-    title_url = sa.Column(sa.String, nullable=False)
     username = sa.Column(sa.String)
     user_url = sa.Column(sa.String)
     avatar_url = sa.Column(sa.String)

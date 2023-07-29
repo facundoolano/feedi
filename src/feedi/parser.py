@@ -24,7 +24,7 @@ class BaseParser:
     TODO
     """
 
-    FIELDS = ['title', 'title_url', 'avatar_url', 'username', 'body',
+    FIELDS = ['title', 'avatar_url', 'username', 'body',
               'media_url', 'remote_id', 'remote_created', 'remote_updated', 'entry_url', 'content_url']
 
     @staticmethod
@@ -79,14 +79,11 @@ class BaseParser:
     def parse_title(self, entry):
         return entry['title']
 
-    def parse_title_url(self, entry):
+    def parse_content_url(self, entry):
         return entry['link']
 
     def parse_entry_url(self, entry):
-        return self.parse_title_url(entry)
-
-    def parse_content_url(self, entry):
-        return self.parse_title_url(entry)
+        return self.parse_content_url(entry)
 
     def parse_username(self, entry):
         return entry.get('author')
@@ -121,7 +118,7 @@ class BaseParser:
         if soup.img:
             return soup.img['src']
 
-        parsed_dest_url = self.parse_title_url(entry)
+        parsed_dest_url = self.parse_content_url(entry)
         return self.fetch_meta(parsed_dest_url, "og:image") or self.fetch_meta(parsed_dest_url, "twitter:image")
 
     def parse_remote_id(self, entry):
@@ -162,7 +159,7 @@ class RedditParser(BaseParser):
         return (self.fetch_meta(link_url, 'og:description') or
                 self.fetch_meta(link_url, 'description'))
 
-    def parse_title_url(self, entry):
+    def parse_content_url(self, entry):
         soup = BeautifulSoup(entry['summary'], 'lxml')
         return soup.find("a", string="[link]")['href']
 
@@ -178,7 +175,7 @@ class LobstersParser(BaseParser):
     def parse_body(self, entry):
         # skip link-only posts
         if 'Comments' in entry['summary']:
-            url = self.parse_title_url(entry)
+            url = self.parse_content_url(entry)
             return (self.fetch_meta(url, 'og:description') or
                     self.fetch_meta(url, 'description'))
         return entry['summary']
@@ -197,7 +194,7 @@ class HackerNewsParser(BaseParser):
     def parse_body(self, entry):
         # skip link-only posts
         if 'Article URL' in entry['summary']:
-            url = self.parse_title_url(entry)
+            url = self.parse_content_url(entry)
             return (self.fetch_meta(url, 'og:description') or self.fetch_meta(url, 'description'))
         return entry['summary']
 
