@@ -89,5 +89,8 @@ def parse_values(server_url, toot):
     media = [m['preview_url'] for m in toot['media_attachments'] if m['type'] == 'image']
     if media:
         result['media_url'] = media[0]
+    elif toot['card']:
+        # NOTE: ideally we'd like to include more info in the embed, not just the preview image. e.g. title, description.
+        result['media_url'] = toot['card'].get('image')
 
     return result
