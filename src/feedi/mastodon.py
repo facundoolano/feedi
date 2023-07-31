@@ -5,6 +5,8 @@ Assumes an app has been registered and an a user logged in and credentials made 
 This could eventually be extended to include an Oauth login flow in the front-end, as well
 as supporting multiple account log in.
 """
+import json
+
 import mastodon
 
 # TODO verify whether the access token is long lived or requires refresh
@@ -49,27 +51,30 @@ def parse_values(server_url, toot):
     Translate any toot api result data into the format expected by the local Entry model.
     """
 
-    results = {'raw_data': toot}
+    result = {
+        'raw_data': json.dumps(toot, default=str)
+    }
+
+    # the updated date is taken from the base toot, so if if it's a reblog it will be the time
+    # it was reblogged. This will be used for sorting entries in the timeline.
+    # in that case the created date, the one displayed, will be taken from the reblogged toot
+    result['remote_updated'] = toot['edited_at'] or toot['created_at']
 
     if toot.get('reblog'):
         # TODO add rebloged by arg
-        results['reblogged_by'] = toot['account']['acct']
+        result['reblogged_by'] = toot['account']['display_name']
         toot = toot['reblog']
 
-    result = {
-        'title': toot['account']['display_name'],
-        'avatar_url': toot['account']['avatar'],
-        'username': toot['account']['acct'],
-        'body': toot['content'],
-        'remote_id': toot['id'],
-        'remote_created': toot['created_at'],
-        'remote_updated': toot['edited_at'] or toot['created_at'],
-        'content_url': toot['url']
-    }
+    result['title'] = toot['account']['display_name']
+    result['avatar_url'] = toot['account']['avatar']
+    result['username'] = toot['account']['acct']
+    result['body'] = toot['content']
+    result['remote_id'] = toot['id']
+    result['remote_created'] = toot['created_at']
+    result['content_url'] = toot['url']
 
-    # for the entry url we typically want to open the logged in user account's instance
-    # eg to comment, reblog etc., not the original mastodon instance, so we build the local url
-    # (which doesn't seem to come in the api response)
+    # we typically want to open the logged in user account's instance, not the original mastodon instance,
+    # so we build the local url (which doesn't seem to come in the api response)
     result['entry_url'] = f'{server_url}/@{toot["account"]["acct"]}/{toot["id"]}'
 
     # for media we only support images for now and will take just the first one

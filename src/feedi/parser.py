@@ -16,7 +16,7 @@ import feedi.models as models
 from feedi.database import db
 
 # TODO parametrize in command or app config
-SKIP_RECENTLY_UPDATED_MINUTES = 30
+SKIP_RECENTLY_UPDATED_MINUTES = 60
 SKIP_OLDER_THAN_DAYS = 15
 
 
@@ -313,7 +313,7 @@ def sync_rss_feed(app, db_feed):
     # https://feedparser.readthedocs.io/en/latest/http-etag.html
     feed = feedparser.parse(db_feed.url, etag=db_feed.etag, modified=db_feed.modified_header)
     if not feed['feed']:
-        app.logger.info('skipping empty feed %s %s', db_feed.name, feed.debug_message)
+        app.logger.info('skipping empty feed %s %s', db_feed.name, feed.get('debug_message'))
         return
 
     db_feed.last_fetch = utcnow
