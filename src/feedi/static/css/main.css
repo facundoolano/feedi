@@ -3,6 +3,41 @@
     padding: 1rem;
 }
 
+.feed-entry .card-content {
+    padding-bottom: 0;
+    padding-top: 0.75rem;
+}
+
+/* .card-content .columns:last-child { */
+/*     margin-bottom: 0 */
+/* } */
+
+.reblogged {
+    margin-bottom: 0!important;
+}
+
+.reblogged .column {
+    padding-top: .5rem!important;
+    padding-bottom: .5rem!important;
+}
+
+.feed-header .column {
+    padding-bottom:0!important
+}
+
+.body-container {
+    margin-bottom: 0!important
+}
+
+.media-url-container {
+    padding-top: .5rem!important;
+    padding-bottom: 1rem!important;
+}
+
+.feed-header {
+    margin-bottom:0.25!important
+}
+
 /* entry effects on hover  */
 .feed-entry .cnard-content:hover {
     /* FIXME this should use SCSS variables */
@@ -21,11 +56,6 @@
     border-radius: .75rem;
     object-fit: cover;
 }
-
-.feed-header {
-    margin-bottom:0!important
-}
-
 
 .card.feed-entry  {
     box-shadow: 0 0 0 1px hsl(0, 0%, 90%);

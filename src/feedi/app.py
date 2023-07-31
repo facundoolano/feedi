@@ -88,15 +88,19 @@ def create_app():
             return error_fragment("Entry not found")
         (entry, ) = result
 
-        # TODO handle case if not html, eg if destination is a pdf
-        # TODO instead of passing a string, try with a template passing the newspaper article object
-        # e.g. to preserve the author data, maybe show the top image
-        try:
-            return extract_article(entry.content_url)
-        except Exception as e:
-            return error_fragment(f"Error fetching article: {repr(e)}")
+        if entry.feed.type == models.Feed.TYPE_RSS:
+            try:
+                return extract_article(entry.content_url)
+            except Exception as e:
+                return error_fragment(f"Error fetching article: {repr(e)}")
+        else:
+            # this is not ideal for mastodon, but at least doesn't break
+            return entry.body
 
     def extract_article(url):
+        # TODO handle case if not html, eg if destination is a pdf
+        # TODO to preserve the author data, maybe show the top image
+
         # https://stackoverflow.com/questions/62943152/shortcomings-of-newspaper3k-how-to-scrape-only-article-html-python
         config = newspaper.Config()
         config.fetch_images = True
@@ -150,8 +154,7 @@ def create_app():
     # FIXME move somewhere else
     # TODO unit test this
     @app.template_filter('humanize')
-    def humanize_date_filter(dt):
-
+    def humanize_date(dt):
         delta = datetime.datetime.utcnow() - dt
 
         if delta < datetime.timedelta(seconds=60):
@@ -163,10 +166,13 @@ def create_app():
         elif delta < datetime.timedelta(days=8):
             return f"{delta.days}d"
         elif delta < datetime.timedelta(days=365):
-            # FIXME
             return dt.strftime("%b %d")
-        # FIXME
         return dt.strftime("%b %d, %Y")
+
+    @app.template_filter('feed_domain')
+    def feed_domain(feed):
+        parts = urllib.parse.urlparse(feed.url or feed.server_url)
+        return f'{parts.scheme}://{parts.netloc}'
 
     @app.template_filter('sanitize')
     def sanitize_content(html):
