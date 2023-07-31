@@ -44,7 +44,13 @@
                          {% if entry.content_url and not entry.body %}
                          <small>click to expand</small>
                          {% endif %}
+
+                         {% if entry.feed.type == 'mastodon' %}
+                         <p>{{ entry.body | safe }}</p>
+                         {% else %}
                          <p>{{ entry.body | sanitize | safe }}</p>
+                         {% endif %}
+
                      </div>
                      {% endif %}
                  </div>

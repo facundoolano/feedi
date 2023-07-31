@@ -154,8 +154,7 @@ def create_app():
     # FIXME move somewhere else
     # TODO unit test this
     @app.template_filter('humanize')
-    def humanize_date_filter(dt):
-
+    def humanize_date(dt):
         delta = datetime.datetime.utcnow() - dt
 
         if delta < datetime.timedelta(seconds=60):
@@ -167,9 +166,7 @@ def create_app():
         elif delta < datetime.timedelta(days=8):
             return f"{delta.days}d"
         elif delta < datetime.timedelta(days=365):
-            # FIXME
             return dt.strftime("%b %d")
-        # FIXME
         return dt.strftime("%b %d, %Y")
 
     @app.template_filter('feed_domain')
