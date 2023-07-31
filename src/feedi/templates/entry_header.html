@@ -3,7 +3,7 @@
         <p>
             <b><a class="feed-title" href="{{ entry.content_url }}" target="_blank">{{ entry.title }}</a></b>
             <br/>
-            <small class="has-text-grey-light">{{ entry.remote_created | humanize }} · {{ entry.feed.name}}</small>
+            <small class="has-text-grey-light">{{ entry.remote_created | humanize }} · {{ entry.username or entry.feed.name}}</small>
         </p>
     </div>
     <div class="column is-narrow">

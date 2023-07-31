@@ -12,7 +12,15 @@
          <div class="columns">
              <div class="column is-narrow">
                  <figure class="image is-32x32">
-                     <img class="is-rounded" src="{{ entry.avatar_url or entry.feed.icon_url }}" alt="{{ entry.username or entry.feed.name}}" title="{{ entry.username or entry.feed.name }}">
+                     {% if entry.user_url %}
+                     <a href="{{ entry.user_url }}">
+                         <img class="is-rounded" src="{{ entry.avatar_url }}" alt="{{ entry.username }}" title="{{ entry.username }}">
+                     </a>
+                     {% else %}
+                     <a href="{{ entry.feed | feed_domain }}">
+                         <img class="is-rounded" src="{{ entry.feed.icon_url }}" alt="{{ entry.feed.name}}" title="{{ entry.feed.name }}">
+                     </a>
+                     {% endif %}
                  </figure>
              </div>
              <div class="column">

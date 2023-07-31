@@ -172,6 +172,11 @@ def create_app():
         # FIXME
         return dt.strftime("%b %d, %Y")
 
+    @app.template_filter('feed_domain')
+    def feed_domain(feed):
+        parts = urllib.parse.urlparse(feed.url or feed.server_url)
+        return f'{parts.scheme}://{parts.netloc}'
+
     @app.template_filter('sanitize')
     def sanitize_content(html):
         # poor man's line truncating: reduce the amount of characters and let bs4 fix the html

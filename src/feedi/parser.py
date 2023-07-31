@@ -416,7 +416,7 @@ def create_test_feeds(app):
                 db_feed = models.MastodonAccount(name=feed_name,
                                                  server_url=server_url,
                                                  access_token=access_token,
-                                                 icon_url=mastodon.fetch_avatar(app, server_url, access_token))
+                                                 icon_url=mastodon.fetch_avatar(server_url, access_token))
 
             else:
                 app.logger.error("unknown feed type %s", attrs[0])

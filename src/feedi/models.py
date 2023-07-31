@@ -69,8 +69,8 @@ class Entry(db.Model):
 
     title = sa.Column(sa.String, nullable=False)
     username = sa.Column(sa.String)
-    user_url = sa.Column(sa.String)
-    avatar_url = sa.Column(sa.String)
+    user_url = sa.Column(sa.String, doc="The url of the user that authored the entry.")
+    avatar_url = sa.Column(sa.String, doc="The url of the avatar image to be displayed for the entry.")
 
     body = sa.Column(sa.String, doc="The content to be displayed in the feed preview. HTML is supported. For article entries, it would be an excerpt of the full article content.")
     entry_url = sa.Column(sa.String, doc="The URL of this entry in the source. For link aggregators this would be the comments page.")
