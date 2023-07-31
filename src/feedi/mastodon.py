@@ -19,7 +19,7 @@ def fetch_avatar(server_url, access_token):
 
 
 # TODO add better logging here
-def fetch_toots(server_url, access_token, newer_than=None, limit=None):
+def fetch_toots(app, server_url, access_token, newer_than=None, limit=None):
     client = mastodon.Mastodon(access_token=access_token,
                                api_base_url=server_url)
 
@@ -43,7 +43,14 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
         raise ValueError("expected either limit or newer_than argument")
 
     # TODO iterate and log errros
-    return [parse_values(server_url, t) for t in toots]
+    values = []
+    for toot in toots:
+        try:
+            values.append(parse_values(server_url, toot))
+        except:
+            app.logger.exception("error parsing toot")
+
+    return values
 
 
 def parse_values(server_url, toot):
@@ -75,7 +82,8 @@ def parse_values(server_url, toot):
 
     # we typically want to open the logged in user account's instance, not the original mastodon instance,
     # so we build the local url (which doesn't seem to come in the api response)
-    result['entry_url'] = f'{server_url}/@{toot["account"]["acct"]}/{toot["id"]}'
+    result['user_url'] = f'{server_url}/@{toot["account"]["acct"]}'
+    result['entry_url'] = f'{result["user_url"]}/{toot["id"]}'
 
     # for media we only support images for now and will take just the first one
     media = [m['preview_url'] for m in toot['media_attachments'] if m['type'] == 'image']

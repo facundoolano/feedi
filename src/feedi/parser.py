@@ -283,7 +283,7 @@ def sync_mastodon_feed(app, db_feed):
         args['limit'] = 50
 
     app.logger.info("Fetching toots %s", args)
-    toots = mastodon.fetch_toots(server_url=db_feed.server_url,
+    toots = mastodon.fetch_toots(app, server_url=db_feed.server_url,
                                  access_token=db_feed.access_token,
                                  **args)
     utcnow = datetime.datetime.utcnow()
@@ -416,7 +416,7 @@ def create_test_feeds(app):
                 db_feed = models.MastodonAccount(name=feed_name,
                                                  server_url=server_url,
                                                  access_token=access_token,
-                                                 icon_url=mastodon.fetch_avatar(server_url, access_token))
+                                                 icon_url=mastodon.fetch_avatar(app, server_url, access_token))
 
             else:
                 app.logger.error("unknown feed type %s", attrs[0])
