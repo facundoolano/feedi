@@ -89,7 +89,7 @@ class BaseParser:
                 for field in self.FIELDS:
                     method = 'parse_' + field
                     result[field] = getattr(self, method)(entry)
-            except ValueError:
+            except:
                 logger.exception("skipping errored entry")
                 continue
 
