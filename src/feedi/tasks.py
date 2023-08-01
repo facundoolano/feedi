@@ -13,8 +13,8 @@ import sqlalchemy.dialects.sqlite as sqlite
 from bs4 import BeautifulSoup
 from flask import current_app as app
 
-import feedi.mastodon as mastodon
 import feedi.models as models
+import feedi.sources as sources
 from feedi.models import db
 
 # TODO parametrize in command or app config
@@ -103,7 +103,6 @@ class BaseParser:
         # remove images in case there are any inside a paragraph
         for tag in soup('img'):
             tag.decompose()
-
         # return the rest of the html untouched, assuming any truncating will be done
         # on the view side if necessary (so it applies regardless of the parser implementation)
         return str(soup)
@@ -286,9 +285,9 @@ def sync_mastodon_feed(app, db_feed):
         args['limit'] = 50
 
     app.logger.info("Fetching toots %s", args)
-    toots = mastodon.fetch_toots(app, server_url=db_feed.server_url,
-                                 access_token=db_feed.access_token,
-                                 **args)
+    toots = sources.mastodon.fetch_toots(app, server_url=db_feed.server_url,
+                                         access_token=db_feed.access_token,
+                                         **args)
     utcnow = datetime.datetime.utcnow()
     for values in toots:
         # upsert to handle already seen entries.
@@ -422,7 +421,7 @@ def create_test_feeds():
                 db_feed = models.MastodonAccount(name=feed_name,
                                                  server_url=server_url,
                                                  access_token=access_token,
-                                                 icon_url=mastodon.fetch_avatar(server_url, access_token))
+                                                 icon_url=sources.mastodon.fetch_avatar(server_url, access_token))
 
             else:
                 app.logger.error("unknown feed type %s", attrs[0])
