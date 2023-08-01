@@ -1,0 +1,262 @@
+import favicon
+import feedparser
+import requests
+from bs4 import BeautifulSoup
+
+
+# FIXME this shouldn't receive an app
+def fetch(app, url, etag=None, modified=None):
+    # using standard feed headers to prevent re-fetching unchanged feeds
+    # https://feedparser.readthedocs.io/en/latest/http-etag.html
+    return feedparser.parse(url, etag=etag, modified=modified)
+
+# FIXME try to merge both these functions
+def parse():
+    pass
+
+class BaseParser:
+    """
+    TODO
+    """
+
+    FIELDS = ['title', 'avatar_url', 'username', 'body',
+              'media_url', 'remote_id', 'remote_created', 'remote_updated', 'entry_url', 'content_url']
+
+    @staticmethod
+    def is_compatible(_feed_url, _feed_data):
+        """
+        Returns whether this class knows how to parse entries from the given feed.
+        The base parser should reasonably work with any rss feed.
+        """
+        # subclasses need to override this. This base class can be used directly without testing for compatibility
+        raise NotImplementedError
+
+    # TODO the logger should be inferred from the module, not passed as arg
+    # TODO review if this has a reasonable purpose vs just passing everything on the parse fun
+    def __init__(self, feed, logger):
+        self.feed = feed
+        self.logger = logger
+        self.response_cache = {}
+
+    # FIXME make this a proper cache of any sort of request, and cache all.
+    def request(self, url):
+        if url in self.response_cache:
+            self.logger.debug("using cached response %s", url)
+            return self.response_cache[url]
+
+        self.logger.debug("making request %s", url)
+        content = requests.get(url).content
+        self.response_cache[url] = content
+        return content
+
+    def fetch_meta(self, url, tag):
+        """
+        TODO
+        """
+        soup = BeautifulSoup(self.request(url), 'lxml')
+        meta_tag = soup.find("meta", property=tag, content=True)
+        if meta_tag:
+            return meta_tag['content']
+
+    def parse(self, entry):
+        """
+        TODO
+        """
+        if 'link' not in entry or 'summary' not in entry:
+            raise ValueError(f"entry seems malformed {entry}")
+
+        result = {}
+        for field in self.FIELDS:
+            method = 'parse_' + field
+            result[field] = getattr(self, method)(entry)
+        return result
+
+    def parse_title(self, entry):
+        return entry['title']
+
+    def parse_content_url(self, entry):
+        return entry['link']
+
+    def parse_entry_url(self, entry):
+        return self.parse_content_url(entry)
+
+    def parse_username(self, entry):
+        return entry.get('author')
+
+    def parse_avatar_url(self, entry):
+        url = entry.get('source', {}).get('icon')
+        if url and requests.head(url).ok:
+            self.logger.debug('found entry-level avatar %s', url)
+            return url
+
+    def parse_body(self, entry):
+        soup = BeautifulSoup(entry['summary'], 'lxml')
+
+        # remove images in case there are any inside a paragraph
+        for tag in soup('img'):
+            tag.decompose()
+        # return the rest of the html untouched, assuming any truncating will be done
+        # on the view side if necessary (so it applies regardless of the parser implementation)
+        return str(soup)
+
+    def parse_media_url(self, entry):
+        # first try to get it in standard feed fields
+        if 'media_thumbnail' in entry:
+            return entry['media_thumbnail'][0]['url']
+
+        if 'media_content' in entry and entry['media_content'][0].get('type') == 'image':
+            return entry['media_content'][0]['url']
+
+        # else try to extract it from the summary html
+        soup = BeautifulSoup(entry['summary'], 'lxml')
+        if soup.img:
+            return soup.img['src']
+
+        parsed_dest_url = self.parse_content_url(entry)
+        return self.fetch_meta(parsed_dest_url, "og:image") or self.fetch_meta(parsed_dest_url, "twitter:image")
+
+    def parse_remote_id(self, entry):
+        return entry.get('id', entry['link'])
+
+    def parse_remote_created(self, entry):
+        dt = to_datetime(entry['published_parsed'])
+        if dt > datetime.datetime.utcnow():
+            raise ValueError("publication date is in the future")
+        return dt
+
+    def parse_remote_updated(self, entry):
+        dt = to_datetime(entry['updated_parsed'])
+        if dt > datetime.datetime.utcnow():
+            raise ValueError("publication date is in the future")
+        return dt
+
+
+# FIXME reduce duplication between aggregators
+class RedditParser(BaseParser):
+    def is_compatible(_feed_url, feed_data):
+        return 'reddit.com' in feed_data['feed']['link']
+
+    def parse_body(self, entry):
+        soup = BeautifulSoup(entry['summary'], 'lxml')
+        link_url = soup.find("a", string="[link]")
+        comments_url = soup.find("a", string="[comments]")
+
+        if link_url['href'] == comments_url['href']:
+            # this looks like it's a local reddit discussion
+            # return the summary instead of fetching description
+
+            # remove the links from the body first
+            link_url.decompose()
+            comments_url.decompose()
+            return str(soup)
+
+        return (self.fetch_meta(link_url, 'og:description') or
+                self.fetch_meta(link_url, 'description'))
+
+    def parse_content_url(self, entry):
+        soup = BeautifulSoup(entry['summary'], 'lxml')
+        return soup.find("a", string="[link]")['href']
+
+    def parse_entry_url(self, entry):
+        # this particular feed puts the reddit comments page in the link
+        return entry['link']
+
+
+class LobstersParser(BaseParser):
+    def is_compatible(_feed_url, feed_data):
+        return 'lobste.rs' in feed_data['feed']['link']
+
+    def parse_body(self, entry):
+        # skip link-only posts
+        if 'Comments' in entry['summary']:
+            url = self.parse_content_url(entry)
+            return (self.fetch_meta(url, 'og:description') or
+                    self.fetch_meta(url, 'description'))
+        return entry['summary']
+
+    def parse_entry_url(self, entry):
+        if 'Comments' in entry['summary']:
+            soup = BeautifulSoup(entry['summary'], 'lxml')
+            return soup.find("a", string="Comments")['href']
+        return entry['link']
+
+
+class HackerNewsParser(BaseParser):
+    def is_compatible(_feed_url, feed_data):
+        return 'news.ycombinator.com' in feed_data['feed']['link']
+
+    def parse_body(self, entry):
+        # skip link-only posts
+        if 'Article URL' in entry['summary']:
+            url = self.parse_content_url(entry)
+            return (self.fetch_meta(url, 'og:description') or self.fetch_meta(url, 'description'))
+        return entry['summary']
+
+    def parse_entry_url(self, entry):
+        soup = BeautifulSoup(entry['summary'], 'lxml')
+        return soup.find(lambda tag: tag.name == 'p' and 'Comments URL' in tag.text).a['href']
+
+
+class MastodonUserParser(BaseParser):
+    """
+    TODO
+    """
+    @staticmethod
+    def is_compatible(_feed_url, feed_data):
+        return 'mastodon' in feed_data['feed'].get('generator', '').lower()
+
+    def parse_title(self, _entry):
+        return self.feed['feed']['title']
+
+
+class GithubFeedParser(BaseParser):
+    """
+    TODO
+    """
+    @staticmethod
+    def is_compatible(feed_url, _feed_data):
+        return 'github.com' in feed_url and 'private.atom' in feed_url
+
+    def parse_body(self, _entry):
+        return None
+
+    def parse_avatar_url(self, entry):
+        return entry['media_thumbnail'][0]['url']
+
+    def parse_media_url(self, _entry):
+        return None
+
+    def parse_entry_url(self, _entry):
+        return None
+
+    def parse_content_url(self, _entry):
+        return None
+
+
+class GoodreadsFeedParser(BaseParser):
+    """
+    TODO
+    """
+    @staticmethod
+    def is_compatible(feed_url, _feed_data):
+        return 'goodreads.com' in feed_url and '/home/index_rss' in feed_url
+
+    def parse_body(self, _entry):
+        return None
+
+    def parse_media_url(self, _entry):
+        return None
+
+
+def detect_feed_icon(app, feed, url):
+    icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
+    if icon_url and requests.head(icon_url).ok:
+        app.logger.debug("using feed icon: %s", icon_url)
+    else:
+        favicons = favicon.get(feed['feed'].get('link', url))
+        # if multiple formats, assume the .ico is the canonical one if present
+        favicons = [f for f in favicons if f.height == f.width] or favicons
+        icon_url = favicons[0].url
+        app.logger.debug('using favicon %s', icon_url)
+
+    return icon_url
