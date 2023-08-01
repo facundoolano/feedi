@@ -30,10 +30,10 @@ def fetch(logger, url, previous_fetch, skip_older_than, etag=None, modified=None
         if cls.is_compatible(url, feed):
             parser_cls = cls
             break
-    parser = parser_cls(feed, previous_fetch, skip_older_than, logger)
+    parser = parser_cls(feed, logger)
 
     logger.info('parsing %s with %s', url, parser_cls)
-    return parser.parse(), feed['feed'], getattr(feed, 'etag', None), getattr(feed, 'modified', None)
+    return parser.parse(previous_fetch, skip_older_than), feed['feed'], getattr(feed, 'etag', None), getattr(feed, 'modified', None)
 
 
 class BaseParser:
@@ -54,15 +54,12 @@ class BaseParser:
         raise NotImplementedError
 
     # TODO the logger should be inferred from the module, not passed as arg
-    # TODO review if this has a reasonable purpose vs just passing everything on the parse fun
-    def __init__(self, feed, previous_fetch, skip_older_than, logger):
+    def __init__(self, feed, logger):
         self.feed = feed
         self.logger = logger
-        self.previous_fetch = previous_fetch
         self.response_cache = {}
-        self.skip_older_than = skip_older_than
 
-    def parse(self):
+    def parse(self, previous_fetch, skip_older_than):
         """
         TODO
         """
@@ -72,12 +69,12 @@ class BaseParser:
                 continue
 
             # again, don't try to process stuff that hasn't changed recently
-            if self.previous_fetch and 'updated_parsed' in entry and to_datetime(entry['updated_parsed']) < self.previous_fetch:
+            if previous_fetch and 'updated_parsed' in entry and to_datetime(entry['updated_parsed']) < previous_fetch:
                 self.logger.debug('skipping up to date entry %s', entry['link'])
                 continue
 
             # or that is too old
-            if 'published_parsed' in entry and datetime.datetime.now() - to_datetime(entry['published_parsed']) > datetime.timedelta(days=self.skip_older_than):
+            if 'published_parsed' in entry and datetime.datetime.now() - to_datetime(entry['published_parsed']) > datetime.timedelta(days=skip_older_than):
                 self.logger.debug('skipping old entry %s', entry['link'])
                 continue
 
