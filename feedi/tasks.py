@@ -7,13 +7,16 @@ import json
 import click
 import sqlalchemy.dialects.sqlite as sqlite
 from flask import current_app as app
+import flask
 
 import feedi.models as models
 import feedi.sources as sources
 from feedi.models import db
 
 
-@app.cli.command("sync")
+feed_cli = flask.cli.AppGroup('feed')
+
+@feed_cli.command('sync')
 def sync_all_feeds():
     db_feeds = db.session.execute(db.select(models.Feed)).all()
     for (db_feed,) in db_feeds:
@@ -87,13 +90,13 @@ def sync_rss_feed(db_feed):
             on_conflict_do_update(("feed_id", "remote_id"), set_=entry_values)
         )
 
-@app.cli.command("debug-feed")
+@feed_cli.command('debug')
 @click.argument('url')
 def debug_feed(url):
     sources.rss.pretty_print(url)
 
 
-@app.cli.command("testfeeds")
+@feed_cli.command('load')
 @click.argument("file")
 def create_test_feeds(file):
     with open(file) as csv_file:
@@ -131,9 +134,12 @@ def create_test_feeds(file):
     db.session.commit()
 
 
-@app.cli.command("delete-feed")
+@feed_cli.command('delete')
 @click.argument('feed-name')
 def delete_feed(feed_name):
     query = db.delete(models.Feed).where(models.Feed.name == feed_name)
     db.session.execute(query)
     db.session.commit()
+
+
+app.cli.add_command(feed_cli)

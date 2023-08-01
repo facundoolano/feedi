@@ -30,12 +30,3 @@ debug-feed = "flask --app src/feedi/app.py debug-feed"
 delete-feed = "flask --app src/feedi/app.py delete-feed"
 
 
-[tool.pdm.dev-dependencies]
-devel = [
-    "pyright>=1.1.318",
-]
-dev = [
-    "ipython>=8.14.0",
-]
-[tool.pyright]
-extraPaths = ["__pypackages__/<major.minor>/lib/"]
