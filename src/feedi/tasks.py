@@ -5,8 +5,6 @@ import datetime
 import json
 
 import click
-# FIXME this shouldnt be here
-import feedparser
 import sqlalchemy.dialects.sqlite as sqlite
 from flask import current_app as app
 
@@ -96,11 +94,7 @@ def sync_rss_feed(app, db_feed):
 @app.cli.command("debug-feed")
 @click.argument('url')
 def debug_feed(url):
-    import pprint
-
-    feed = feedparser.parse(url)
-    pp = pprint.PrettyPrinter(depth=10)
-    pp.pprint(feed)
+    sources.rss.pretty_print(url)
 
 
 # TODO this should receive the file as arg
@@ -118,10 +112,9 @@ def create_test_feeds():
 
             if feed_type == models.Feed.TYPE_RSS:
                 url = attrs[2]
-                feed = feedparser.parse(url)
                 db_feed = models.RssFeed(name=feed_name,
                                          url=url,
-                                         icon_url=sources.rss.detect_feed_icon(app, feed, url))
+                                         icon_url=sources.rss.detect_feed_icon(app, url))
 
             elif feed_type == models.Feed.TYPE_MASTODON_ACCOUNT:
                 server_url = attrs[2]

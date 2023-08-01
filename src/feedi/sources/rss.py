@@ -1,5 +1,6 @@
 import datetime
 import json
+import pprint
 import time
 
 import favicon
@@ -34,9 +35,6 @@ def fetch(logger, url, previous_fetch, skip_older_than, etag=None, modified=None
     logger.info('parsing %s with %s', url, parser_cls)
     return parser.parse(), feed['feed'], getattr(feed, 'etag', None), getattr(feed, 'modified', None)
 
-# FIXME try to merge both these functions
-def parse():
-    pass
 
 class BaseParser:
     """
@@ -288,8 +286,8 @@ class GoodreadsFeedParser(BaseParser):
         return None
 
 
-# TODO this could receive the url only
-def detect_feed_icon(app, feed, url):
+def detect_feed_icon(app, url):
+    feed = feedparser.parse(url)
     icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
     if icon_url and requests.head(icon_url).ok:
         app.logger.debug("using feed icon: %s", icon_url)
@@ -301,6 +299,11 @@ def detect_feed_icon(app, feed, url):
         app.logger.debug('using favicon %s', icon_url)
 
     return icon_url
+
+def pretty_print(url):
+    feed = feedparser.parse(url)
+    pp = pprint.PrettyPrinter(depth=10)
+    pp.pprint(feed)
 
 def to_datetime(struct_time):
     return datetime.datetime.fromtimestamp(time.mktime(struct_time))
