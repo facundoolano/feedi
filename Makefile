@@ -1,8 +1,5 @@
 .PHONY: deps dev-deps shell serve reset feeds
 
-# TODO check if this is necessary
-export PYTHONPATH=.
-
 venv=source venv/bin/activate &&
 flask=$(venv) flask --app feedi/app.py
 

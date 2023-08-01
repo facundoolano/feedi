@@ -11,7 +11,6 @@ from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
-# FIXME this shouldn't receive a logger
 def fetch(url, previous_fetch, skip_older_than, etag=None, modified=None):
     # using standard feed headers to prevent re-fetching unchanged feeds
     # https://feedparser.readthedocs.io/en/latest/http-etag.html
@@ -27,7 +26,9 @@ def fetch(url, previous_fetch, skip_older_than, etag=None, modified=None):
         return [], None, None, None
 
     parser_cls = BaseParser
-    # FIXME this is hacky, we aren't enforcing an order which may be necessary
+    # Try with all the custom parsers, and if none is compatible default to the generic parsing of the base class.
+    # NOTE this is kind of hacky, it assumes the order doesn't matter
+    # (i.e. that a single subclass is supposed to be compatible with the url)
     for cls in BaseParser.__subclasses__():
         if cls.is_compatible(url, feed):
             parser_cls = cls
@@ -62,7 +63,8 @@ class BaseParser:
 
     def parse(self, previous_fetch, skip_older_than):
         """
-        TODO
+        Returns a generator of feed entry values, one for each entry found in the feed.
+        previous_fetch (datetime) and skip_older_than (minutes) are used to potentially skip some of the entries.
         """
         for entry in self.feed['entries']:
             if 'link' not in entry or 'summary' not in entry:
@@ -165,8 +167,9 @@ class BaseParser:
 
     def fetch_meta(self, url, tag):
         """
-        TODO
+        GET the body of the url (which could be already cached) and extract the content of the given meta tag.
         """
+        # TODO try accepting a series of tags to try in turn
         soup = BeautifulSoup(self.request(url), 'lxml')
         meta_tag = soup.find("meta", property=tag, content=True)
         if meta_tag:
@@ -241,7 +244,8 @@ class HackerNewsParser(BaseParser):
 
 class MastodonUserParser(BaseParser):
     """
-    TODO
+    Parser for the public rss feed of a single mastodon user.
+    (wouldn't typically be necessary if the mastond account login is being used)
     """
     @staticmethod
     def is_compatible(_feed_url, feed_data):
@@ -253,7 +257,7 @@ class MastodonUserParser(BaseParser):
 
 class GithubFeedParser(BaseParser):
     """
-    TODO
+    Parser for the personal Github notifications feed.
     """
     @staticmethod
     def is_compatible(feed_url, _feed_data):
@@ -277,7 +281,7 @@ class GithubFeedParser(BaseParser):
 
 class GoodreadsFeedParser(BaseParser):
     """
-    TODO
+    Parser for the Goodreads private home rss feed.
     """
     @staticmethod
     def is_compatible(feed_url, _feed_data):

@@ -1,9 +1,5 @@
 """
 Module to ingest a logged user's timeline to include in the app main feed.
-Assumes an app has been registered and an a user logged in and credentials made available in the environment.
-
-This could eventually be extended to include an Oauth login flow in the front-end, as well
-as supporting multiple account log in.
 """
 import json
 import logging
@@ -43,7 +39,6 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
     else:
         raise ValueError("expected either limit or newer_than argument")
 
-    # TODO iterate and log errors
     values = []
     for toot in toots:
         try:
