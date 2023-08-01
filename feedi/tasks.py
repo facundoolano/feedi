@@ -5,14 +5,13 @@ import datetime
 import json
 
 import click
+import flask
 import sqlalchemy.dialects.sqlite as sqlite
 from flask import current_app as app
-import flask
 
 import feedi.models as models
 import feedi.sources as sources
 from feedi.models import db
-
 
 feed_cli = flask.cli.AppGroup('feed')
 

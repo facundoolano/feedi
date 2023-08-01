@@ -43,13 +43,13 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
     else:
         raise ValueError("expected either limit or newer_than argument")
 
-    # TODO iterate and log errros
+    # TODO iterate and log errors
     values = []
     for toot in toots:
         try:
             values.append(parse_values(server_url, toot))
         except:
-            app.logger.exception("error parsing toot")
+            logger.exception("error parsing toot")
 
     return values
 

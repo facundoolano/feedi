@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 import pprint
 import time
 
@@ -7,9 +8,6 @@ import favicon
 import feedparser
 import requests
 from bs4 import BeautifulSoup
-
-
-import logging
 
 logger = logging.getLogger(__name__)
 
