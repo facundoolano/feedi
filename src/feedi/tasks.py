@@ -12,10 +12,6 @@ import feedi.models as models
 import feedi.sources as sources
 from feedi.models import db
 
-# TODO parametrize in command or app config
-RSS_SKIP_RECENTLY_UPDATED_MINUTES = 60
-RSS_SKIP_OLDER_THAN_DAYS = 15
-
 
 @app.cli.command("sync")
 def sync_all_feeds():
@@ -43,7 +39,7 @@ def sync_mastodon_feed(db_feed):
     else:
         # if there isn't any entry yet, get the "first page" of toots from the timeline
         # TODO make constant/config
-        args['limit'] = 50
+        args['limit'] = app.config['MASTODON_FETCH_LIMIT']
 
     app.logger.info("Fetching toots %s", args)
     toots = sources.mastodon.fetch_toots(server_url=db_feed.server_url,
@@ -65,14 +61,14 @@ def sync_mastodon_feed(db_feed):
 def sync_rss_feed(db_feed):
     utcnow = datetime.datetime.utcnow()
 
-    if db_feed.last_fetch and utcnow - db_feed.last_fetch < datetime.timedelta(minutes=RSS_SKIP_RECENTLY_UPDATED_MINUTES):
+    if db_feed.last_fetch and utcnow - db_feed.last_fetch < datetime.timedelta(minutes=app.config['RSS_SKIP_RECENTLY_UPDATED_MINUTES']):
         app.logger.info('skipping recently synced feed %s', db_feed.name)
         return
 
     app.logger.info('fetching %s', db_feed.name)
     entries, feed_data, etag, modified,  = sources.rss.fetch(db_feed.url,
                                                              db_feed.last_fetch,
-                                                             RSS_SKIP_OLDER_THAN_DAYS,
+                                                             app.config['RSS_SKIP_OLDER_THAN_DAYS'],
                                                              etag=db_feed.etag, modified=db_feed.modified_header)
 
     db_feed.last_fetch = utcnow
@@ -97,10 +93,10 @@ def debug_feed(url):
     sources.rss.pretty_print(url)
 
 
-# TODO this should receive the file as arg
 @app.cli.command("testfeeds")
-def create_test_feeds():
-    with open('feeds.csv') as csv_file:
+@click.argument("file")
+def create_test_feeds(file):
+    with open(file) as csv_file:
         for attrs in csv.reader(csv_file):
             feed_type = attrs[0]
             feed_name = attrs[1]
