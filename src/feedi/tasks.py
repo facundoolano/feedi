@@ -5,11 +5,13 @@ import datetime
 import json
 import time
 
+import click
 import favicon
 import feedparser
 import requests
 import sqlalchemy.dialects.sqlite as sqlite
 from bs4 import BeautifulSoup
+from flask import current_app as app
 
 import feedi.mastodon as mastodon
 import feedi.models as models
@@ -255,7 +257,8 @@ class GoodreadsFeedParser(BaseParser):
         return None
 
 
-def sync_all_feeds(app):
+@app.cli.command("sync")
+def sync_all_feeds():
     db_feeds = db.session.execute(db.select(models.Feed)).all()
     for (db_feed,) in db_feeds:
         if db_feed.type == models.Feed.TYPE_RSS:
@@ -384,6 +387,8 @@ def detect_feed_icon(app, feed, url):
     return icon_url
 
 
+@app.cli.command("debug-feed")
+@click.argument('url')
 def debug_feed(url):
     feed = feedparser.parse(url)
     import pprint
@@ -391,7 +396,8 @@ def debug_feed(url):
     pp.pprint(feed)
 
 
-def create_test_feeds(app):
+@app.cli.command("testfeeds")
+def create_test_feeds():
     with open('feeds.csv') as csv_file:
         for attrs in csv.reader(csv_file):
             feed_type = attrs[0]
@@ -428,7 +434,9 @@ def create_test_feeds(app):
     db.session.commit()
 
 
-def delete_feed(app, feed_name):
+@app.cli.command("delete-feed")
+@click.argument('feed-name')
+def delete_feed(feed_name):
     query = db.delete(models.Feed).where(models.Feed.name == feed_name)
     db.session.execute(query)
     db.session.commit()
