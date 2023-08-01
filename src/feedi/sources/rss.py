@@ -9,8 +9,12 @@ import requests
 from bs4 import BeautifulSoup
 
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 # FIXME this shouldn't receive a logger
-def fetch(logger, url, previous_fetch, skip_older_than, etag=None, modified=None):
+def fetch(url, previous_fetch, skip_older_than, etag=None, modified=None):
     # using standard feed headers to prevent re-fetching unchanged feeds
     # https://feedparser.readthedocs.io/en/latest/http-etag.html
     feed = feedparser.parse(url, etag=etag, modified=modified)
@@ -56,7 +60,6 @@ class BaseParser:
     # TODO the logger should be inferred from the module, not passed as arg
     def __init__(self, feed, logger):
         self.feed = feed
-        self.logger = logger
         self.response_cache = {}
 
     def parse(self, previous_fetch, skip_older_than):
@@ -65,17 +68,17 @@ class BaseParser:
         """
         for entry in self.feed['entries']:
             if 'link' not in entry or 'summary' not in entry:
-                self.logger.warn(f"entry seems malformed {entry}")
+                logger.warn(f"entry seems malformed {entry}")
                 continue
 
             # again, don't try to process stuff that hasn't changed recently
             if previous_fetch and 'updated_parsed' in entry and to_datetime(entry['updated_parsed']) < previous_fetch:
-                self.logger.debug('skipping up to date entry %s', entry['link'])
+                logger.debug('skipping up to date entry %s', entry['link'])
                 continue
 
             # or that is too old
             if 'published_parsed' in entry and datetime.datetime.now() - to_datetime(entry['published_parsed']) > datetime.timedelta(days=skip_older_than):
-                self.logger.debug('skipping old entry %s', entry['link'])
+                logger.debug('skipping old entry %s', entry['link'])
                 continue
 
             result = {
@@ -87,7 +90,7 @@ class BaseParser:
                     method = 'parse_' + field
                     result[field] = getattr(self, method)(entry)
             except ValueError:
-                self.logger.exception("skipping errored entry")
+                logger.exception("skipping errored entry")
                 continue
 
             yield result
@@ -107,7 +110,7 @@ class BaseParser:
     def parse_avatar_url(self, entry):
         url = entry.get('source', {}).get('icon')
         if url and requests.head(url).ok:
-            self.logger.debug('found entry-level avatar %s', url)
+            logger.debug('found entry-level avatar %s', url)
             return url
 
     def parse_body(self, entry):
@@ -154,10 +157,10 @@ class BaseParser:
     # FIXME make this a proper cache of any sort of request, and cache all.
     def request(self, url):
         if url in self.response_cache:
-            self.logger.debug("using cached response %s", url)
+            logger.debug("using cached response %s", url)
             return self.response_cache[url]
 
-        self.logger.debug("making request %s", url)
+        logger.debug("making request %s", url)
         content = requests.get(url).content
         self.response_cache[url] = content
         return content
@@ -289,17 +292,17 @@ class GoodreadsFeedParser(BaseParser):
         return None
 
 
-def detect_feed_icon(app, url):
+def detect_feed_icon(url):
     feed = feedparser.parse(url)
     icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
     if icon_url and requests.head(icon_url).ok:
-        app.logger.debug("using feed icon: %s", icon_url)
+        logger.debug("using feed icon: %s", icon_url)
     else:
         favicons = favicon.get(feed['feed'].get('link', url))
         # if multiple formats, assume the .ico is the canonical one if present
         favicons = [f for f in favicons if f.height == f.width] or favicons
         icon_url = favicons[0].url
-        app.logger.debug('using favicon %s', icon_url)
+        logger.debug('using favicon %s', icon_url)
 
     return icon_url
 

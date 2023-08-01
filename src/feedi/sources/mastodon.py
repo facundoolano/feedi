@@ -6,10 +6,11 @@ This could eventually be extended to include an Oauth login flow in the front-en
 as supporting multiple account log in.
 """
 import json
+import logging
 
 import mastodon
 
-# TODO verify whether the access token is long lived or requires refresh
+logger = logging.getLogger(__name__)
 
 
 def fetch_avatar(server_url, access_token):
@@ -19,7 +20,7 @@ def fetch_avatar(server_url, access_token):
 
 
 # TODO add better logging here
-def fetch_toots(app, server_url, access_token, newer_than=None, limit=None):
+def fetch_toots(server_url, access_token, newer_than=None, limit=None):
     client = mastodon.Mastodon(access_token=access_token,
                                api_base_url=server_url)
 

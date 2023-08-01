@@ -13,10 +13,10 @@ load_dotenv()
 
 
 def create_app():
-    app = flask.Flask(__name__)
+    app = flask.Flask(__package__)
+    app.logger.setLevel(logging.DEBUG)
 
     # TODO setup config file
-    app.logger.setLevel(logging.DEBUG)
     app.secret_key = os.environ['FLASK_SECRET_KEY']
     app.config['TEMPLATES_AUTO_RELOAD'] = True
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///feedi.db"

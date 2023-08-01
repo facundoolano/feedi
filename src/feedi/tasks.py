@@ -22,9 +22,9 @@ def sync_all_feeds():
     db_feeds = db.session.execute(db.select(models.Feed)).all()
     for (db_feed,) in db_feeds:
         if db_feed.type == models.Feed.TYPE_RSS:
-            sync_rss_feed(app, db_feed)
+            sync_rss_feed(db_feed)
         elif db_feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
-            sync_mastodon_feed(app, db_feed)
+            sync_mastodon_feed(db_feed)
         else:
             app.logger.error("unknown feed type %s", db_feed.type)
             continue
@@ -32,7 +32,7 @@ def sync_all_feeds():
         db.session.commit()
 
 
-def sync_mastodon_feed(app, db_feed):
+def sync_mastodon_feed(db_feed):
 
     latest_entry = db_feed.entries.order_by(models.Entry.remote_updated.desc()).first()
     args = {}
@@ -46,7 +46,7 @@ def sync_mastodon_feed(app, db_feed):
         args['limit'] = 50
 
     app.logger.info("Fetching toots %s", args)
-    toots = sources.mastodon.fetch_toots(app, server_url=db_feed.server_url,
+    toots = sources.mastodon.fetch_toots(server_url=db_feed.server_url,
                                          access_token=db_feed.access_token,
                                          **args)
     utcnow = datetime.datetime.utcnow()
@@ -62,7 +62,7 @@ def sync_mastodon_feed(app, db_feed):
         )
 
 
-def sync_rss_feed(app, db_feed):
+def sync_rss_feed(db_feed):
     utcnow = datetime.datetime.utcnow()
 
     if db_feed.last_fetch and utcnow - db_feed.last_fetch < datetime.timedelta(minutes=RSS_SKIP_RECENTLY_UPDATED_MINUTES):
@@ -70,17 +70,17 @@ def sync_rss_feed(app, db_feed):
         return
 
     app.logger.info('fetching %s', db_feed.name)
-    entry_parser, feed_data, etag, modified,  = sources.rss.fetch(app.logger, db_feed.url,
-                                                                  db_feed.last_fetch,
-                                                                  RSS_SKIP_OLDER_THAN_DAYS,
-                                                                  etag=db_feed.etag, modified=db_feed.modified_header)
+    entries, feed_data, etag, modified,  = sources.rss.fetch(db_feed.url,
+                                                             db_feed.last_fetch,
+                                                             RSS_SKIP_OLDER_THAN_DAYS,
+                                                             etag=db_feed.etag, modified=db_feed.modified_header)
 
     db_feed.last_fetch = utcnow
     db_feed.etag = etag
     db_feed.modified_header = modified
     db_feed.raw_data = json.dumps(feed_data)
 
-    for entry_values in entry_parser:
+    for entry_values in entries:
         # upsert to handle already seen entries.
         # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
         entry_values['updated'] = utcnow
@@ -114,7 +114,7 @@ def create_test_feeds():
                 url = attrs[2]
                 db_feed = models.RssFeed(name=feed_name,
                                          url=url,
-                                         icon_url=sources.rss.detect_feed_icon(app, url))
+                                         icon_url=sources.rss.detect_feed_icon(url))
 
             elif feed_type == models.Feed.TYPE_MASTODON_ACCOUNT:
                 server_url = attrs[2]
