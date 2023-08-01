@@ -8,10 +8,6 @@
     padding-top: 0.75rem;
 }
 
-/* .card-content .columns:last-child { */
-/*     margin-bottom: 0 */
-/* } */
-
 .reblogged {
     margin-bottom: 0!important;
 }
@@ -30,7 +26,6 @@
 }
 
 .media-url-container {
-    padding-top: .5rem!important;
     padding-bottom: 1rem!important;
 }
 
@@ -38,11 +33,11 @@
     margin-bottom:0.25!important
 }
 
-/* entry effects on hover  */
-.feed-entry .cnard-content:hover {
-    /* FIXME this should use SCSS variables */
-    /* background-color:  hsl(0, 0%, 96%) */
+.avatar-column {
+    padding-right: .25
 }
+
+/* entry effects on hover  */
 
 .feed-entry .button {
     visibility: hidden;

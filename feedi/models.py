@@ -1,11 +1,11 @@
 import datetime
-import enum
 
 import sqlalchemy as sa
-
-from feedi.database import db
+from flask_sqlalchemy import SQLAlchemy
 
 # TODO consider adding explicit support for url columns
+
+db = SQLAlchemy()
 
 
 class Feed(db.Model):

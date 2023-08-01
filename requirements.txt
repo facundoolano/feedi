@@ -1,0 +1,10 @@
+flask>=2.3.2
+feedparser>=6.0.10
+favicon>=0.7.0
+requests>=2.31.0
+sqlalchemy>=2.0.19
+flask-sqlalchemy>=3.0.5
+beautifulsoup4>=4.12.2
+lxml>=4.9.3
+newspaper3k>=0.2.8
+Mastodon-py>=1.8.1"

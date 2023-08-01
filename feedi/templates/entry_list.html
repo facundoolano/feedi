@@ -10,7 +10,7 @@
          </div>
          {% endif %}
          <div class="columns">
-             <div class="column is-narrow">
+             <div class="column is-narrow avatar-column">
                  <figure class="image is-32x32">
                      {% if entry.user_url %}
                      <a href="{{ entry.user_url }}">
@@ -40,15 +40,15 @@
                      </div>
                      {% endif %}
                      {% if entry.body %}
-                     <div class="column">
+                     <div class="column content">
                          {% if entry.content_url and not entry.body %}
                          <small>click to expand</small>
                          {% endif %}
 
                          {% if entry.feed.type == 'mastodon' %}
-                         <p>{{ entry.body | safe }}</p>
+                         {{ entry.body | safe }}
                          {% else %}
-                         <p>{{ entry.body | sanitize | safe }}</p>
+                         {{ entry.body | sanitize | safe }}
                          {% endif %}
 
                      </div>
