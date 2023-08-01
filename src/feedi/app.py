@@ -57,7 +57,7 @@ def create_app():
         query = db.select(models.Entry).filter(models.Entry.remote_updated < dt)\
                                        .order_by(models.Entry.remote_updated.desc()).limit(ENTRY_PAGE_SIZE)
         entries = [e for (e, ) in db.session.execute(query)]
-        return flask.render_template('entries.html', entries=entries)
+        return flask.render_template('entry_list.html', entries=entries)
 
     @app.route("/feeds/<int:id>/raw")
     def raw_feed(id):
