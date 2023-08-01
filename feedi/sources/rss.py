@@ -33,7 +33,7 @@ def fetch(url, previous_fetch, skip_older_than, etag=None, modified=None):
         if cls.is_compatible(url, feed):
             parser_cls = cls
             break
-    parser = parser_cls(feed, logger)
+    parser = parser_cls(feed)
 
     logger.info('parsing %s with %s', url, parser_cls)
     return parser.parse(previous_fetch, skip_older_than), feed['feed'], getattr(feed, 'etag', None), getattr(feed, 'modified', None)
@@ -56,8 +56,7 @@ class BaseParser:
         # subclasses need to override this. This base class can be used directly without testing for compatibility
         raise NotImplementedError
 
-    # TODO the logger should be inferred from the module, not passed as arg
-    def __init__(self, feed, logger):
+    def __init__(self, feed):
         self.feed = feed
         self.response_cache = {}
 

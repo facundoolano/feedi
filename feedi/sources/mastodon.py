@@ -64,7 +64,6 @@ def parse_values(server_url, toot):
     result['remote_updated'] = toot['edited_at'] or toot['created_at']
 
     if toot.get('reblog'):
-        # TODO add rebloged by arg
         result['reblogged_by'] = toot['account']['display_name']
         toot = toot['reblog']
 
