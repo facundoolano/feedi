@@ -1,14 +1,38 @@
+import datetime
+import json
+import time
+
 import favicon
 import feedparser
 import requests
 from bs4 import BeautifulSoup
 
 
-# FIXME this shouldn't receive an app
-def fetch(app, url, etag=None, modified=None):
+# FIXME this shouldn't receive a logger
+def fetch(logger, url, previous_fetch, skip_older_than, etag=None, modified=None):
     # using standard feed headers to prevent re-fetching unchanged feeds
     # https://feedparser.readthedocs.io/en/latest/http-etag.html
-    return feedparser.parse(url, etag=etag, modified=modified)
+    feed = feedparser.parse(url, etag=etag, modified=modified)
+
+    if not feed['feed']:
+        logger.info('skipping empty feed %s %s', url, feed.get('debug_message'))
+        return [], None, None, None
+
+    # also checking with the internal updated field in case feed doesn't support the standard headers
+    if previous_fetch and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) < previous_fetch:
+        logger.info('skipping up to date feed %s', url)
+        return [], None, None, None
+
+    parser_cls = BaseParser
+    # FIXME this is hacky, we aren't enforcing an order which may be necessary
+    for cls in BaseParser.__subclasses__():
+        if cls.is_compatible(url, feed):
+            parser_cls = cls
+            break
+    parser = parser_cls(feed, previous_fetch, skip_older_than, logger)
+
+    logger.info('parsing %s with %s', url, parser_cls)
+    return parser.parse(), feed['feed'], getattr(feed, 'etag', None), getattr(feed, 'modified', None)
 
 # FIXME try to merge both these functions
 def parse():
@@ -33,43 +57,39 @@ class BaseParser:
 
     # TODO the logger should be inferred from the module, not passed as arg
     # TODO review if this has a reasonable purpose vs just passing everything on the parse fun
-    def __init__(self, feed, logger):
+    def __init__(self, feed, previous_fetch, skip_older_than, logger):
         self.feed = feed
         self.logger = logger
+        self.previous_fetch = previous_fetch
         self.response_cache = {}
+        self.skip_older_than = skip_older_than
 
-    # FIXME make this a proper cache of any sort of request, and cache all.
-    def request(self, url):
-        if url in self.response_cache:
-            self.logger.debug("using cached response %s", url)
-            return self.response_cache[url]
-
-        self.logger.debug("making request %s", url)
-        content = requests.get(url).content
-        self.response_cache[url] = content
-        return content
-
-    def fetch_meta(self, url, tag):
+    def parse(self):
         """
         TODO
         """
-        soup = BeautifulSoup(self.request(url), 'lxml')
-        meta_tag = soup.find("meta", property=tag, content=True)
-        if meta_tag:
-            return meta_tag['content']
+        for entry in self.feed['entries']:
+            if 'link' not in entry or 'summary' not in entry:
+                self.logger.warn(f"entry seems malformed {entry}")
+                continue
 
-    def parse(self, entry):
-        """
-        TODO
-        """
-        if 'link' not in entry or 'summary' not in entry:
-            raise ValueError(f"entry seems malformed {entry}")
+            # again, don't try to process stuff that hasn't changed recently
+            if self.previous_fetch and 'updated_parsed' in entry and to_datetime(entry['updated_parsed']) < self.previous_fetch:
+                self.logger.debug('skipping up to date entry %s', entry['link'])
+                continue
 
-        result = {}
-        for field in self.FIELDS:
-            method = 'parse_' + field
-            result[field] = getattr(self, method)(entry)
-        return result
+            # or that is too old
+            if 'published_parsed' in entry and datetime.datetime.now() - to_datetime(entry['published_parsed']) > datetime.timedelta(days=self.skip_older_than):
+                self.logger.debug('skipping old entry %s', entry['link'])
+                continue
+
+            result = {
+                'raw_data': json.dumps(entry)
+            }
+            for field in self.FIELDS:
+                method = 'parse_' + field
+                result[field] = getattr(self, method)(entry)
+            yield result
 
     def parse_title(self, entry):
         return entry['title']
@@ -129,6 +149,26 @@ class BaseParser:
         if dt > datetime.datetime.utcnow():
             raise ValueError("publication date is in the future")
         return dt
+
+    # FIXME make this a proper cache of any sort of request, and cache all.
+    def request(self, url):
+        if url in self.response_cache:
+            self.logger.debug("using cached response %s", url)
+            return self.response_cache[url]
+
+        self.logger.debug("making request %s", url)
+        content = requests.get(url).content
+        self.response_cache[url] = content
+        return content
+
+    def fetch_meta(self, url, tag):
+        """
+        TODO
+        """
+        soup = BeautifulSoup(self.request(url), 'lxml')
+        meta_tag = soup.find("meta", property=tag, content=True)
+        if meta_tag:
+            return meta_tag['content']
 
 
 # FIXME reduce duplication between aggregators
@@ -248,6 +288,7 @@ class GoodreadsFeedParser(BaseParser):
         return None
 
 
+# TODO this could receive the url only
 def detect_feed_icon(app, feed, url):
     icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
     if icon_url and requests.head(icon_url).ok:
@@ -260,3 +301,6 @@ def detect_feed_icon(app, feed, url):
         app.logger.debug('using favicon %s', icon_url)
 
     return icon_url
+
+def to_datetime(struct_time):
+    return datetime.datetime.fromtimestamp(time.mktime(struct_time))

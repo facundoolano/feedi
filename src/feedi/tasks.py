@@ -3,7 +3,6 @@
 import csv
 import datetime
 import json
-import time
 
 import click
 # FIXME this shouldnt be here
@@ -67,69 +66,32 @@ def sync_mastodon_feed(app, db_feed):
 
 def sync_rss_feed(app, db_feed):
     utcnow = datetime.datetime.utcnow()
-    previous_fetch = db_feed.last_fetch
 
-    if previous_fetch and utcnow - previous_fetch < datetime.timedelta(minutes=RSS_SKIP_RECENTLY_UPDATED_MINUTES):
+    if db_feed.last_fetch and utcnow - db_feed.last_fetch < datetime.timedelta(minutes=RSS_SKIP_RECENTLY_UPDATED_MINUTES):
         app.logger.info('skipping recently synced feed %s', db_feed.name)
         return
 
     app.logger.info('fetching %s', db_feed.name)
-    feed = sources.rss.fetch(app, db_feed.urll, etag=db_feed.etag, modified=db_feed.modified_header)
-
-    if not feed['feed']:
-        app.logger.info('skipping empty feed %s %s', db_feed.name, feed.get('debug_message'))
-        return
+    entry_parser, feed_data, etag, modified,  = sources.rss.fetch(app.logger, db_feed.url,
+                                                                  db_feed.last_fetch,
+                                                                  RSS_SKIP_OLDER_THAN_DAYS,
+                                                                  etag=db_feed.etag, modified=db_feed.modified_header)
 
     db_feed.last_fetch = utcnow
-    db_feed.etag = getattr(feed, 'etag', db_feed.etag)
-    db_feed.modified_header = getattr(feed, 'modified', db_feed.modified_header)
-    db_feed.raw_data = json.dumps(feed['feed'])
+    db_feed.etag = etag
+    db_feed.modified_header = modified
+    db_feed.raw_data = json.dumps(feed_data)
 
-    # also checking with the internal updated field in case feed doesn't support the standard headers
-    if previous_fetch and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) < previous_fetch:
-        app.logger.info('skipping up to date feed %s', db_feed.name)
-        return
-
-    parser_cls = BaseParser
-    # FIXME this is hacky, we aren't enforcing an order which may be necessary
-    for cls in BaseParser.__subclasses__():
-        if cls.is_compatible(db_feed.url, feed):
-            parser_cls = cls
-            break
-    parser = parser_cls(feed, app.logger)
-
-    app.logger.info('parsing %s with %s', parser_cls)
-    for entry in feed['entries']:
-        # again, don't try to process stuff that hasn't changed recently
-        if previous_fetch and 'updated_parsed' in entry and to_datetime(entry['updated_parsed']) < previous_fetch:
-            app.logger.debug('skipping up to date entry %s', entry['link'])
-            continue
-
-        # or that is too old
-        if 'published_parsed' in entry and datetime.datetime.now() - to_datetime(entry['published_parsed']) > datetime.timedelta(days=RSS_SKIP_OLDER_THAN_DAYS):
-            app.logger.debug('skipping old entry %s', entry['link'])
-            continue
-
-        try:
-            values = parser.parse(entry)
-        except Exception as e:
-            app.logger.exception("parsing raised error: %s", e)
-            continue
-
+    for entry_values in entry_parser:
         # upsert to handle already seen entries.
         # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
-        values['updated'] = utcnow
-        values['feed_id'] = db_feed.id
-        values['raw_data'] = json.dumps(entry)
+        entry_values['updated'] = utcnow
+        entry_values['feed_id'] = db_feed.id
         db.session.execute(
             sqlite.insert(models.Entry).
-            values(**values).
-            on_conflict_do_update(("feed_id", "remote_id"), set_=values)
+            values(**entry_values).
+            on_conflict_do_update(("feed_id", "remote_id"), set_=entry_values)
         )
-
-
-def to_datetime(struct_time):
-    return datetime.datetime.fromtimestamp(time.mktime(struct_time))
 
 @app.cli.command("debug-feed")
 @click.argument('url')
