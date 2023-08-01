@@ -1,25 +1,18 @@
 # coding: utf-8
 
 import logging
-import os
 
 import flask
-from dotenv import load_dotenv
 
 from feedi.models import db
-
-# load environment variables from an .env file
-load_dotenv()
 
 
 def create_app():
     app = flask.Flask(__package__)
-    app.logger.setLevel(logging.DEBUG)
+    app.config.from_object('feedi.config')
+    app.config.from_envvar('FEEDI_CONFIG', silent=True)
 
-    # TODO setup config file
-    app.secret_key = os.environ['FLASK_SECRET_KEY']
-    app.config['TEMPLATES_AUTO_RELOAD'] = True
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///feedi.db"
+    app.logger.setLevel(logging.DEBUG)
 
     db.init_app(app)
 
