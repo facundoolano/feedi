@@ -11,7 +11,6 @@ import lxml
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
-import feedi.models as models
 import feedi.parser as parser
 from feedi.database import db
 
