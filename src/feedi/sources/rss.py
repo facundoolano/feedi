@@ -81,9 +81,15 @@ class BaseParser:
             result = {
                 'raw_data': json.dumps(entry)
             }
-            for field in self.FIELDS:
-                method = 'parse_' + field
-                result[field] = getattr(self, method)(entry)
+
+            try:
+                for field in self.FIELDS:
+                    method = 'parse_' + field
+                    result[field] = getattr(self, method)(entry)
+            except ValueError:
+                self.logger.exception("skipping errored entry")
+                continue
+
             yield result
 
     def parse_title(self, entry):
@@ -136,7 +142,7 @@ class BaseParser:
     def parse_remote_created(self, entry):
         dt = to_datetime(entry['published_parsed'])
         if dt > datetime.datetime.utcnow():
-            raise ValueError("publication date is in the future")
+            raise ValueError(f"publication date is in the future {entry}")
         return dt
 
     def parse_remote_updated(self, entry):
