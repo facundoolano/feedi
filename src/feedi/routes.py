@@ -1,11 +1,12 @@
 import datetime
-import flask
-from flask import current_app as app
-import newspaper
-from feedi.database import db
-import feedi.models as models
-from bs4 import BeautifulSoup
 
+import flask
+import newspaper
+from bs4 import BeautifulSoup
+from flask import current_app as app
+
+import feedi.models as models
+from feedi.models import db
 
 ENTRY_PAGE_SIZE = 20
 

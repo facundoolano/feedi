@@ -13,7 +13,7 @@ from bs4 import BeautifulSoup
 
 import feedi.mastodon as mastodon
 import feedi.models as models
-from feedi.database import db
+from feedi.models import db
 
 # TODO parametrize in command or app config
 SKIP_RECENTLY_UPDATED_MINUTES = 60

@@ -12,7 +12,7 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
 import feedi.parser as parser
-from feedi.database import db
+from feedi.models import db
 
 # load environment variables from an .env file
 load_dotenv()
