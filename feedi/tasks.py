@@ -8,30 +8,39 @@ import click
 import flask
 import sqlalchemy.dialects.sqlite as sqlite
 from flask import current_app as app
+from huey import crontab
+from huey.contrib.mini import MiniHuey
 
 import feedi.models as models
 import feedi.sources as sources
+from feedi.app import create_huey_app
 from feedi.models import db
 
 feed_cli = flask.cli.AppGroup('feed')
 
-@feed_cli.command('sync')
-def sync_all_feeds():
-    db_feeds = db.session.execute(db.select(models.Feed)).all()
-    for (db_feed,) in db_feeds:
-        if db_feed.type == models.Feed.TYPE_RSS:
-            sync_rss_feed(db_feed)
-        elif db_feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
-            sync_mastodon_feed(db_feed)
-        else:
-            app.logger.error("unknown feed type %s", db_feed.type)
-            continue
+huey = MiniHuey()
 
-        db.session.commit()
+
+@feed_cli.command('sync')
+@huey.task(crontab(minute='*/30'))
+def sync_all_feeds():
+    app = create_huey_app()
+
+    with app.app_context():
+        db_feeds = db.session.execute(db.select(models.Feed)).all()
+        for (db_feed,) in db_feeds:
+            if db_feed.type == models.Feed.TYPE_RSS:
+                sync_rss_feed(db_feed)
+            elif db_feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
+                sync_mastodon_feed(db_feed)
+            else:
+                app.logger.error("unknown feed type %s", db_feed.type)
+                continue
+
+            db.session.commit()
 
 
 def sync_mastodon_feed(db_feed):
-
     latest_entry = db_feed.entries.order_by(models.Entry.remote_updated.desc()).first()
     args = {}
     if latest_entry:
