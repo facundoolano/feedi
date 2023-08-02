@@ -46,6 +46,7 @@ def sync_all_feeds():
             task.get()
 
 
+# TODO use name instead of id, add command support
 @huey.task()
 def sync_mastodon_feed(feed_id):
     app = create_huey_app()
@@ -77,9 +78,12 @@ def sync_mastodon_feed(feed_id):
                 values(**values).
                 on_conflict_do_update(("feed_id", "remote_id"), set_=values)
             )
+
+            # inline commit to avoid sqlite locking when fetching parallel feeds
             db.session.commit()
 
 
+# TODO use name instead of id, add command support
 @huey.task()
 def sync_rss_feed(feed_id):
     app = create_huey_app()
@@ -115,6 +119,8 @@ def sync_rss_feed(feed_id):
                 values(**entry_values).
                 on_conflict_do_update(("feed_id", "remote_id"), set_=entry_values)
             )
+
+            # inline commit to avoid sqlite locking when fetching parallel feeds
             db.session.commit()
 
 

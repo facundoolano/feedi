@@ -89,7 +89,7 @@ class BaseParser:
                     method = 'parse_' + field
                     result[field] = getattr(self, method)(entry)
             except:
-                logger.exception("skipping errored entry")
+                logger.exception("skipping errored entry", entry['link'])
                 continue
 
             yield result

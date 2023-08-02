@@ -34,6 +34,10 @@ def create_app():
 
 
 def create_huey_app():
+    """
+    Construct a minimal flask app for exposing to the huey tasks.
+    This is necessary to make config and db session available to the periodic tasks.
+    """
     app = flask.Flask('huey_app')
     app.config.from_object('feedi.config')
     app.config.from_envvar('FEEDI_CONFIG', silent=True)
