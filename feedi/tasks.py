@@ -21,82 +21,102 @@ feed_cli = flask.cli.AppGroup('feed')
 huey = MiniHuey()
 
 
+# TODO add a huey task decorator for context
+
 @feed_cli.command('sync')
-@huey.task(crontab(minute='*/30'))
+@huey.task(crontab(minute='*/15'))
 def sync_all_feeds():
     app = create_huey_app()
 
     with app.app_context():
-        db_feeds = db.session.execute(db.select(models.Feed)).all()
-        for (db_feed,) in db_feeds:
-            if db_feed.type == models.Feed.TYPE_RSS:
-                sync_rss_feed(db_feed)
-            elif db_feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
-                sync_mastodon_feed(db_feed)
+        feeds = db.session.execute(db.select(models.Feed.id, models.Feed.type)).all()
+        db.session.close()
+
+        tasks = []
+        for feed in feeds:
+            if feed.type == models.Feed.TYPE_RSS:
+                tasks.append(sync_rss_feed(feed.id))
+            elif feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
+                tasks.append(sync_mastodon_feed(feed.id))
             else:
-                app.logger.error("unknown feed type %s", db_feed.type)
+                app.logger.error("unknown feed type %s", feed.type)
                 continue
 
+        for task in tasks:
+            task.get()
+
+
+@huey.task()
+def sync_mastodon_feed(feed_id):
+    app = create_huey_app()
+
+    with app.app_context():
+        db_feed = db.session.get(models.Feed, feed_id)
+        latest_entry = db_feed.entries.order_by(models.Entry.remote_updated.desc()).first()
+        args = {}
+        if latest_entry:
+            # there's some entry on db, this is not the first time we're syncing
+            # get all toots since the last seen one
+            args['newer_than'] = latest_entry.remote_id
+        else:
+            # if there isn't any entry yet, get the "first page" of toots from the timeline
+            args['limit'] = app.config['MASTODON_FETCH_LIMIT']
+
+        app.logger.info("Fetching toots %s", args)
+        toots = sources.mastodon.fetch_toots(server_url=db_feed.server_url,
+                                             access_token=db_feed.access_token,
+                                             **args)
+        utcnow = datetime.datetime.utcnow()
+        for values in toots:
+            # upsert to handle already seen entries.
+            # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
+            values['updated'] = utcnow
+            values['feed_id'] = db_feed.id
+            db.session.execute(
+                sqlite.insert(models.Entry).
+                values(**values).
+                on_conflict_do_update(("feed_id", "remote_id"), set_=values)
+            )
             db.session.commit()
 
 
-def sync_mastodon_feed(db_feed):
-    latest_entry = db_feed.entries.order_by(models.Entry.remote_updated.desc()).first()
-    args = {}
-    if latest_entry:
-        # there's some entry on db, this is not the first time we're syncing
-        # get all toots since the last seen one
-        args['newer_than'] = latest_entry.remote_id
-    else:
-        # if there isn't any entry yet, get the "first page" of toots from the timeline
-        # TODO make constant/config
-        args['limit'] = app.config['MASTODON_FETCH_LIMIT']
+@huey.task()
+def sync_rss_feed(feed_id):
+    app = create_huey_app()
 
-    app.logger.info("Fetching toots %s", args)
-    toots = sources.mastodon.fetch_toots(server_url=db_feed.server_url,
-                                         access_token=db_feed.access_token,
-                                         **args)
-    utcnow = datetime.datetime.utcnow()
-    for values in toots:
-        # upsert to handle already seen entries.
-        # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
-        values['updated'] = utcnow
-        values['feed_id'] = db_feed.id
-        db.session.execute(
-            sqlite.insert(models.Entry).
-            values(**values).
-            on_conflict_do_update(("feed_id", "remote_id"), set_=values)
-        )
+    with app.app_context():
+        db_feed = db.session.get(models.Feed, feed_id)
+        utcnow = datetime.datetime.utcnow()
 
+        if db_feed.last_fetch and utcnow - db_feed.last_fetch < datetime.timedelta(minutes=app.config['RSS_SKIP_RECENTLY_UPDATED_MINUTES']):
+            app.logger.info('skipping recently synced feed %s', db_feed.name)
+            return
 
-def sync_rss_feed(db_feed):
-    utcnow = datetime.datetime.utcnow()
+        app.logger.info('fetching %s', db_feed.name)
+        entries, feed_data, etag, modified, = sources.rss.fetch(db_feed.url,
+                                                                db_feed.last_fetch,
+                                                                app.config['RSS_SKIP_OLDER_THAN_DAYS'],
+                                                                etag=db_feed.etag, modified=db_feed.modified_header)
 
-    if db_feed.last_fetch and utcnow - db_feed.last_fetch < datetime.timedelta(minutes=app.config['RSS_SKIP_RECENTLY_UPDATED_MINUTES']):
-        app.logger.info('skipping recently synced feed %s', db_feed.name)
-        return
+        db_feed.last_fetch = utcnow
+        db_feed.etag = etag
+        db_feed.modified_header = modified
+        db_feed.raw_data = json.dumps(feed_data)
+        db.session.merge(db_feed)
+        db.session.commit()
 
-    app.logger.info('fetching %s', db_feed.name)
-    entries, feed_data, etag, modified,  = sources.rss.fetch(db_feed.url,
-                                                             db_feed.last_fetch,
-                                                             app.config['RSS_SKIP_OLDER_THAN_DAYS'],
-                                                             etag=db_feed.etag, modified=db_feed.modified_header)
+        for entry_values in entries:
+            # upsert to handle already seen entries.
+            # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
+            entry_values['updated'] = utcnow
+            entry_values['feed_id'] = feed_id
+            db.session.execute(
+                sqlite.insert(models.Entry).
+                values(**entry_values).
+                on_conflict_do_update(("feed_id", "remote_id"), set_=entry_values)
+            )
+            db.session.commit()
 
-    db_feed.last_fetch = utcnow
-    db_feed.etag = etag
-    db_feed.modified_header = modified
-    db_feed.raw_data = json.dumps(feed_data)
-
-    for entry_values in entries:
-        # upsert to handle already seen entries.
-        # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
-        entry_values['updated'] = utcnow
-        entry_values['feed_id'] = db_feed.id
-        db.session.execute(
-            sqlite.insert(models.Entry).
-            values(**entry_values).
-            on_conflict_do_update(("feed_id", "remote_id"), set_=entry_values)
-        )
 
 @feed_cli.command('debug')
 @click.argument('url')

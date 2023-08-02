@@ -35,7 +35,7 @@ def fetch(url, previous_fetch, skip_older_than, etag=None, modified=None):
             break
     parser = parser_cls(feed)
 
-    logger.info('parsing %s with %s', url, parser_cls)
+    logger.debug('parsing %s with %s', url, parser_cls)
     return parser.parse(previous_fetch, skip_older_than), feed['feed'], getattr(feed, 'etag', None), getattr(feed, 'modified', None)
 
 
@@ -144,7 +144,7 @@ class BaseParser:
     def parse_remote_created(self, entry):
         dt = to_datetime(entry['published_parsed'])
         if dt > datetime.datetime.utcnow():
-            raise ValueError(f"publication date is in the future {entry}")
+            raise ValueError(f"publication date is in the future")
         return dt
 
     def parse_remote_updated(self, entry):
