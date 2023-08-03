@@ -50,7 +50,7 @@ def huey_task(*huey_args):
 
 
 @feed_cli.command('sync')
-@huey_task(crontab(minute='*/15'))
+@huey_task(crontab(minute=app.config['SYNC_FEEDS_CRON_MINUTES']))
 def sync_all_feeds():
     feeds = db.session.execute(db.select(models.Feed.name, models.Feed.type)).all()
     db.session.close()
