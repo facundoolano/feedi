@@ -1,10 +1,10 @@
 # coding: utf-8
 
 from gevent import monkey; monkey.patch_all()
-
 import logging
 
 import flask
+from werkzeug.serving import is_running_from_reloader
 
 from feedi.models import db
 
@@ -23,8 +23,13 @@ def create_app():
 
         from . import filters, routes, tasks
 
-        # giving this a try, probably not the place to put it for production
-        tasks.huey.start()
+        if not is_running_from_reloader():
+            # we want only one huey scheduler running, so we make sure
+            # this isn't the dev server reloader process
+
+            # btw this may not be the right place to put the huey startup
+            # perhaps it should be in wsgi, but we wouldn't have it in dev server
+            tasks.huey.start()
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):

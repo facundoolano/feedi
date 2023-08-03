@@ -102,7 +102,7 @@ def sync_rss_feed(feed_name):
             app.logger.info('skipping recently synced feed %s', db_feed.name)
             return
 
-        app.logger.info('fetching %s', db_feed.name)
+        app.logger.debug('fetching rss %s %s', db_feed.name, db_feed.url)
         entries, feed_data, etag, modified, = sources.rss.fetch(db_feed.url,
                                                                 db_feed.last_fetch,
                                                                 app.config['RSS_SKIP_OLDER_THAN_DAYS'],
