@@ -1,6 +1,7 @@
 # coding: utf-8
 """
 This module contains tasks that can be scheduled by huey and/or run as flask cli commands.
+(The cli commands could eventually be moved to another module).
 """
 
 import csv
