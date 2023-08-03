@@ -13,12 +13,25 @@ ENTRY_PAGE_SIZE = 20
 
 
 @app.route("/")
-def home():
+def home_entries():
     query = db.select(models.Entry).order_by(models.Entry.remote_updated.desc()).limit(ENTRY_PAGE_SIZE)
     entries = [e for (e, ) in db.session.execute(query)]
     return flask.render_template('base.html', entries=entries)
 
+# FIXME make pagination work with this
+# TODO extract common entry page function
+@app.route("/feeds/<feed_name>")
+def feed_entries(feed_name):
+    query = db.select(models.Entry)\
+              .filter(models.Entry.feed.has(name=feed_name))\
+              .order_by(models.Entry.remote_updated.desc())\
+              .limit(ENTRY_PAGE_SIZE)
 
+    entries = [e for (e, ) in db.session.execute(query)]
+
+    return flask.render_template('base.html', entries=entries)
+
+# FIXME the after has to be a query arg, and this endpoint should be just another way of fetching home
 @app.route("/entries/after/<float:ts>/")
 def entry_page(ts):
     "Load a page of entries, older than the given timestamp. Used to implement infinite scrolling of the feed."
