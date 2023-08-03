@@ -17,7 +17,12 @@
                     <aside class="menu">
                         <ul class="menu-list">
                             <li>
-                                <a href="/"> All Feeds</a>
+                                <div class="level-left">
+                                    <div class="level-item">
+                                        <icon><i class="far fa-list-alt"></i></icon>
+                                        <a href="/">All Feeds</a>
+                                    </div>
+                                </div>
                                 <ul>
                                     {% for feed in feeds %}
                                     <li class="level-left {% if selected_feed == feed.name %}is-active{% endif %}">
@@ -33,8 +38,18 @@
                                 </ul>
                             </li>
                             <li>
-                                <a href="/"> Favorites</a>
-                                <a href="/"> Trash</a>
+                                <div class="level-left">
+                                    <div class="level-item">
+                                        <icon><i class="far fa-star"></i></icon>
+                                        <a href="/">Favorites</a>
+                                    </div>
+                                </div>
+                                <div class="level-left">
+                                    <div class="level-item">
+                                        <icon><i class="far fa-trash-alt"></i></icon>
+                                        <a href="/">Trash</a>
+                                    </div>
+                                </div>
                             </li>
                         </ul>
                     </aside>
