@@ -1,4 +1,7 @@
 # coding: utf-8
+"""
+This module contains tasks that can be scheduled by huey and/or run as flask cli commands.
+"""
 
 import csv
 import datetime
@@ -53,18 +56,20 @@ def huey_task(*huey_args):
 @huey_task(crontab(minute=app.config['SYNC_FEEDS_CRON_MINUTES']))
 def sync_all_feeds():
     feeds = db.session.execute(db.select(models.Feed.name, models.Feed.type)).all()
-    db.session.close()
 
     tasks = []
     for feed in feeds:
         if feed.type == models.Feed.TYPE_RSS:
-            tasks.append(sync_rss_feed(feed.name))
+            task = sync_rss_feed(feed.name)
         elif feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
-            tasks.append(sync_mastodon_feed(feed.name))
+            task = sync_mastodon_feed(feed.name)
         else:
             app.logger.error("unknown feed type %s", feed.type)
             continue
 
+        tasks.append(task)
+
+    # wait for concurrent tasks to finish before returning
     for task in tasks:
         task.get()
 
@@ -86,20 +91,7 @@ def sync_mastodon_feed(feed_name):
     toots = sources.mastodon.fetch_toots(server_url=db_feed.server_url,
                                          access_token=db_feed.access_token,
                                          **args)
-    utcnow = datetime.datetime.utcnow()
-    for values in toots:
-        # upsert to handle already seen entries.
-        # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
-        values['updated'] = utcnow
-        values['feed_id'] = db_feed.id
-        db.session.execute(
-            sqlite.insert(models.Entry).
-            values(**values).
-            on_conflict_do_update(("feed_id", "remote_id"), set_=values)
-        )
-
-        # inline commit to avoid sqlite locking when fetching parallel feeds
-        db.session.commit()
+    upsert_entries(db_feed.id, toots)
 
 
 @huey_task()
@@ -124,15 +116,26 @@ def sync_rss_feed(feed_name):
     db.session.merge(db_feed)
     db.session.commit()
 
-    for entry_values in entries:
+    upsert_entries(db_feed.id, entries)
+
+
+
+# NOTE most of this code should probably live in a db related module eg models
+def upsert_entries(feed_id, entries_values):
+    """
+    Insert or update the given feed's entries based on the values in the list.
+    An insert and commit is emitted for each entry.
+    """
+    utcnow = datetime.datetime.utcnow()
+    for values in entries_values:
         # upsert to handle already seen entries.
         # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
-        entry_values['updated'] = utcnow
-        entry_values['feed_id'] = db_feed.id
+        values['updated'] = utcnow
+        values['feed_id'] = feed_id
         db.session.execute(
             sqlite.insert(models.Entry).
-            values(**entry_values).
-            on_conflict_do_update(("feed_id", "remote_id"), set_=entry_values)
+            values(**values).
+            on_conflict_do_update(("feed_id", "remote_id"), set_=values)
         )
 
         # inline commit to avoid sqlite locking when fetching parallel feeds
@@ -148,6 +151,8 @@ def debug_feed(url):
 @feed_cli.command('load')
 @click.argument("file")
 def create_test_feeds(file):
+    "Load feeds from a local csv file."
+
     with open(file) as csv_file:
         for attrs in csv.reader(csv_file):
             feed_type = attrs[0]
@@ -186,6 +191,8 @@ def create_test_feeds(file):
 @feed_cli.command('delete')
 @click.argument('feed-name')
 def delete_feed(feed_name):
+    "Remove a feed and its entries from the database."
+
     query = db.delete(models.Feed).where(models.Feed.name == feed_name)
     db.session.execute(query)
     db.session.commit()
