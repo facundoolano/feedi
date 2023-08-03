@@ -20,16 +20,21 @@
                                 <a href="/"> All Feeds</a>
                                 <ul>
                                     {% for feed in feeds %}
-                                    <li class="level-left">
+                                    <li class="level-left {% if selected_feed == feed.name %}is-active{% endif %}">
                                             <div class="level-item">
                                                 <figure class="image is-16x16 ">
                                                     <img class="is-rounded" src="{{ feed.icon_url }}">
                                                 </figure>
+                                                <!-- FIXME  use htmx instead of full reload -->
                                                 <a href="/feeds/{{feed.name}}">{{ feed.name }}</a>
                                             </div>
                                     </li>
                                     {% endfor %}
                                 </ul>
+                            </li>
+                            <li>
+                                <a href="/"> Favorites</a>
+                                <a href="/"> Trash</a>
                             </li>
                         </ul>
                     </aside>

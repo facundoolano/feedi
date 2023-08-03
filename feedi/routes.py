@@ -35,7 +35,8 @@ def entry_list(feed_name=None):
     feeds = db.session.execute(db.select(models.Feed)).all()
     feeds = [feed for (feed,) in feeds]
 
-    return flask.render_template('base.html', entries=entries, feeds=feeds)
+    return flask.render_template('base.html', entries=entries, feeds=feeds,
+                                 selected_feed=feed_name)
 
 
 # TODO move to db module
