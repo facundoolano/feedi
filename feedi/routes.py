@@ -9,37 +9,43 @@ from flask import current_app as app
 import feedi.models as models
 from feedi.models import db
 
-ENTRY_PAGE_SIZE = 20
-
 
 @app.route("/")
-def home_entries():
-    query = db.select(models.Entry).order_by(models.Entry.remote_updated.desc()).limit(ENTRY_PAGE_SIZE)
-    entries = [e for (e, ) in db.session.execute(query)]
-    return flask.render_template('base.html', entries=entries)
-
-# FIXME make pagination work with this
-# TODO extract common entry page function
 @app.route("/feeds/<feed_name>")
-def feed_entries(feed_name):
-    query = db.select(models.Entry)\
-              .filter(models.Entry.feed.has(name=feed_name))\
-              .order_by(models.Entry.remote_updated.desc())\
-              .limit(ENTRY_PAGE_SIZE)
+def entry_list(feed_name=None):
+    """
+    Generic view to fetch a list of entries. By default renders the home timeline.
+    If accessed with a feed name or a pagination timestam, filter the resuls accordingly.
+    If the request is an html AJAX request, respond only with the entry list HTML fragment.
+    """
+    ENTRY_PAGE_SIZE = 20
 
-    entries = [e for (e, ) in db.session.execute(query)]
+    after_ts = flask.request.args.get('after')
+    entries = entry_page(limit=ENTRY_PAGE_SIZE, after_ts=after_ts, feed_name=feed_name)
 
-    return flask.render_template('base.html', entries=entries)
+    is_htmx = flask.request.headers.get('HX-Request') == 'true'
+    template = 'entry_list.html' if is_htmx else 'base.html'
 
-# FIXME the after has to be a query arg, and this endpoint should be just another way of fetching home
-@app.route("/entries/after/<float:ts>/")
-def entry_page(ts):
-    "Load a page of entries, older than the given timestamp. Used to implement infinite scrolling of the feed."
-    dt = datetime.datetime.fromtimestamp(ts)
-    query = db.select(models.Entry).filter(models.Entry.remote_updated < dt)\
-                                   .order_by(models.Entry.remote_updated.desc()).limit(ENTRY_PAGE_SIZE)
-    entries = [e for (e, ) in db.session.execute(query)]
-    return flask.render_template('entry_list.html', entries=entries)
+    return flask.render_template(template, entries=entries)
+
+
+# TODO move to db module
+def entry_page(limit, after_ts=None, feed_name=None):
+    """
+    TODO
+    """
+    query = db.select(models.Entry)
+
+    if after_ts:
+        dt = datetime.datetime.fromtimestamp(float(after_ts))
+        query = query.filter(models.Entry.remote_updated < dt)
+
+    if feed_name:
+        query = query.filter(models.Entry.feed.has(name=feed_name))
+
+    query = query.order_by(models.Entry.remote_updated.desc()).limit(limit)
+
+    return [e for (e, ) in db.session.execute(query)]
 
 
 @app.route("/feeds/<int:id>/raw")
