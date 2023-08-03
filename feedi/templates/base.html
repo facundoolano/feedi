@@ -10,7 +10,33 @@
 </head>
 <body class="has-background-light">
     <div class="columns">
-        <div class="column"></div>
+        <div class="column">
+            <div class="columns">
+                <div class="column"></div>
+                <div class="column is-narrow">
+                    <aside class="menu">
+                        <ul class="menu-list">
+                            <li>
+                                <a href="/"> All Feeds</a>
+                                <ul>
+                                    {% for feed in feeds %}
+                                    <li class="level-left">
+                                            <div class="level-item">
+                                                <figure class="image is-16x16 ">
+                                                    <img class="is-rounded" src="{{ feed.icon_url }}">
+                                                </figure>
+                                                <a href="/feeds/{{feed.name}}">{{ feed.name }}</a>
+                                            </div>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        </ul>
+                    </aside>
+
+                </div>
+            </div>
+        </div>
         <div class="column is-half">
             {% include "entry_list.html" %}
         </div>

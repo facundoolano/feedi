@@ -24,15 +24,26 @@ def entry_list(feed_name=None):
     entries = entry_page(limit=ENTRY_PAGE_SIZE, after_ts=after_ts, feed_name=feed_name)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
-    template = 'entry_list.html' if is_htmx else 'base.html'
 
-    return flask.render_template(template, entries=entries)
+    if is_htmx:
+        # render a single page of the entry list
+        return flask.render_template('entry_list.html', entries=entries)
+
+    # render home, including feeds sidebar
+    # (this will eventually include folders)
+    # TODO order by amount of entries and show up to 5
+    feeds = db.session.execute(db.select(models.Feed)).all()
+    feeds = [feed for (feed,) in feeds]
+
+    return flask.render_template('base.html', entries=entries, feeds=feeds)
 
 
 # TODO move to db module
 def entry_page(limit, after_ts=None, feed_name=None):
     """
-    TODO
+    Fetch a page of entries from db, optionally filtered by feed_name.
+    The page is selected from entries older than the given date, or the
+    most recent ones if no date is given.
     """
     query = db.select(models.Entry)
 
