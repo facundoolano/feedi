@@ -89,7 +89,7 @@ class BaseParser:
                     method = 'parse_' + field
                     result[field] = getattr(self, method)(entry)
             except:
-                logger.exception("skipping errored entry", entry['link'])
+                logger.exception("skipping errored entry %s", entry['link'])
                 continue
 
             yield result
@@ -144,7 +144,7 @@ class BaseParser:
     def parse_remote_created(self, entry):
         dt = to_datetime(entry['published_parsed'])
         if dt > datetime.datetime.utcnow():
-            raise ValueError(f"publication date is in the future")
+            raise ValueError("publication date is in the future")
         return dt
 
     def parse_remote_updated(self, entry):

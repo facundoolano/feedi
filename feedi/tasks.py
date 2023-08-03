@@ -29,15 +29,15 @@ def sync_all_feeds():
     app = create_huey_app()
 
     with app.app_context():
-        feeds = db.session.execute(db.select(models.Feed.id, models.Feed.type)).all()
+        feeds = db.session.execute(db.select(models.Feed.name, models.Feed.type)).all()
         db.session.close()
 
         tasks = []
         for feed in feeds:
             if feed.type == models.Feed.TYPE_RSS:
-                tasks.append(sync_rss_feed(feed.id))
+                tasks.append(sync_rss_feed(feed.name))
             elif feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
-                tasks.append(sync_mastodon_feed(feed.id))
+                tasks.append(sync_mastodon_feed(feed.name))
             else:
                 app.logger.error("unknown feed type %s", feed.type)
                 continue
@@ -48,11 +48,13 @@ def sync_all_feeds():
 
 # TODO use name instead of id, add command support
 @huey.task()
-def sync_mastodon_feed(feed_id):
+def sync_mastodon_feed(feed_name):
     app = create_huey_app()
 
     with app.app_context():
-        db_feed = db.session.get(models.Feed, feed_id)
+        app.logger.info("STARTING mastodon feed sync %s", feed_name)
+
+        (db_feed, ) = db.session.execute(db.select(models.Feed).filter_by(name=feed_name)).first()
         latest_entry = db_feed.entries.order_by(models.Entry.remote_updated.desc()).first()
         args = {}
         if latest_entry:
@@ -63,7 +65,7 @@ def sync_mastodon_feed(feed_id):
             # if there isn't any entry yet, get the "first page" of toots from the timeline
             args['limit'] = app.config['MASTODON_FETCH_LIMIT']
 
-        app.logger.info("Fetching toots %s", args)
+        app.logger.debug("Fetching toots %s", args)
         toots = sources.mastodon.fetch_toots(server_url=db_feed.server_url,
                                              access_token=db_feed.access_token,
                                              **args)
@@ -82,14 +84,18 @@ def sync_mastodon_feed(feed_id):
             # inline commit to avoid sqlite locking when fetching parallel feeds
             db.session.commit()
 
+        app.logger.info("FINISHED mastodon feed sync %s", feed_name)
+
 
 # TODO use name instead of id, add command support
 @huey.task()
-def sync_rss_feed(feed_id):
+def sync_rss_feed(feed_name):
     app = create_huey_app()
 
     with app.app_context():
-        db_feed = db.session.get(models.Feed, feed_id)
+        app.logger.info("STARTING rss feed sync %s", feed_name)
+
+        (db_feed, ) = db.session.execute(db.select(models.Feed).filter_by(name=feed_name)).first()
         utcnow = datetime.datetime.utcnow()
 
         if db_feed.last_fetch and utcnow - db_feed.last_fetch < datetime.timedelta(minutes=app.config['RSS_SKIP_RECENTLY_UPDATED_MINUTES']):
@@ -113,7 +119,7 @@ def sync_rss_feed(feed_id):
             # upsert to handle already seen entries.
             # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
             entry_values['updated'] = utcnow
-            entry_values['feed_id'] = feed_id
+            entry_values['feed_id'] = db_feed.id
             db.session.execute(
                 sqlite.insert(models.Entry).
                 values(**entry_values).
@@ -122,6 +128,8 @@ def sync_rss_feed(feed_id):
 
             # inline commit to avoid sqlite locking when fetching parallel feeds
             db.session.commit()
+
+        app.logger.info("FINISHED rss feed sync %s", feed_name)
 
 
 @feed_cli.command('debug')

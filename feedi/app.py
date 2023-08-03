@@ -14,7 +14,7 @@ def create_app():
     app.config.from_object('feedi.config')
     app.config.from_envvar('FEEDI_CONFIG', silent=True)
 
-    app.logger.setLevel(logging.DEBUG)
+    app.logger.setLevel(logging.INFO)
 
     db.init_app(app)
 
@@ -41,7 +41,7 @@ def create_huey_app():
     app = flask.Flask('huey_app')
     app.config.from_object('feedi.config')
     app.config.from_envvar('FEEDI_CONFIG', silent=True)
-    app.logger.setLevel(logging.DEBUG)
+    app.logger.setLevel(logging.INFO)
     db.init_app(app)
 
     return app
