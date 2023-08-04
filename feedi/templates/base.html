@@ -22,7 +22,11 @@
                             <div class="level-left">
                                 <div class="level-item">
                                     <icon><i class="far fa-list-alt"></i></icon>
-                                    <a href="/">All Feeds</a>
+                                    <a hx-get="/"
+                                       hx-swap="innerHTML show:top"
+                                       hx-push-url="true" hx-target="#entry-list"
+                                       _="on click remove .is-active from  .level-left"
+                                    >All Feeds</a>
                                 </div>
                             </div>
                             <div class="level-right">
@@ -42,8 +46,11 @@
                                     <figure class="image is-16x16 ">
                                         <img class="is-rounded" src="{{ feed.icon_url }}">
                                     </figure>
-                                    <!-- FIXME  use htmx instead of full reload -->
-                                    <a href="/feeds/{{feed.name}}">{{ feed.name }}</a>
+                                    <a hx-get="/feeds/{{feed.name}}" hx-push-url="true" hx-target="#entry-list"
+                                       hx-swap="innerHTML show:top"
+                                       _="on click remove .is-active from  .level-left
+                                               then add .is-active to the closest .level-left"
+                                    >{{ feed.name }}</a>
                                 </div>
                             </li>
                             {% endfor %}
@@ -87,7 +94,7 @@
             </div>
 
         </div>
-        <div class="column is-half">
+        <div class="column is-half" id="entry-list">
             {% include "entry_list.html" %}
         </div>
         <div class="column is-paddingless">
