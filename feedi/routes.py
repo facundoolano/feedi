@@ -3,6 +3,7 @@ import urllib
 
 import flask
 import newspaper
+import sqlalchemy as sa
 from bs4 import BeautifulSoup
 from flask import current_app as app
 
@@ -31,8 +32,15 @@ def entry_list(feed_name=None):
 
     # render home, including feeds sidebar
     # (this will eventually include folders)
-    # TODO order by amount of entries and show up to 5
-    feeds = db.session.execute(db.select(models.Feed)).all()
+
+    # get the 15 feeds with most posts in the last 24 hours
+    yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
+    feeds = db.session.execute(db.select(models.Feed)
+                               .join(models.Entry)
+                               .group_by(models.Feed)
+                               .filter(models.Entry.remote_updated > yesterday)
+                               .order_by(sa.func.count().desc())
+                               .limit(15)).all()
     feeds = [feed for (feed,) in feeds]
 
     return flask.render_template('base.html', entries=entries, feeds=feeds,
