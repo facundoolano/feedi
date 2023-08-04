@@ -125,3 +125,8 @@ img[src=""] {
     text-rendering: optimizelegibility !important;
     letter-spacing: .03em;
 }
+
+/* feeds sidebar */
+.feeds-sidebar li  {
+    font-size: 0.9rem
+}
