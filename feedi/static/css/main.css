@@ -22,7 +22,8 @@
 }
 
 .body-container {
-    margin-bottom: 0!important
+    margin-bottom: 0!important;
+    font-size: 0.95em;
 }
 
 .media-url-container {
