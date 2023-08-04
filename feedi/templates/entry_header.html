@@ -1,7 +1,13 @@
 <div class="columns feed-header">
     <div class="column">
         <p>
-            <b><a class="feed-title" href="{{ entry.content_url }}" target="_blank">{{ entry.title }}</a></b>
+            <b><a class="feed-title"
+                  hx-get="/entries/{{ entry.id }}/content"
+                  hx-trigger="click"
+                  hx-target="next .entry-content"
+                  hx-indicator="next .htmx-indicator"
+                  _="on click add .is-active to next .reader-modal"
+                  href="{{ entry.content_url }}" target="_blank">{{ entry.title }}</a></b>
             <br/>
             <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> · {{ entry.username or entry.feed.name}}</small>
         </p>
