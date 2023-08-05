@@ -1,19 +1,23 @@
-<div class="columns feed-header">
-    <div class="column">
+<div class="level feed-header">
+    <div class="level-left">
         <p>
-            <b><a class="feed-title" href="{{ entry.content_url }}" target="_blank">{{ entry.title }}</a></b>
+            <b><a class="feed-title"
+                  hx-get="/entries/{{ entry.id }}/content"
+                  hx-trigger="click"
+                  hx-target="next .entry-content"
+                  hx-indicator="next .htmx-indicator"
+                  _="on click add .is-active to next .reader-modal"
+                  href="{{ entry.content_url }}" target="_blank">{{ entry.title }}</a></b>
             <br/>
-            <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> · {{ entry.username or entry.feed.name}}</small>
         </p>
     </div>
-    <div class="column is-narrow">
-        <a class="button is-white is-rounded" title="Remove entry"><i class="fas fa-trash-alt"></i></a>
-        <a class="button is-white is-rounded" title="Pin entry"><i class="fas fa-thumbtack"></i></a>
-        {% if entry.entry_url %}<a href="{{ entry.entry_url }}" target="_blank" class="button is-white is-rounded" title="Comment on source"><i class="fas fa-comment-alt"></i></a>{% endif %}
+    <div class="level-right">
+        <a class="level-item icon is-white is-rounded" title="Remove entry"><i class="fas fa-trash-alt"></i></a>
+        <a class="level-item icon is-white is-rounded" title="Pin entry"><i class="fas fa-thumbtack"></i></a>
 
         <div class="dropdown is-right">
             <div class="dropdown-trigger">
-                <a class="button is-white is-rounded"
+                <a class="icon is-white is-rounded level-item"
                    _="on click toggle .is-active on the closest .dropdown then
                           on click elsewhere remove .is-active from the closest .dropdown">
                     <i class="fas fa-ellipsis-v"></i>
@@ -21,9 +25,12 @@
             </div>
             <div class="dropdown-menu" role="menu">
                 <div class="dropdown-content">
-                    <a class="dropdown-item"><span class="icon"><i class="fas fa-share"></i></span> Share</a>
-                    <a class="dropdown-item"><span class="icon"><i class="fas fa-tag"></i></span> Tags</a>
-                    <a class="dropdown-item"><span class="icon"><i class="fas fa-user-plus"></i></span> Add feed</a>
+                    <a href="{{ entry.content_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-external-link-alt"></i></span> Go to source</a>
+                    {% if entry.entry_url and entry.content_url != entry.entry_url %}
+                    <a href="{{ entry.entry_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-comment-alt"></i></span> Go to discussion</a>
+                    {% endif %}
+                    <a class="dropdown-item"><span class="icon"><i class="fas fa-link"></i></span> Copy URL</a>
+                    <a class="dropdown-item"><span class="icon"><i class="fas fa-rss"></i></span> Crawl origin feed</a>
                     <hr class="dropdown-divider">
                     <a class="dropdown-item" href="/entries/{{ entry.id }}/raw" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw entry data</a>
                     <a class="dropdown-item" href="/feeds/{{ entry.feed.id }}/raw" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw feed data</a>
@@ -32,4 +39,7 @@
         </div>
 
     </div>
+</div>
+<div class="feed-header-details">
+    <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> · {{ entry.username or entry.feed.name}}</small>
 </div>

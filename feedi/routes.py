@@ -3,30 +3,69 @@ import urllib
 
 import flask
 import newspaper
+import sqlalchemy as sa
 from bs4 import BeautifulSoup
 from flask import current_app as app
 
 import feedi.models as models
 from feedi.models import db
 
-ENTRY_PAGE_SIZE = 20
-
 
 @app.route("/")
-def home():
-    query = db.select(models.Entry).order_by(models.Entry.remote_updated.desc()).limit(ENTRY_PAGE_SIZE)
-    entries = [e for (e, ) in db.session.execute(query)]
-    return flask.render_template('base.html', entries=entries)
+@app.route("/feeds/<feed_name>")
+def entry_list(feed_name=None):
+    """
+    Generic view to fetch a list of entries. By default renders the home timeline.
+    If accessed with a feed name or a pagination timestam, filter the resuls accordingly.
+    If the request is an html AJAX request, respond only with the entry list HTML fragment.
+    """
+    ENTRY_PAGE_SIZE = 20
+
+    after_ts = flask.request.args.get('after')
+    entries = entry_page(limit=ENTRY_PAGE_SIZE, after_ts=after_ts, feed_name=feed_name)
+
+    is_htmx = flask.request.headers.get('HX-Request') == 'true'
+
+    if is_htmx:
+        # render a single page of the entry list
+        return flask.render_template('entry_list.html', entries=entries)
+
+    # render home, including feeds sidebar
+    # (this will eventually include folders)
+
+    # get the 15 feeds with most posts in the last 24 hours
+    yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
+    feeds = db.session.execute(db.select(models.Feed)
+                               .join(models.Entry)
+                               .group_by(models.Feed)
+                               .filter(models.Entry.remote_updated > yesterday)
+                               .order_by(sa.func.count().desc())
+                               .limit(15)).all()
+    feeds = [feed for (feed,) in feeds]
+
+    return flask.render_template('base.html', entries=entries, feeds=feeds,
+                                 selected_feed=feed_name)
 
 
-@app.route("/entries/after/<float:ts>/")
-def entry_page(ts):
-    "Load a page of entries, older than the given timestamp. Used to implement infinite scrolling of the feed."
-    dt = datetime.datetime.fromtimestamp(ts)
-    query = db.select(models.Entry).filter(models.Entry.remote_updated < dt)\
-                                   .order_by(models.Entry.remote_updated.desc()).limit(ENTRY_PAGE_SIZE)
-    entries = [e for (e, ) in db.session.execute(query)]
-    return flask.render_template('entry_list.html', entries=entries)
+# TODO move to db module
+def entry_page(limit, after_ts=None, feed_name=None):
+    """
+    Fetch a page of entries from db, optionally filtered by feed_name.
+    The page is selected from entries older than the given date, or the
+    most recent ones if no date is given.
+    """
+    query = db.select(models.Entry)
+
+    if after_ts:
+        dt = datetime.datetime.fromtimestamp(float(after_ts))
+        query = query.filter(models.Entry.remote_updated < dt)
+
+    if feed_name:
+        query = query.filter(models.Entry.feed.has(name=feed_name))
+
+    query = query.order_by(models.Entry.remote_updated.desc()).limit(limit)
+
+    return [e for (e, ) in db.session.execute(query)]
 
 
 @app.route("/feeds/<int:id>/raw")

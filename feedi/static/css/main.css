@@ -17,20 +17,26 @@
     padding-bottom: .5rem!important;
 }
 
-.feed-header .column {
-    padding-bottom:0!important
-}
-
 .body-container {
-    margin-bottom: 0!important
+    margin-bottom: 0!important;
+    font-size: 0.95em;
 }
 
 .media-url-container {
     padding-bottom: 1rem!important;
 }
 
+.feed-header .level-left {
+    /* wrap for title to prevent icons overflow */
+    flex-shrink: 1!important;
+}
+
 .feed-header {
-    margin-bottom:0.25!important
+    margin-bottom: 0!important;
+}
+
+.feed-header-details {
+    margin-bottom: 0.75rem!important;
 }
 
 .avatar-column {
@@ -39,11 +45,11 @@
 
 /* entry effects on hover  */
 
-.feed-entry .button {
+.feed-entry .icon {
     visibility: hidden;
 }
 
-.feed-entry:hover .button {
+.feed-entry:hover .icon {
     visibility: visible;
 }
 
@@ -56,7 +62,7 @@
     box-shadow: 0 0 0 1px hsl(0, 0%, 90%);
 }
 
-.side-bar {
+.feeds-sidebar-parent, .side-bar {
     position: sticky;
     display: inline-block;
     vertical-align: top;
@@ -69,14 +75,23 @@
     margin-top: .25rem;
 }
 
-.button:not(.toggled) {
-    /* FIXME this should use SCSS variables */
-    color: hsl(0, 0%, 86%)!important
+li.is-active, li.is-active  a:hover {
+    /* FIXME copied from .menu-list a.is-active */
+    background-color: #485fc7;
+}
+li.is-active a, li.is-active  a:hover {
+    /* FIXME copied from .menu-list a.is-active */
+    color: #fff;
 }
 
-.button:not(.toggled):hover,  .button.toggled {
+.level-item.icon:not(.toggled) {
     /* FIXME this should use SCSS variables */
-    color: hsl(0, 0%, 29%)!important
+    color: hsl(0, 0%, 86%)
+}
+
+.level-item.icon:not(.toggled):hover,  .level-item.icon.toggled {
+    /* FIXME this should use SCSS variables */
+    color: hsl(0, 0%, 29%)
 }
 
 code{
@@ -115,4 +130,17 @@ img[src=""] {
     -moz-font-smoothing: antialiased !important;
     text-rendering: optimizelegibility !important;
     letter-spacing: .03em;
+}
+
+/* feeds sidebar */
+.feeds-sidebar li  {
+    font-size: 0.9rem;
+    padding-left: 0.2em;
+}
+
+.folder-collapsed {
+    height:0;
+    margin-top:0!important;
+    margin-bottom:0!important;
+    visibility: hidden;
 }
