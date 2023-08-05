@@ -72,7 +72,11 @@ def sync_all_feeds():
 
     # wait for concurrent tasks to finish before returning
     for task in tasks:
-        task.get()
+        try:
+            task.get()
+        except:
+            app.logger.exception("failure during async task %s", task)
+            continue
 
 
 @huey_task()
