@@ -40,7 +40,7 @@ def entry_list(feed_name=None):
                                .group_by(models.Feed)
                                .filter(models.Entry.remote_updated > yesterday)
                                .order_by(sa.func.count().desc())
-                               .limit(15)).all()
+                               .limit(5)).all()
     feeds = [feed for (feed,) in feeds]
 
     return flask.render_template('base.html', entries=entries, feeds=feeds,
