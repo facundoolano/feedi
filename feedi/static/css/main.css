@@ -17,10 +17,6 @@
     padding-bottom: .5rem!important;
 }
 
-.feed-header .column {
-    padding-bottom:0!important
-}
-
 .body-container {
     margin-bottom: 0!important;
     font-size: 0.95em;
@@ -30,8 +26,17 @@
     padding-bottom: 1rem!important;
 }
 
+.feed-header .level-left {
+    /* wrap for title to prevent icons overflow */
+    flex-shrink: 1!important;
+}
+
 .feed-header {
-    margin-bottom:0.25!important
+    margin-bottom: 0!important;
+}
+
+.feed-header-details {
+    margin-bottom: 0.75rem!important;
 }
 
 .avatar-column {
@@ -40,11 +45,11 @@
 
 /* entry effects on hover  */
 
-.feed-entry .button {
+.feed-entry .icon {
     visibility: hidden;
 }
 
-.feed-entry:hover .button {
+.feed-entry:hover .icon {
     visibility: visible;
 }
 
@@ -79,14 +84,14 @@ li.is-active a, li.is-active  a:hover {
     color: #fff;
 }
 
-.button:not(.toggled) {
+.level-item.icon:not(.toggled) {
     /* FIXME this should use SCSS variables */
-    color: hsl(0, 0%, 86%)!important
+    color: hsl(0, 0%, 86%)
 }
 
-.button:not(.toggled):hover,  .button.toggled {
+.level-item.icon:not(.toggled):hover,  .level-item.icon.toggled {
     /* FIXME this should use SCSS variables */
-    color: hsl(0, 0%, 29%)!important
+    color: hsl(0, 0%, 29%)
 }
 
 code{
