@@ -16,11 +16,11 @@
                 <div class="column ">
             <aside class="menu feeds-sidebar">
                 <ul class="menu-list">
-                    {% with name="Timeline", icon="far fa-list-alt", url="/", feeds=None %}
-                      {% include "sidebar_folder.html" %}
+                    {% with name="Home", icon="fas fa-home", url="/", feeds=None %}
+                    {% include "sidebar_folder.html" %}
                     {% endwith %}
-                    {% with name="Smartline", icon="fas fa-robot", url="/", feeds=None %}
-                      {% include "sidebar_folder.html" %}
+                    {% with name="Timeline", icon="far fa-list-alt", url="/", feeds=None %}
+                    {% include "sidebar_folder.html" %}
                     {% endwith %}
                     <hr class="dropdown-divider"/>
                     {% with name="News", url="/" %}
