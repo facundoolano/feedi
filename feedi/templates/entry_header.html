@@ -33,9 +33,9 @@
                     <a class="dropdown-item"><span class="icon"><i class="fas fa-rss"></i></span> Crawl origin feed</a>
                     <hr class="dropdown-divider">
                     {% if entry.username %}
-                    <a class="dropdown-item"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.username }}</a>
+                    <a class="dropdown-item" href="/users/{{ entry.username }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.username }}</a>
                     {% endif %}
-                    <a class="dropdown-item"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.feed.name }}</a>
+                    <a class="dropdown-item" href="/feeds/{{ entry.feed.name }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.feed.name }}</a>
                     <a class="dropdown-item"><span class="icon"><i class="far fa-edit"></i></span> Edit {{ entry.feed.name }}</a>
                     <a class="dropdown-item"><span class="icon"><i class="fas fa-volume-mute"></i></span> Mute {{ entry.feed.name }}</a>
                     <hr class="dropdown-divider">
