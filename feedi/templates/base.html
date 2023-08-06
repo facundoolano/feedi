@@ -11,10 +11,9 @@
 <body class="has-background-light">
     <section class="section">
     <div class="columns">
-        <div class="column">
-            <div class="columns is-hidden-mobile feeds-sidebar-parent">
-                <div class="column" ></div>
-                <div class="column">
+        <div class="column is-hidden-touch is-narrow">
+            <div class="columns feeds-sidebar-parent">
+                <div class="column ">
             <aside class="menu feeds-sidebar">
                 <ul class="menu-list">
                     {% with name="Timeline", icon="far fa-list-alt", url="/", feeds=None %}
@@ -55,10 +54,10 @@
             </div>
 
         </div>
-        <div class="column is-half" id="entry-list">
+        <div class="column" id="entry-list">
             {% include "entry_list.html" %}
         </div>
-        <div class="column">
+        <div class="column is-narrow">
             <div class="columns columns is-hidden-mobile feeds-sidebar-parent">
               <div class="column is-narrow">
                   <div class="field">
@@ -100,7 +99,7 @@
                     </ul>
                 </aside>
               </div>
-          </div>
+            </div>
         </div>
     </div>
     </section>
