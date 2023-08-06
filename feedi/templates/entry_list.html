@@ -9,15 +9,15 @@
              </div>
          </div>
          {% endif %}
-         <div class="columns">
+         <div class="columns is-mobile">
              <div class="column is-narrow avatar-column">
                  <figure class="image is-32x32">
-                     {% if entry.user_url %}
-                     <a href="{{ entry.user_url }}">
+                     {% if entry.avatar_url %}
+                     <a href="/users/{{ entry.username }}">
                          <img class="is-rounded" src="{{ entry.avatar_url }}" alt="{{ entry.username }}" title="{{ entry.username }}">
                      </a>
                      {% else %}
-                     <a href="{{ entry.feed | feed_domain }}">
+                     <a href="/feeds/{{ entry.feed.name }}">
                          <img class="is-rounded" src="{{ entry.feed.icon_url }}" alt="{{ entry.feed.name}}" title="{{ entry.feed.name }}">
                      </a>
                      {% endif %}
@@ -83,6 +83,6 @@
      </div>
  </div>
  {% if loop.last %}
- <div hx-get="?after={{ entry.remote_updated.timestamp()  }}" hx-trigger="revealed" hx-swap="outerHTML"></div>
+ <div hx-get="{{ request.path }}?after={{ entry.remote_updated.timestamp()  }}" hx-trigger="revealed" hx-swap="outerHTML"></div>
  {% endif %}
  {% endfor %}

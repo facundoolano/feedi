@@ -45,11 +45,11 @@
 
 /* entry effects on hover  */
 
-.feed-entry .icon {
+.feed-entry .hover-icon {
     visibility: hidden;
 }
 
-.feed-entry:hover .icon {
+.feed-entry:hover .hover-icon {
     visibility: visible;
 }
 
@@ -62,7 +62,7 @@
     box-shadow: 0 0 0 1px hsl(0, 0%, 90%);
 }
 
-.feeds-sidebar-parent, .side-bar {
+.feeds-sidebar-parent {
     position: sticky;
     display: inline-block;
     vertical-align: top;

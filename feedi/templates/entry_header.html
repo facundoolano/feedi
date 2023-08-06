@@ -1,4 +1,4 @@
-<div class="level feed-header">
+<div class="level feed-header is-mobile">
     <div class="level-left">
         <p>
             <b><a class="feed-title"
@@ -12,12 +12,12 @@
         </p>
     </div>
     <div class="level-right">
-        <a class="level-item icon is-white is-rounded" title="Remove entry"><i class="fas fa-trash-alt"></i></a>
-        <a class="level-item icon is-white is-rounded" title="Pin entry"><i class="fas fa-thumbtack"></i></a>
+       <a class="level-item icon hover-icon is-white is-rounded" title="Remove entry"><i class="fas fa-trash-alt"></i></a>
+        <a class="level-item icon hover-icon is-white is-rounded" title="Pin entry"><i class="fas fa-thumbtack"></i></a>
 
         <div class="dropdown is-right">
             <div class="dropdown-trigger">
-                <a class="icon is-white is-rounded level-item"
+                <a class="icon hover-icon is-white is-rounded level-item"
                    _="on click toggle .is-active on the closest .dropdown then
                           on click elsewhere remove .is-active from the closest .dropdown">
                     <i class="fas fa-ellipsis-v"></i>
@@ -27,10 +27,17 @@
                 <div class="dropdown-content">
                     <a href="{{ entry.content_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-external-link-alt"></i></span> Go to source</a>
                     {% if entry.entry_url and entry.content_url != entry.entry_url %}
-                    <a href="{{ entry.entry_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-comment-alt"></i></span> Go to discussion</a>
+                    <a href="{{ entry.entry_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="far fa-comment-alt"></i></span> Go to discussion</a>
                     {% endif %}
                     <a class="dropdown-item"><span class="icon"><i class="fas fa-link"></i></span> Copy URL</a>
                     <a class="dropdown-item"><span class="icon"><i class="fas fa-rss"></i></span> Crawl origin feed</a>
+                    <hr class="dropdown-divider">
+                    {% if entry.username %}
+                    <a class="dropdown-item" href="/users/{{ entry.username }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.username }}</a>
+                    {% endif %}
+                    <a class="dropdown-item" href="/feeds/{{ entry.feed.name }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.feed.name }}</a>
+                    <a class="dropdown-item"><span class="icon"><i class="far fa-edit"></i></span> Edit {{ entry.feed.name }}</a>
+                    <a class="dropdown-item"><span class="icon"><i class="fas fa-volume-mute"></i></span> Mute {{ entry.feed.name }}</a>
                     <hr class="dropdown-divider">
                     <a class="dropdown-item" href="/entries/{{ entry.id }}/raw" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw entry data</a>
                     <a class="dropdown-item" href="/feeds/{{ entry.feed.id }}/raw" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw feed data</a>
