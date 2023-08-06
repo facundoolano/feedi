@@ -10,89 +10,88 @@
 </head>
 <body class="has-background-light">
     <section class="container">
-    <div class="columns">
-        <div class="column is-hidden-touch is-narrow">
-            <aside class="menu feeds-sidebar">
-                <ul class="menu-list">
-                    {% with name="Home", icon="fas fa-home", url="/", feeds=None %}
-                    {% include "sidebar_folder.html" %}
-                    {% endwith %}
-                    {% with name="Timeline", icon="far fa-list-alt", url="/", feeds=None %}
-                    {% include "sidebar_folder.html" %}
-                    {% endwith %}
-                    <hr class="dropdown-divider"/>
-                    {% with name="News", url="/" %}
-                    {% include "sidebar_folder.html" %}
-                    {% endwith %}
-                    {% with name="Social", url="/" %}
-                    {% include "sidebar_folder.html" %}
-                    {% endwith %}
-                    <hr class="dropdown-divider"/>
-                    {% include "sidebar_feed_list.html" %}
-                    <hr class="dropdown-divider"/>
-                    <li>
-                        <div class="level-left">
-                            <div class="level-item">
-                                <icon><i class="far fa-star"></i></icon>
-                                <a href="/">Favorites</a>
+        <div class="columns">
+            <div class="column is-hidden-touch is-narrow">
+                <aside class="menu feeds-sidebar">
+                    <ul class="menu-list">
+                        {% with name="Home", icon="fas fa-home", url="/", feeds=None %}
+                        {% include "sidebar_folder.html" %}
+                        {% endwith %}
+                        {% with name="Timeline", icon="far fa-list-alt", url="/", feeds=None %}
+                        {% include "sidebar_folder.html" %}
+                        {% endwith %}
+                        <hr class="dropdown-divider"/>
+                        {% with name="News", url="/" %}
+                        {% include "sidebar_folder.html" %}
+                        {% endwith %}
+                        {% with name="Social", url="/" %}
+                        {% include "sidebar_folder.html" %}
+                        {% endwith %}
+                        <hr class="dropdown-divider"/>
+                        {% include "sidebar_feed_list.html" %}
+                        <hr class="dropdown-divider"/>
+                        <li>
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <icon><i class="far fa-star"></i></icon>
+                                    <a href="/">Favorites</a>
+                                </div>
                             </div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="level-left">
-                            <div class="level-item">
-                                <icon><i class="far fa-trash-alt"></i></icon>
-                                <a href="/">Trash</a>
+                        </li>
+                        <li>
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <icon><i class="far fa-trash-alt"></i></icon>
+                                    <a href="/">Trash</a>
+                                </div>
                             </div>
-                        </div>
-                    </li>
-                </ul>
-            </aside>
-
+                        </li>
+                    </ul>
+                </aside>
+            </div>
+            <div class="column" id="entry-list">
+                {% include "entry_list.html" %}
+            </div>
+            <div class="column is-narrow">
+                <aside class="menu feeds-sidebar is-hidden-mobile sidebar-right">
+                    <div class="field">
+                        <p class="control has-icons-left">
+                            <input class="input  is-small" type="text" placeholder="Search">
+                            <span class="icon is-small is-left">
+                                <i class="fas fa-search"></i>
+                            </span>
+                        </p>
+                    </div>
+                    <ul class="menu-list">
+                        <hr class="dropdown-divider"/>
+                        <li>
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <icon><i class="fas fa-plus"></i></icon>
+                                    <a>Add Feed</a>
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <icon><i class="fas fa-edit"></i></icon>
+                                    <a>Manage Feeds</a>
+                                </div>
+                            </div>
+                        </li>
+                        <hr class="dropdown-divider"/>
+                        <li>
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <icon><i class="fas fa-images"></i></icon>
+                                    <a hx-post="/session/hide_media/" _="on click toggle .is-hidden on .media-url-container">Toggle thumbnails</a>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </aside>
+            </div>
         </div>
-        <div class="column" id="entry-list">
-            {% include "entry_list.html" %}
-        </div>
-        <div class="column is-narrow">
-            <aside class="menu feeds-sidebar is-hidden-mobile sidebar-right">
-                <div class="field">
-                    <p class="control has-icons-left">
-                        <input class="input  is-small" type="text" placeholder="Search">
-                        <span class="icon is-small is-left">
-                            <i class="fas fa-search"></i>
-                        </span>
-                    </p>
-                </div>
-                <ul class="menu-list">
-                    <hr class="dropdown-divider"/>
-                    <li>
-                        <div class="level-left">
-                            <div class="level-item">
-                                <icon><i class="fas fa-plus"></i></icon>
-                                <a>Add Feed</a>
-                            </div>
-                        </div>
-                    </li>
-                    <li>
-                        <div class="level-left">
-                            <div class="level-item">
-                                <icon><i class="fas fa-edit"></i></icon>
-                                <a>Manage Feeds</a>
-                            </div>
-                        </div>
-                    </li>
-                    <hr class="dropdown-divider"/>
-                    <li>
-                        <div class="level-left">
-                            <div class="level-item">
-                                <icon><i class="fas fa-images"></i></icon>
-                                <a hx-post="/session/hide_media/" _="on click toggle .is-hidden on .media-url-container">Toggle thumbnails</a>
-                            </div>
-                        </div>
-                    </li>
-                </ul>
-            </aside>
-        </div>
-    </div>
     </section>
 </body>
