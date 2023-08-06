@@ -62,7 +62,7 @@
     box-shadow: 0 0 0 1px hsl(0, 0%, 90%);
 }
 
-.feeds-sidebar-parent, .side-bar {
+.feeds-sidebar-parent {
     position: sticky;
     display: inline-block;
     vertical-align: top;

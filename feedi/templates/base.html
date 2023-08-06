@@ -9,6 +9,7 @@
     <title>Feedi</title>
 </head>
 <body class="has-background-light">
+    <section class="section">
     <div class="columns">
         <div class="column">
             <div class="columns is-hidden-mobile feeds-sidebar-parent">
@@ -57,18 +58,50 @@
         <div class="column is-half" id="entry-list">
             {% include "entry_list.html" %}
         </div>
-        <div class="column is-paddingless">
-            <aside class="level side-bar">
-                <div class="level-left">
-                    <p class="level-item">
-                        <button class="button is-medium is-rounded is-light {% if not session.hide_media %}toggled{% endif %}"
-                                hx-post="/session/hide_media/"
-                                _="on click toggle .is-hidden on .media-url-container then toggle .toggled on me"
-                                title="Toggle thumbnails"><i class="fas fa-images"></i></button>
-                    </p>
-                </div>
-            </aside>
+        <div class="column">
+            <div class="columns columns is-hidden-mobile feeds-sidebar-parent">
+              <div class="column is-narrow">
+                  <div class="field">
+                      <p class="control has-icons-left">
+                          <input class="input  is-small" type="text" placeholder="Search">
+                          <span class="icon is-small is-left">
+                              <i class="fas fa-search"></i>
+                          </span>
+                      </p>
+                  </div>
+                <aside class="menu feeds-sidebar">
+                    <ul class="menu-list">
+                        <hr class="dropdown-divider"/>
+                        <li>
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <icon><i class="fas fa-plus"></i></icon>
+                                    <a>Add Feed</a>
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <icon><i class="fas fa-edit"></i></icon>
+                                    <a>Manage Feeds</a>
+                                </div>
+                            </div>
+                        </li>
+                        <hr class="dropdown-divider"/>
+                        <li>
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <icon><i class="fas fa-images"></i></icon>
+                                    <a hx-post="/session/hide_media/" _="on click toggle .is-hidden on .media-url-container">Toggle thumbnails</a>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </aside>
+              </div>
+          </div>
         </div>
     </div>
-    </div>
+    </section>
 </body>
