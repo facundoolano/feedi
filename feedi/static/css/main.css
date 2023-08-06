@@ -45,11 +45,11 @@
 
 /* entry effects on hover  */
 
-.feed-entry .icon {
+.feed-entry .hover-icon {
     visibility: hidden;
 }
 
-.feed-entry:hover .icon {
+.feed-entry:hover .hover-icon {
     visibility: visible;
 }
 
