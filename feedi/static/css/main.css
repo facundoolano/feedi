@@ -62,17 +62,16 @@
     box-shadow: 0 0 0 1px hsl(0, 0%, 90%);
 }
 
-.feeds-sidebar-parent {
+.feeds-sidebar {
     position: sticky;
     display: inline-block;
     vertical-align: top;
-    /* max-height: 100vh; */
-    top: 0;
+    top: 1rem;
     bottom: 0;
 }
 
-.side-bar .button {
-    margin-top: .25rem;
+.sidebar-right {
+    margin-right: .5rem
 }
 
 li.is-active, li.is-active  a:hover {
