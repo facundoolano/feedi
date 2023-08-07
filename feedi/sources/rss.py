@@ -293,6 +293,20 @@ class GoodreadsFeedParser(BaseParser):
         return None
 
 
+class EconomistParser(BaseParser):
+    def is_compatible(feed_url, _feed_data):
+        return 'economist.com' in feed_url
+
+    def parse_content_url(self, entry):
+        # the feed entry link is garbage, get it from the summary html
+        soup = BeautifulSoup(entry['summary'], 'lxml')
+        return soup.find("a", href=True)['href']
+
+    def parse_body(self, entry):
+        url = self.parse_content_url(entry)
+        return (self.fetch_meta(url, 'og:description') or self.fetch_meta(url, 'description'))
+
+
 def detect_feed_icon(url):
     feed = feedparser.parse(url)
     icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
