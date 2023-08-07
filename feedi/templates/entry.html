@@ -1,5 +1,22 @@
 {% extends "base.html" %}
 
+{% block sidebar_left %}
+<aside class="menu feeds-sidebar">
+    <ul class="menu-list">
+        <li>
+            <div class="level-left">
+                <div class="level-item">
+                    <icon><i class="fas fa-chevron-left"></i></icon>
+                    <a _="on click call window.history.back()
+                             then on keyup[key is 'Escape'] elsewhere trigger click on me"
+                    >Back</a>
+                </div>
+            </div>
+        </li>
+    </ul>
+</aside>
+{% endblock %}
+
 {% block content %}
 <div class="box is-radiusless feed-entry">
     <div class="content entry-content">
