@@ -2,12 +2,8 @@
     <div class="level-left">
         <p>
             <b><a class="feed-title"
-                  hx-get="/entries/{{ entry.id }}/content"
-                  hx-trigger="click"
-                  hx-target="next .entry-content"
-                  hx-indicator="next .htmx-indicator"
-                  _="on click add .is-active to next .reader-modal"
-                  href="{{ entry.content_url }}" target="_blank">{{ entry.title }}</a></b>
+                  href="/entries/{{ entry.id }}"
+               >{{ entry.title }}</a></b>
             <br/>
         </p>
     </div>

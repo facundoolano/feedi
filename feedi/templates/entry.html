@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="box is-radiusless feed-entry">
+    <div class="content entry-content">
+        <h2>{{ entry.title }}</h2>
+        {{ content | safe }}
+    </div>
+</div>
+{% endblock content %}

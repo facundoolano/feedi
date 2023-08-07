@@ -61,6 +61,8 @@ def entry_page(limit, after_ts=None, feed_name=None, username=None):
     return [e for (e, ) in db.session.execute(query)]
 
 
+# FIXME having to call this from several views suggests that I need more smarts either in the
+# templates or in the view support functions
 def shortcut_feeds():
     # get the 5 feeds with most posts in the last 24 hours
     yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
@@ -93,8 +95,26 @@ def raw_feed(id):
     )
 
 
-def error_fragment(msg):
-    return flask.render_template("error_message.html", message=msg)
+@app.route("/entries/<int:id>/", methods=['GET'])
+def fetch_entry_content(id):
+    result = db.session.execute(db.select(models.Entry).filter_by(id=id)).first()
+
+    # FIXME fix error handling in templates
+    if not result:
+        return flask.render_template("error_message.html", message="Entry not found")
+    (entry, ) = result
+
+    if entry.feed.type == models.Feed.TYPE_RSS:
+        try:
+            content = extract_article(entry.content_url)
+        except Exception as e:
+            return flask.render_template("error_message.html", message=f"Error fetching article: {repr(e)}")
+    else:
+        # this is not ideal for mastodon, but at least doesn't break
+        content = entry.body
+
+    return flask.render_template("entry.html", entry=entry, content=content,
+                                 shortcut_feeds=shortcut_feeds())
 
 
 @app.route("/entries/<int:id>/raw")
@@ -105,24 +125,6 @@ def raw_entry(id):
         status=200,
         mimetype='application/json'
     )
-
-
-@app.route("/entries/<int:id>/content/", methods=['GET'])
-def fetch_entry_content(id):
-    result = db.session.execute(db.select(models.Entry).filter_by(id=id)).first()
-    if not result:
-        return error_fragment("Entry not found")
-    (entry, ) = result
-
-    if entry.feed.type == models.Feed.TYPE_RSS:
-        try:
-            return extract_article(entry.content_url)
-        except Exception as e:
-            return error_fragment(f"Error fetching article: {repr(e)}")
-    else:
-        # this is not ideal for mastodon, but at least doesn't break
-        return entry.body
-
 
 def extract_article(url):
     # TODO handle case if not html, eg if destination is a pdf
