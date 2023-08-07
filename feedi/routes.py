@@ -75,7 +75,10 @@ def shortcut_feeds():
 
 @app.route("/feeds")
 def feeds():
+    feeds = db.session.execute(db.select(models.Feed)).all()
+    feeds= [f for (f, ) in feeds]
     return flask.render_template('feeds.html',
+                                 feeds=feeds,
                                  shortcut_feeds=shortcut_feeds())
 
 
