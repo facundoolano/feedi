@@ -32,7 +32,7 @@
 }
 
 .column {
-    overflow: clip!important;
+    overflow-x: clip!important;
 }
 
 .feed-header {
