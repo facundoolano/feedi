@@ -62,7 +62,7 @@
     object-fit: cover;
 }
 
-.card.feed-entry  {
+.card.feed-entry, .box.feed-entry  {
     box-shadow: 0 0 0 1px hsl(0, 0%, 90%);
 }
 
@@ -78,7 +78,7 @@ li.is-active, li.is-active  a:hover {
     /* FIXME copied from .menu-list a.is-active */
     background-color: #485fc7;
 }
-li.is-active a, li.is-active  a:hover {
+li.is-active a, li.is-active  a:hover{
     /* FIXME copied from .menu-list a.is-active */
     color: #fff;
 }
@@ -91,6 +91,10 @@ li.is-active a, li.is-active  a:hover {
 .level-item.icon:not(.toggled):hover,  .level-item.icon.toggled {
     /* FIXME this should use SCSS variables */
     color: hsl(0, 0%, 29%)
+}
+
+.table a {
+    color: #363636
 }
 
 code{
