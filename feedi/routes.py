@@ -23,7 +23,8 @@ def entry_list(feed_name=None, username=None):
     ENTRY_PAGE_SIZE = 20
 
     after_ts = flask.request.args.get('after')
-    entries = entry_page(limit=ENTRY_PAGE_SIZE, after_ts=after_ts, feed_name=feed_name, username=username)
+    entries = entry_page(limit=ENTRY_PAGE_SIZE, after_ts=after_ts,
+                         feed_name=feed_name, username=username)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
 
@@ -32,21 +33,9 @@ def entry_list(feed_name=None, username=None):
         return flask.render_template('entry_list.html', entries=entries)
 
     # render home, including feeds sidebar
-    # (this will eventually include folders)
-
-    # get the 15 feeds with most posts in the last 24 hours
-    yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
-    feeds = db.session.execute(db.select(models.Feed)
-                               .join(models.Entry)
-                               .group_by(models.Feed)
-                               .filter(models.Entry.remote_updated > yesterday)
-                               .order_by(sa.func.count().desc())
-                               .limit(5)).all()
-    feeds = [feed for (feed,) in feeds]
-
-    return flask.render_template('base.html', entries=entries, feeds=feeds,
+    return flask.render_template('entries.html', entries=entries,
+                                 shortcut_feeds=shortcut_feeds(),
                                  selected_feed=feed_name)
-
 
 # TODO move to db module
 def entry_page(limit, after_ts=None, feed_name=None, username=None):
@@ -70,6 +59,24 @@ def entry_page(limit, after_ts=None, feed_name=None, username=None):
     query = query.order_by(models.Entry.remote_updated.desc()).limit(limit)
 
     return [e for (e, ) in db.session.execute(query)]
+
+
+def shortcut_feeds():
+    # get the 5 feeds with most posts in the last 24 hours
+    yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
+    feeds = db.session.execute(db.select(models.Feed)
+                               .join(models.Entry)
+                               .group_by(models.Feed)
+                               .filter(models.Entry.remote_updated > yesterday)
+                               .order_by(sa.func.count().desc())
+                               .limit(5)).all()
+    return [feed for (feed,) in feeds]
+
+
+@app.route("/feeds")
+def feeds():
+    return flask.render_template('feeds.html',
+                                 shortcut_feeds=shortcut_feeds())
 
 
 @app.route("/feeds/<int:id>/raw")
