@@ -29,10 +29,13 @@
                         {% with name="Social", url="/", feeds=shortcut_feeds %}
                         {% include "sidebar_folder.html" %}
                         {% endwith %}
+                        {% if shortcut_feeds %}
                         <hr class="dropdown-divider"/>
+                        {% endif %}
                         {% with name="Social", url="/", feeds=shortcut_feeds %}
                           {% include "sidebar_feed_list.html" %}
                         {% endwith %}
+
                         <hr class="dropdown-divider"/>
                         <li>
                             <div class="level-left">
@@ -64,7 +67,7 @@
                <aside class="menu feeds-sidebar is-hidden-mobile sidebar-right">
                    <div class="field">
                        <p class="control has-icons-left">
-                           <input class="input  is-small" type="text" placeholder="Search">
+                           <input class="input  is-small" type="text" placeholder="Search or Browse URL">
                            <span class="icon is-small is-left">
                                <i class="fas fa-search"></i>
                            </span>
