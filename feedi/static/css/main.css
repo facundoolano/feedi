@@ -101,15 +101,6 @@ code{
     white-space:pre-wrap
     }
 
-.reader-modal .modal-content {
-    /* this is a hack and an arbitrary number should be changed in variable to work as is-half
-https://github.com/jgthms/bulma/blob/master/sass/components/modal.sass#L7C2-L7C21
-*/
-    width: 60%!important;
-}
-
-/* some tweaks to make images look better inside the reader modal */
-
 img[src=""] {
     display: none!important
 }
