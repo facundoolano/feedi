@@ -20,7 +20,7 @@ class Feed(db.Model):
     id = sa.Column(sa.Integer, primary_key=True)
     type = sa.Column(sa.String, nullable=False)
 
-    name = sa.Column(sa.String, unique=True)
+    name = sa.Column(sa.String, unique=True, index=True)
     icon_url = sa.Column(sa.String)
 
     created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
@@ -30,7 +30,7 @@ class Feed(db.Model):
 
     raw_data = sa.Column(sa.String, doc="The original feed data received from the feed, as JSON")
 
-    folder = sa.Column(sa.String)
+    folder = sa.Column(sa.String, index=True)
 
     __mapper_args__ = {'polymorphic_on': type,
                        'polymorphic_identity': 'feed'}
@@ -70,7 +70,7 @@ class Entry(db.Model):
     remote_id = sa.Column(sa.String, nullable=False, doc="The identifier of this entry in its source feed.")
 
     title = sa.Column(sa.String, nullable=False)
-    username = sa.Column(sa.String)
+    username = sa.Column(sa.String, index=True)
     user_url = sa.Column(sa.String, doc="The url of the user that authored the entry.")
     avatar_url = sa.Column(sa.String, doc="The url of the avatar image to be displayed for the entry.")
 
