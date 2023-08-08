@@ -1,15 +1,14 @@
 <li>
   <div class="level is-marginless">
     <div class="level-left">
-      <div class="level-item">
-        <icon><i class="{{ icon or 'far fa-folder-open' }}"></i></icon>
-        <a hx-get="{{ url }}"
-           hx-swap="innerHTML show:top"
-           hx-push-url="true"
-           hx-target="#entry-list"
-           _="on click remove .is-active from  .level-left"
-           >{{ name }}</a>
-      </div>
+        <div class="level-item">
+            <a hx-get="{{ url }}"
+               hx-swap="innerHTML show:top"
+               hx-push-url="true"
+               hx-target="#entry-list"
+               _="on click remove .is-active from  .level-left"
+            ><icon class="icon"><i class="{{ icon or 'far fa-folder-open' }}"></i></icon> {{ name }}</a>
+        </div>
     </div>
     {% if feeds %}
     <div class="level-right">

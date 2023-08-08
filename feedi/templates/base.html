@@ -40,16 +40,17 @@
                         <li>
                             <div class="level-left">
                                 <div class="level-item">
-                                    <icon><i class="far fa-star"></i></icon>
-                                    <a href="/">Favorites</a>
+                                    <a href="/"><icon class="icon"><i class="far fa-star"></i></icon>
+                                        Favorites</a>
                                 </div>
                             </div>
                         </li>
                         <li>
                             <div class="level-left">
                                 <div class="level-item">
-                                    <icon><i class="far fa-trash-alt"></i></icon>
-                                    <a href="/">Trash</a>
+                                    <a href="/">
+                                        <icon class="icon"><i class="far fa-trash-alt"></i></icon>
+                                        Trash</a>
                                 </div>
                             </div>
                         </li>
@@ -63,46 +64,44 @@
                 </div>
             </div>
             <div class="column">
-               {% block sidebar_right %}
                <aside class="menu feeds-sidebar is-hidden-mobile sidebar-right">
-                   <div class="field">
-                       <p class="control has-icons-left">
-                           <input class="input  is-small" type="text" placeholder="Search or Browse URL">
-                           <span class="icon is-small is-left">
-                               <i class="fas fa-search"></i>
-                           </span>
-                       </p>
-                   </div>
                    <ul class="menu-list">
+                       <div class="field">
+                           <p class="control has-icons-left">
+                               <input class="input  is-small" type="text" placeholder="Search or Browse URL">
+                               <span class="icon is-small is-left">
+                                   <i class="fas fa-search"></i>
+                               </span>
+                           </p>
+                       </div>
+                       <hr class="dropdown-divider"/>
+               {% block sidebar_right %}
+                       <li>
+                           <div class="level-left">
+                               <div class="level-item">
+                                   <a><icon class="icon"><i class="fas fa-plus"></i></icon> Add Feed</a>
+                               </div>
+                           </div>
+                       </li>
+                       <li>
+                           <div class="level-left">
+                               <div class="level-item">
+                                   <a href="/feeds"><icon class="icon"><i class="fas fa-edit"></i></icon> Manage Feeds</a>
+                               </div>
+                           </div>
+                       </li>
                        <hr class="dropdown-divider"/>
                        <li>
                            <div class="level-left">
                                <div class="level-item">
-                                   <icon><i class="fas fa-plus"></i></icon>
-                                   <a>Add Feed</a>
+                                   <a hx-post="/session/hide_media/" _="on click toggle .is-hidden on .media-url-container">
+                                       <icon class="icon"><i class="fas fa-images"></i></icon> Toggle thumbnails</a>
                                </div>
                            </div>
                        </li>
-                       <li>
-                           <div class="level-left">
-                               <div class="level-item">
-                                   <icon><i class="fas fa-edit"></i></icon>
-                                   <a href="/feeds">Manage Feeds</a>
-                               </div>
-                           </div>
-                       </li>
-                       <hr class="dropdown-divider"/>
-                       <li>
-                           <div class="level-left">
-                               <div class="level-item">
-                                   <icon><i class="fas fa-images"></i></icon>
-                                   <a hx-post="/session/hide_media/" _="on click toggle .is-hidden on .media-url-container">Toggle thumbnails</a>
-                               </div>
-                           </div>
-                       </li>
+               {% endblock %}
                    </ul>
                </aside>
-               {% endblock %}
             </div>
         </div>
     </section>

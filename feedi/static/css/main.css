@@ -132,7 +132,12 @@ img[src=""] {
 }
 
 .feeds-sidebar .image {
-    margin-left: 0.2rem;
+    display: inline-block;
+    margin-right: 0.2rem;
+}
+
+.feeds-sidebar .icon {
+    height: 1rem;
 }
 
 .folder-collapsed {

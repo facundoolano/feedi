@@ -25,3 +25,22 @@
     </div>
 </div>
 {% endblock content %}
+
+{% block sidebar_right %}
+<li><a href="{{ entry.content_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-external-link-alt"></i></span> Go to source</a></li>
+{% if entry.entry_url and entry.content_url != entry.entry_url %}
+<li><a href="{{ entry.entry_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="far fa-comment-alt"></i></span> Go to discussion</a></li>
+{% endif %}
+<li><a class="dropdown-item"><span class="icon"><i class="fas fa-link"></i></span> Copy URL</a></li>
+<li><a class="dropdown-item"><span class="icon"><i class="fas fa-rss"></i></span> Crawl origin feed</a></li>
+<hr class="dropdown-divider">
+{% if entry.username %}
+<li><a class="dropdown-item" href="/users/{{ entry.username }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.username }}</a></li>
+{% endif %}
+<li><a class="dropdown-item" href="/feeds/{{ entry.feed.name }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.feed.name }}</a></li>
+<li><a class="dropdown-item"><span class="icon"><i class="far fa-edit"></i></span> Edit {{ entry.feed.name }}</a></li>
+<li><a class="dropdown-item"><span class="icon"><i class="fas fa-volume-mute"></i></span> Mute {{ entry.feed.name }}</a></li>
+<hr class="dropdown-divider">
+<li><a class="dropdown-item" href="/entries/{{ entry.id }}/raw" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw entry data</a></li>
+<li><a class="dropdown-item" href="/feeds/{{ entry.feed.id }}/raw" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw feed data</a></li>
+{% endblock %}

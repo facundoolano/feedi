@@ -1,14 +1,16 @@
 {% for feed in feeds %}
   <li class="level-left {% if selected_feed == feed.name %}is-active{% endif %}">
     <div class="level-item">
-      <figure class="image is-16x16 ">
-        <img class="is-rounded" src="{{ feed.icon_url }}">
-      </figure>
-      <a hx-get="/feeds/{{feed.name}}" hx-push-url="true" hx-target="#entry-list"
+        <a hx-get="/feeds/{{feed.name}}" hx-push-url="true" hx-target="#entry-list"
            hx-swap="innerHTML show:top"
            _="on click remove .is-active from  .level-left
-                   then add .is-active to the closest .level-left"
-      >{{ feed.name | truncate(15) }}</a>
+                   then add .is-active to the closest .level-left">
+            <span class="icon ">
+                <figure class="is-16x16 image">
+                <img class="is-rounded" src="{{ feed.icon_url }}">
+            </figure></span> {{ feed.name | truncate(15) }}
+        </a>
+
     </div>
   </li>
 {% endfor %}
