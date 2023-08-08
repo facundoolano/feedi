@@ -23,7 +23,8 @@ def entry_list(feed_name=None, username=None):
     ENTRY_PAGE_SIZE = 20
 
     after_ts = flask.request.args.get('after')
-    entries = entry_page(limit=ENTRY_PAGE_SIZE, after_ts=after_ts, feed_name=feed_name, username=username)
+    entries = entry_page(limit=ENTRY_PAGE_SIZE, after_ts=after_ts,
+                         feed_name=feed_name, username=username)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
 
@@ -32,21 +33,9 @@ def entry_list(feed_name=None, username=None):
         return flask.render_template('entry_list.html', entries=entries)
 
     # render home, including feeds sidebar
-    # (this will eventually include folders)
-
-    # get the 15 feeds with most posts in the last 24 hours
-    yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
-    feeds = db.session.execute(db.select(models.Feed)
-                               .join(models.Entry)
-                               .group_by(models.Feed)
-                               .filter(models.Entry.remote_updated > yesterday)
-                               .order_by(sa.func.count().desc())
-                               .limit(5)).all()
-    feeds = [feed for (feed,) in feeds]
-
-    return flask.render_template('base.html', entries=entries, feeds=feeds,
+    return flask.render_template('entries.html', entries=entries,
+                                 shortcut_feeds=shortcut_feeds(),
                                  selected_feed=feed_name)
-
 
 # TODO move to db module
 def entry_page(limit, after_ts=None, feed_name=None, username=None):
@@ -72,6 +61,29 @@ def entry_page(limit, after_ts=None, feed_name=None, username=None):
     return [e for (e, ) in db.session.execute(query)]
 
 
+# FIXME having to call this from several views suggests that I need more smarts either in the
+# templates or in the view support functions
+def shortcut_feeds():
+    # get the 5 feeds with most posts in the last 24 hours
+    yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
+    feeds = db.session.execute(db.select(models.Feed)
+                               .join(models.Entry)
+                               .group_by(models.Feed)
+                               .filter(models.Entry.remote_updated > yesterday)
+                               .order_by(sa.func.count().desc())
+                               .limit(5)).all()
+    return [feed for (feed,) in feeds]
+
+
+@app.route("/feeds")
+def feeds():
+    feeds = db.session.execute(db.select(models.Feed)).all()
+    feeds= [f for (f, ) in feeds]
+    return flask.render_template('feeds.html',
+                                 feeds=feeds,
+                                 shortcut_feeds=shortcut_feeds())
+
+
 @app.route("/feeds/<int:id>/raw")
 def raw_feed(id):
     feed = db.get_or_404(models.Feed, id)
@@ -83,8 +95,26 @@ def raw_feed(id):
     )
 
 
-def error_fragment(msg):
-    return flask.render_template("error_message.html", message=msg)
+@app.route("/entries/<int:id>/", methods=['GET'])
+def fetch_entry_content(id):
+    result = db.session.execute(db.select(models.Entry).filter_by(id=id)).first()
+
+    # FIXME fix error handling in templates
+    if not result:
+        return flask.render_template("error_message.html", message="Entry not found")
+    (entry, ) = result
+
+    if entry.feed.type == models.Feed.TYPE_RSS:
+        try:
+            content = extract_article(entry.content_url)
+        except Exception as e:
+            return flask.render_template("error_message.html", message=f"Error fetching article: {repr(e)}")
+    else:
+        # this is not ideal for mastodon, but at least doesn't break
+        content = entry.body
+
+    return flask.render_template("entry_content.html", entry=entry, content=content,
+                                 shortcut_feeds=shortcut_feeds())
 
 
 @app.route("/entries/<int:id>/raw")
@@ -95,24 +125,6 @@ def raw_entry(id):
         status=200,
         mimetype='application/json'
     )
-
-
-@app.route("/entries/<int:id>/content/", methods=['GET'])
-def fetch_entry_content(id):
-    result = db.session.execute(db.select(models.Entry).filter_by(id=id)).first()
-    if not result:
-        return error_fragment("Entry not found")
-    (entry, ) = result
-
-    if entry.feed.type == models.Feed.TYPE_RSS:
-        try:
-            return extract_article(entry.content_url)
-        except Exception as e:
-            return error_fragment(f"Error fetching article: {repr(e)}")
-    else:
-        # this is not ideal for mastodon, but at least doesn't break
-        return entry.body
-
 
 def extract_article(url):
     # TODO handle case if not html, eg if destination is a pdf

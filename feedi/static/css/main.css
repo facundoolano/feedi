@@ -31,6 +31,10 @@
     flex-shrink: 1!important;
 }
 
+.column {
+    overflow-x: clip!important;
+}
+
 .feed-header {
     margin-bottom: 0!important;
 }
@@ -58,7 +62,7 @@
     object-fit: cover;
 }
 
-.card.feed-entry  {
+.card.feed-entry, .box.feed-entry  {
     box-shadow: 0 0 0 1px hsl(0, 0%, 90%);
 }
 
@@ -70,15 +74,11 @@
     bottom: 0;
 }
 
-.sidebar-right {
-    margin-right: .5rem
-}
-
 li.is-active, li.is-active  a:hover {
     /* FIXME copied from .menu-list a.is-active */
     background-color: #485fc7;
 }
-li.is-active a, li.is-active  a:hover {
+li.is-active a, li.is-active  a:hover{
     /* FIXME copied from .menu-list a.is-active */
     color: #fff;
 }
@@ -93,18 +93,13 @@ li.is-active a, li.is-active  a:hover {
     color: hsl(0, 0%, 29%)
 }
 
+.table a {
+    color: #363636
+}
+
 code{
     white-space:pre-wrap
     }
-
-.reader-modal .modal-content {
-    /* this is a hack and an arbitrary number should be changed in variable to work as is-half
-https://github.com/jgthms/bulma/blob/master/sass/components/modal.sass#L7C2-L7C21
-*/
-    width: 60%!important;
-}
-
-/* some tweaks to make images look better inside the reader modal */
 
 img[src=""] {
     display: none!important
@@ -121,7 +116,7 @@ img[src=""] {
 
 .entry-content {
     padding: 2rem 5rem 2rem;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     line-height: 1.6;
 
     -moz-osx-font-smoothing: grayscale;
@@ -134,7 +129,15 @@ img[src=""] {
 /* feeds sidebar */
 .feeds-sidebar li  {
     font-size: 0.9rem;
-    padding-left: 0.2em;
+}
+
+.feeds-sidebar .image {
+    display: inline-block;
+    margin-right: 0.2rem;
+}
+
+.feeds-sidebar .icon {
+    height: 1rem;
 }
 
 .folder-collapsed {

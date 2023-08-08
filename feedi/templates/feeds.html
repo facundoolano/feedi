@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="box is-radiusless feed-entry  ">
+    <div class="content">
+        <h3>Feeds</h3>
+    </div>
+    <table class="table is-hoverable is-fullwidth">
+        <tbody>
+            {% for feed in feeds %}
+            <tr>
+                <td class="is-narrow">
+                    <a href="/feeds/{{feed.name}}">
+                        <figure class="image is-24x24 ">
+                            <img class="is-rounded" src="{{ feed.icon_url }}">
+                        </figure>
+                    </a>
+                </td>
+                <td>
+                    <a href="/feeds/{{feed.name}}">{{ feed.name }}</a>
+                </td>
+                <td><span class="icon"><i class="far fa-folder-open"></i></span> News</td>
+                <td class="is-narrow"><a class="#" title="delete"><span class="icon"><i class="far fa-trash-alt"></i></span></a></td>
+                <td class="is-narrow"><a class="#" title="edit"><span class="icon"><i class="fas fa-edit"></i></span></a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+    {% endblock content %}

@@ -28,11 +28,7 @@
 
                  {% if entry.body or entry.media_url %}
                  <div class="columns is-clickable body-container"
-                      hx-get="/entries/{{ entry.id }}/content"
-                      hx-trigger="click"
-                      hx-target="next .entry-content"
-                      hx-indicator="next .htmx-indicator"
-                      _="on click add .is-active to next .reader-modal">
+                      _="on click set the location of the window to '/entries/{{ entry.id }}' ">
                      {% if entry.media_url %}
                      <div class="column is-one-quarter media-url-container {% if session.hide_media %}is-hidden{% endif %}">
                          <figure class="image media-url is-5by3">
@@ -56,28 +52,6 @@
                      {% endif %}
                  </div>
                  {% endif %}
-                 <div class="modal reader-modal" _="on keyup[key is 'Escape'] elsewhere remove .is-active from me">
-                     <div class="modal-background" _="on click remove .is-active from closest .reader-modal"></div>
-                     <div class="modal-content">
-                         <div class="box">
-                             <div class="columns">
-                                 <div class="column is-narrow">
-                                     <figure class="image is-32x32">
-                                         <img class="is-rounded" src="{{ entry.avatar_url or entry.feed.icon_url }}" alt="{{ entry.username or entry.feed.name}}" title="{{ entry.username or entry.feed.name }}">
-                                     </figure>
-                                 </div>
-                                 <div class="column">
-                                     <div class="content">
-                                         {% include "entry_header.html" %}
-                                     </div>
-                                 </div>
-                             </div>
-                             <div class="content entry-content">
-                                 <div class="has-text-centered htmx-indicator"><button class="button is-loading is-large is-white htmx"></button></div>
-                             </div>
-                         </div>
-                     </div>
-                 </div>
              </div>
          </div>
      </div>

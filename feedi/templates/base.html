@@ -7,11 +7,14 @@
     <script src="/static/js/htmx.min.js"></script>
     <script src="/static/js/hyperscript.min.js"></script>
     <title>Feedi</title>
+    <meta name="htmx-config" content='{"refreshOnHistoryMiss": true}'>
 </head>
-<body class="has-background-light">
+<html class="has-background-light">
+<body>
     <section class="container">
         <div class="columns">
-            <div class="column is-hidden-touch is-narrow">
+            <div class="column is-hidden-touch">
+                {% block sidebar_left %}
                 <aside class="menu feeds-sidebar">
                     <ul class="menu-list">
                         {% with name="Home", icon="fas fa-home", url="/", feeds=None %}
@@ -21,77 +24,87 @@
                         {% include "sidebar_folder.html" %}
                         {% endwith %}
                         <hr class="dropdown-divider"/>
-                        {% with name="News", url="/" %}
+                        {% with name="News", url="/", feeds=shortcut_feeds %}
                         {% include "sidebar_folder.html" %}
                         {% endwith %}
-                        {% with name="Social", url="/" %}
+                        {% with name="Social", url="/", feeds=shortcut_feeds %}
                         {% include "sidebar_folder.html" %}
                         {% endwith %}
+                        {% if shortcut_feeds %}
                         <hr class="dropdown-divider"/>
-                        {% include "sidebar_feed_list.html" %}
+                        {% endif %}
+                        {% with name="Social", url="/", feeds=shortcut_feeds %}
+                          {% include "sidebar_feed_list.html" %}
+                        {% endwith %}
+
                         <hr class="dropdown-divider"/>
                         <li>
                             <div class="level-left">
                                 <div class="level-item">
-                                    <icon><i class="far fa-star"></i></icon>
-                                    <a href="/">Favorites</a>
+                                    <a href="/"><icon class="icon"><i class="far fa-star"></i></icon>
+                                        Favorites</a>
                                 </div>
                             </div>
                         </li>
                         <li>
                             <div class="level-left">
                                 <div class="level-item">
-                                    <icon><i class="far fa-trash-alt"></i></icon>
-                                    <a href="/">Trash</a>
+                                    <a href="/">
+                                        <icon class="icon"><i class="far fa-trash-alt"></i></icon>
+                                        Trash</a>
                                 </div>
                             </div>
                         </li>
                     </ul>
                 </aside>
+                {% endblock %}
             </div>
-            <div class="column" id="entry-list">
-                {% include "entry_list.html" %}
+            <div class="column is-centered is-two-thirds">
+                <div id="entry-list">
+                    {% block content %}{% endblock %}
+                </div>
             </div>
-            <div class="column is-narrow">
-                <aside class="menu feeds-sidebar is-hidden-mobile sidebar-right">
-                    <div class="field">
-                        <p class="control has-icons-left">
-                            <input class="input  is-small" type="text" placeholder="Search">
-                            <span class="icon is-small is-left">
-                                <i class="fas fa-search"></i>
-                            </span>
-                        </p>
-                    </div>
-                    <ul class="menu-list">
-                        <hr class="dropdown-divider"/>
-                        <li>
-                            <div class="level-left">
-                                <div class="level-item">
-                                    <icon><i class="fas fa-plus"></i></icon>
-                                    <a>Add Feed</a>
-                                </div>
-                            </div>
-                        </li>
-                        <li>
-                            <div class="level-left">
-                                <div class="level-item">
-                                    <icon><i class="fas fa-edit"></i></icon>
-                                    <a>Manage Feeds</a>
-                                </div>
-                            </div>
-                        </li>
-                        <hr class="dropdown-divider"/>
-                        <li>
-                            <div class="level-left">
-                                <div class="level-item">
-                                    <icon><i class="fas fa-images"></i></icon>
-                                    <a hx-post="/session/hide_media/" _="on click toggle .is-hidden on .media-url-container">Toggle thumbnails</a>
-                                </div>
-                            </div>
-                        </li>
-                    </ul>
-                </aside>
+            <div class="column">
+               <aside class="menu feeds-sidebar is-hidden-mobile sidebar-right">
+                   <ul class="menu-list">
+                       <div class="field">
+                           <p class="control has-icons-left">
+                               <input class="input  is-small" type="text" placeholder="What now?">
+                               <span class="icon is-small is-left">
+                                   <i class="fas fa-search"></i>
+                               </span>
+                           </p>
+                       </div>
+                       <hr class="dropdown-divider"/>
+               {% block sidebar_right %}
+                       <li>
+                           <div class="level-left">
+                               <div class="level-item">
+                                   <a><icon class="icon"><i class="fas fa-plus"></i></icon> Add Feed</a>
+                               </div>
+                           </div>
+                       </li>
+                       <li>
+                           <div class="level-left">
+                               <div class="level-item">
+                                   <a href="/feeds"><icon class="icon"><i class="fas fa-edit"></i></icon> Manage Feeds</a>
+                               </div>
+                           </div>
+                       </li>
+                       <hr class="dropdown-divider"/>
+                       <li>
+                           <div class="level-left">
+                               <div class="level-item">
+                                   <a hx-post="/session/hide_media/" _="on click toggle .is-hidden on .media-url-container">
+                                       <icon class="icon"><i class="fas fa-images"></i></icon> Toggle thumbnails</a>
+                               </div>
+                           </div>
+                       </li>
+               {% endblock %}
+                   </ul>
+               </aside>
             </div>
         </div>
     </section>
 </body>
+</html>
