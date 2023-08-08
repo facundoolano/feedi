@@ -113,7 +113,7 @@ def fetch_entry_content(id):
         # this is not ideal for mastodon, but at least doesn't break
         content = entry.body
 
-    return flask.render_template("entry.html", entry=entry, content=content,
+    return flask.render_template("entry_content.html", entry=entry, content=content,
                                  shortcut_feeds=shortcut_feeds())
 
 
