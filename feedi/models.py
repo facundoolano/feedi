@@ -30,6 +30,8 @@ class Feed(db.Model):
 
     raw_data = sa.Column(sa.String, doc="The original feed data received from the feed, as JSON")
 
+    folder = sa.Column(sa.String)
+
     __mapper_args__ = {'polymorphic_on': type,
                        'polymorphic_identity': 'feed'}
 
