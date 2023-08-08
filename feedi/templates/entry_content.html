@@ -6,10 +6,9 @@
         <li>
             <div class="level-left">
                 <div class="level-item">
-                    <icon><i class="fas fa-chevron-left"></i></icon>
                     <a _="on click call window.history.back()
-                             then on keyup[key is 'Escape'] elsewhere trigger click on me"
-                    >Back</a>
+                          then on keyup[key is 'Escape'] elsewhere trigger click on me"
+                    ><icon><i class="fas fa-arrow-left"></i></icon> Back</a>
                 </div>
             </div>
         </li>
@@ -18,9 +17,32 @@
 {% endblock %}
 
 {% block content %}
+
 <div class="box is-radiusless feed-entry">
+    <article class="media">
+        <figure class="media-left">
+            <p class="image is-64x64">
+                {% if entry.avatar_url %}
+                <a href="/users/{{ entry.username }}">
+          <img class="is-rounded" src="{{ entry.avatar_url }}" alt="{{ entry.username }}" title="{{ entry.username }}">
+      </a>
+      {% else %}
+      <a href="/feeds/{{ entry.feed.name }}">
+          <img class="is-rounded" src="{{ entry.feed.icon_url }}" alt="{{ entry.feed.name}}" title="{{ entry.feed.name }}">
+      </a>
+      {% endif %}
+            </p>
+  </figure>
+  <div class="media-content">
+      <a href="{{ entry.content_url }}" target="_blank"><strong>{{ entry.title }}</strong></a>
+      <div class="feed-header-details">
+          <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> · {{ entry.username or entry.feed.name}}</small>
+      </div>
+  </div>
+  <div class="media-right">
+  </div>
+    </article>
     <div class="content entry-content">
-        <h2>{{ entry.title }}</h2>
         {{ content | safe }}
     </div>
 </div>
