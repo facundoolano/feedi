@@ -12,7 +12,7 @@ from feedi.models import db
 
 
 @app.route("/")
-@app.route("/feeds/<feed_name>")
+@app.route("/feeds/<feed_name>/entries")
 @app.route("/users/<username>")
 def entry_list(feed_name=None, username=None):
     """
@@ -76,12 +76,31 @@ def shortcut_feeds():
 
 
 @app.route("/feeds")
-def feeds():
+def feed_list():
     feeds = db.session.execute(db.select(models.Feed)).all()
     feeds= [f for (f, ) in feeds]
     return flask.render_template('feeds.html',
                                  feeds=feeds,
                                  shortcut_feeds=shortcut_feeds())
+
+
+@app.route("/feeds/<feed_name>")
+def feed_form(feed_name):
+    feed = db.session.execute(db.select(models.Feed).filter_by(name=feed_name)).first()
+    if not feed:
+        flask.abort(404, "Feed not found")
+
+    (feed,) = feed
+    return flask.render_template('feed_edit.html',
+                                 feed=feed)
+
+@app.route("/feeds/<feed_name>", methods=["POST"])
+def feed_submit(feed_name):
+    # FIXME we're assuming rss feeds only here for now, will need to deal with mastodon later
+    statement = sa.update(models.RssFeed).where(models.Feed.name == feed_name).values(**flask.request.form)
+    db.session.execute(statement)
+    db.session.commit()
+    return flask.redirect(flask.url_for('feed_list'))
 
 
 @app.route("/feeds/<int:id>/raw")

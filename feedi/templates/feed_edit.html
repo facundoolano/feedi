@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="box is-radiusless feed-entry  ">
+    <div class="content">
+        <h3>Edit feed</h3>
+        <br/>
+
+        <form method="post">
+        <div class="field">
+            <label class="label">Name</label>
+            <div class="control">
+                <input class="input" name="name" type="text" placeholder="Text input" value="{{ feed.name }}">
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label">URL</label>
+            <div class="control">
+                <input class="input" name="url" type="text" placeholder="Text input" value="{{ feed.url }}">
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label">Folder</label>
+            <div class="control">
+                <input class="input" name="folder" type="text" placeholder="Folder name" value="{{ feed.folder or '' }}">
+            </div>
+        </div>
+
+        <br/>
+
+        <div class="field is-grouped is-grouped-right">
+            <p class="control"><a class="button is-light" href="/feeds">Cancel</a></p>
+            <p class="control"><input class="button is-primary" type="submit" value="Save"></p>
+        </div>
+
+        </form>
+    </div>
+
+</div>
+{% endblock content %}
