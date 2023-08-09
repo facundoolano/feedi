@@ -26,7 +26,7 @@
         <div class="field">
             <label class="label">Folder</label>
             <div class="control">
-                <input class="input" name="folder" type="text" placeholder="Folder name" {% if feed %}value="{{ feed.folder }}"{% endif %}>
+                <input class="input" name="folder" type="text" placeholder="Folder name" {% if feed and feed.folder %}value="{{ feed.folder }}"{% endif %}>
             </div>
         </div>
 
