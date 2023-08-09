@@ -1,5 +1,6 @@
 import datetime
 import urllib
+from collections import defaultdict
 
 import flask
 import newspaper
@@ -36,6 +37,7 @@ def entry_list(feed_name=None, username=None):
     # render home, including feeds sidebar
     return flask.render_template('entries.html', entries=entries,
                                  shortcut_feeds=shortcut_feeds(),
+                                 folders=feed_folders(),
                                  selected_feed=feed_name)
 
 # TODO move to db module
@@ -67,16 +69,28 @@ def entry_page(limit, after_ts=None, feed_name=None, username=None):
 # FIXME having to call this from several views suggests that I need more smarts either in the
 # templates or in the view support functions
 def shortcut_feeds():
-    # get the 5 feeds with most posts in the last 24 hours
-    yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
-    feeds = db.session.execute(db.select(models.Feed)
-                               .join(models.Entry)
-                               .group_by(models.Feed)
-                               .filter(models.Entry.remote_updated > yesterday)
-                               .order_by(sa.func.count().desc())
-                               .limit(5)).all()
-    return [feed for (feed,) in feeds]
+    # get the 5 feeds with most posts in the last 24 hours. these will be the top level shortcuts.
+    # Eventually could be replaced by "most frequently accessed"
 
+    yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
+    top_feeds = db.session.execute(db.select(models.Feed)
+                                   .join(models.Entry)
+                                   .group_by(models.Feed)
+                                   .filter(models.Entry.remote_updated > yesterday)
+                                   .order_by(sa.func.count().desc())
+                                   .limit(5)).all()
+
+    return [feed for (feed,) in top_feeds]
+
+def feed_folders():
+    in_folder = db.session.execute(db.select(models.Feed)
+                                   .filter(models.Feed.folder != None, models.Feed.folder != '' )).all()
+
+    feeds_by_folder = defaultdict(list)
+    for (feed,) in in_folder:
+        feeds_by_folder[feed.folder].append(feed)
+
+    return feeds_by_folder
 
 @app.route("/feeds")
 def feed_list():
@@ -84,6 +98,7 @@ def feed_list():
     feeds = [f for (f, ) in feeds]
     return flask.render_template('feeds.html',
                                  feeds=feeds,
+                                 folders=feed_folders(),
                                  shortcut_feeds=shortcut_feeds())
 
 
@@ -214,7 +229,6 @@ def extract_article(url):
     soup = BeautifulSoup(article.article_html, 'lxml')
     for img in soup.find_all('img'):
         src = img.get('src')
-        print(src, urllib.parse.urlparse(src).netloc)
         if not src:
             # skip images with missing src
             img.decompose()

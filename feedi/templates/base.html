@@ -17,19 +17,15 @@
                 {% block sidebar_left %}
                 <aside class="menu feeds-sidebar">
                     <ul class="menu-list">
-                        {% with name="Home", icon="fas fa-home", url="/", feeds=None %}
+                        {% with name="home", icon="fas fa-home", url="/", feeds=None %}
                         {% include "sidebar_folder.html" %}
                         {% endwith %}
-                        {% with name="Timeline", icon="far fa-list-alt", url="/", feeds=None %}
-                        {% include "sidebar_folder.html" %}
-                        {% endwith %}
-                        <hr class="dropdown-divider"/>
-                        {% with name="News", url="/", feeds=shortcut_feeds %}
-                        {% include "sidebar_folder.html" %}
-                        {% endwith %}
-                        {% with name="Social", url="/", feeds=shortcut_feeds %}
-                        {% include "sidebar_folder.html" %}
-                        {% endwith %}
+                        {% if folders %}
+                          <hr class="dropdown-divider"/>
+                          {% for (name, feeds) in folders.items() %}
+                            {% include "sidebar_folder.html" %}
+                          {% endfor %}
+                        {% endif %}
                         {% if shortcut_feeds %}
                         <hr class="dropdown-divider"/>
                         {% endif %}
