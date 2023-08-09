@@ -75,26 +75,21 @@ def sidebar_feeds():
     fetch folders and quick access feeds to make available to any template needing to render the sidebar.
     """
     if flask.request.headers.get('HX-Request') != 'true':
-        # get the 5 feeds with most posts in the last 24 hours. these will be the top level shortcuts.
-        # Eventually could be replaced by "most frequently accessed"
-        yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
-        top_feeds = db.session.execute(db.select(models.Feed)
-                                       .join(models.Entry)
-                                       .group_by(models.Feed)
-                                       .filter(models.Entry.remote_updated > yesterday)
-                                       .order_by(sa.func.count().desc())
-                                       .limit(5)).all()
-        shortcut_feeds = [feed for (feed,) in top_feeds]
+        #
+        shortcut_feeds = db.session.execute(db.select(models.Feed)
+                                            .order_by(models.Feed.views.desc())
+                                            .limit(5)).all()
+        shortcut_feeds = [feed for (feed,) in shortcut_feeds]
 
         in_folder = db.session.execute(db.select(models.Feed)
-                                       .filter(models.Feed.folder != None, models.Feed.folder != '')).all()
+                                       .filter(models.Feed.folder != None, models.Feed.folder != '')
+                                       .order_by(models.Feed.views.desc())).all()
 
-        feeds_by_folder = defaultdict(list)
+        folders = defaultdict(list)
         for (feed,) in in_folder:
-            feeds_by_folder[feed.folder].append(feed)
+            folders[feed.folder].append(feed)
 
-        return dict(shortcut_feeds=shortcut_feeds,
-                    folders=feeds_by_folder)
+        return dict(shortcut_feeds=shortcut_feeds, folders=folders)
     return {}
 
 
