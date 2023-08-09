@@ -65,7 +65,7 @@ def entry_page(limit, after_ts=None, feed_name=None, username=None, folder=None)
 
     query = query.order_by(models.Entry.remote_updated.desc()).limit(limit)
 
-    return [e for (e, ) in db.session.execute(query)]
+    return db.session.scalars(query)
 
 
 @app.context_processor
@@ -75,35 +75,26 @@ def sidebar_feeds():
     fetch folders and quick access feeds to make available to any template needing to render the sidebar.
     """
     if flask.request.headers.get('HX-Request') != 'true':
-        # get the 5 feeds with most posts in the last 24 hours. these will be the top level shortcuts.
-        # Eventually could be replaced by "most frequently accessed"
-        yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
-        top_feeds = db.session.execute(db.select(models.Feed)
-                                       .join(models.Entry)
-                                       .group_by(models.Feed)
-                                       .filter(models.Entry.remote_updated > yesterday)
-                                       .order_by(sa.func.count().desc())
-                                       .limit(5)).all()
-        shortcut_feeds = [feed for (feed,) in top_feeds]
+        shortcut_feeds = db.session.scalars(db.select(models.Feed)
+                                            .order_by(models.Feed.views.desc())
+                                            .limit(5)).all()
 
-        in_folder = db.session.execute(db.select(models.Feed)
-                                       .filter(models.Feed.folder != None, models.Feed.folder != '')).all()
+        in_folder = db.session.scalars(db.select(models.Feed)
+                                       .filter(models.Feed.folder != None, models.Feed.folder != '')
+                                       .order_by(models.Feed.views.desc())).all()
 
-        feeds_by_folder = defaultdict(list)
-        for (feed,) in in_folder:
-            feeds_by_folder[feed.folder].append(feed)
+        folders = defaultdict(list)
+        for feed in in_folder:
+            folders[feed.folder].append(feed)
 
-        return dict(shortcut_feeds=shortcut_feeds,
-                    folders=feeds_by_folder)
+        return dict(shortcut_feeds=shortcut_feeds, folders=folders)
     return {}
 
 
 @app.route("/feeds")
 def feed_list():
-    feeds = db.session.execute(db.select(models.Feed)).all()
-    feeds = [f for (f, ) in feeds]
-    return flask.render_template('feeds.html',
-                                 feeds=feeds)
+    feeds = db.session.scalars(db.select(models.Feed)).all()
+    return flask.render_template('feeds.html', feeds=feeds)
 
 
 @app.get("/feeds/add")
@@ -136,20 +127,18 @@ def feed_delete(feed_name):
 
 @app.get("/feeds/edit/<feed_name>")
 def feed_edit(feed_name):
-    feed = db.session.execute(db.select(models.Feed).filter_by(name=feed_name)).first()
+    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     if not feed:
         flask.abort(404, "Feed not found")
 
-    (feed,) = feed
     return flask.render_template('feed_edit.html', feed=feed)
 
 
 @app.post("/feeds/edit/<feed_name>")
 def feed_edit_submit(feed_name):
-    feed = db.session.execute(db.select(models.Feed).filter_by(name=feed_name)).first()
+    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     if not feed:
         flask.abort(404, "Feed not found")
-    (feed,) = feed
 
     # setting values at the instance level instead of issuing an update on models.Feed
     # so we don't need to explicitly inspect the feed to figure out its subclass
@@ -165,12 +154,11 @@ def fetch_entry_content(id):
     """
     Fetch the entry content from the source and display it for reading locally.
     """
-    result = db.session.execute(db.select(models.Entry).filter_by(id=id)).first()
+    entry = db.session.scalar(db.select(models.Entry).filter_by(id=id))
 
     # FIXME fix error handling in templates
-    if not result:
+    if not entry:
         return flask.render_template("error_message.html", message="Entry not found")
-    (entry, ) = result
 
     if entry.feed.type == models.Feed.TYPE_RSS:
         try:
@@ -180,6 +168,10 @@ def fetch_entry_content(id):
     else:
         # this is not ideal for mastodon, but at least doesn't break
         content = entry.body
+
+    # increase the feed views counter
+    entry.feed.views += 1
+    db.session.commit()
 
     return flask.render_template("entry_content.html", entry=entry, content=content)
 

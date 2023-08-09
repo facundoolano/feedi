@@ -27,10 +27,10 @@ class Feed(db.Model):
     updated = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
     entries = sa.orm.relationship("Entry", back_populates="feed", cascade="all, delete-orphan", lazy='dynamic')
-
     raw_data = sa.Column(sa.String, doc="The original feed data received from the feed, as JSON")
-
     folder = sa.Column(sa.String, index=True)
+    views = sa.Column(sa.Integer, default=0, nullable=False,
+                      doc="counts how many times articles of this feed have been read. ")
 
     __mapper_args__ = {'polymorphic_on': type,
                        'polymorphic_identity': 'feed'}
