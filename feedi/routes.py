@@ -75,7 +75,6 @@ def sidebar_feeds():
     fetch folders and quick access feeds to make available to any template needing to render the sidebar.
     """
     if flask.request.headers.get('HX-Request') != 'true':
-        #
         shortcut_feeds = db.session.scalars(db.select(models.Feed)
                                             .order_by(models.Feed.views.desc())
                                             .limit(5)).all()
