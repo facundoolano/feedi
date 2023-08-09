@@ -39,7 +39,8 @@ def entry_list(feed_name=None, username=None, folder=None):
     return flask.render_template('entries.html', entries=entries,
                                  shortcut_feeds=shortcut_feeds(),
                                  folders=feed_folders(),
-                                 selected_feed=feed_name)
+                                 selected_feed=feed_name,
+                                 selected_folder=folder)
 
 # TODO move to db module
 

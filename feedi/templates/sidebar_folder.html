@@ -1,13 +1,14 @@
 <li>
-  <div class="level is-marginless">
-    <div class="level-left">
+    <div class="level is-marginless">
+        <div class="level-left  {% if selected_folder == name %}is-active"{% endif %}">
         <div class="level-item">
             <a hx-get="/folder/{{ name }}"
                hx-swap="innerHTML show:top"
                hx-push-url="true"
                hx-target="#entry-list"
-               _="on click remove .is-active from  .level-left"
-            ><icon class="icon"><i class="far fa-folder-open"></i></icon> {{ name }}</a>
+               _="on click remove .is-active from  .level-left
+                       then add .is-active to the closest .level-left">
+                <icon class="icon"><i class="far fa-folder-open"></i></icon> {{ name }}</a>
         </div>
     </div>
     <div class="level-right">

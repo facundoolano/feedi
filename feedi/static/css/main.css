@@ -74,14 +74,15 @@
     bottom: 0;
 }
 
-li.is-active, li.is-active  a:hover {
-    /* FIXME copied from .menu-list a.is-active */
-    background-color: #485fc7;
+.feeds-sidebar .is-active {
+    font-weight: bold;
 }
-li.is-active a, li.is-active  a:hover{
-    /* FIXME copied from .menu-list a.is-active */
-    color: #fff;
+
+.folder-feed-list {
+    border-left:0!important;
+    margin:.25em!important;
 }
+
 
 .level-item.icon:not(.toggled) {
     /* FIXME this should use SCSS variables */
