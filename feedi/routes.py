@@ -14,9 +14,10 @@ from feedi.sources import rss
 
 
 @app.route("/")
+@app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
 @app.route("/users/<username>")
-def entry_list(feed_name=None, username=None):
+def entry_list(feed_name=None, username=None, folder=None):
     """
     Generic view to fetch a list of entries. By default renders the home timeline.
     If accessed with a feed name or a pagination timestam, filter the resuls accordingly.
@@ -26,7 +27,7 @@ def entry_list(feed_name=None, username=None):
 
     after_ts = flask.request.args.get('after')
     entries = entry_page(limit=ENTRY_PAGE_SIZE, after_ts=after_ts,
-                         feed_name=feed_name, username=username)
+                         feed_name=feed_name, username=username, folder=folder)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
 
@@ -43,7 +44,7 @@ def entry_list(feed_name=None, username=None):
 # TODO move to db module
 
 
-def entry_page(limit, after_ts=None, feed_name=None, username=None):
+def entry_page(limit, after_ts=None, feed_name=None, username=None, folder=None):
     """
     Fetch a page of entries from db, optionally filtered by feed_name.
     The page is selected from entries older than the given date, or the
@@ -57,6 +58,9 @@ def entry_page(limit, after_ts=None, feed_name=None, username=None):
 
     if feed_name:
         query = query.filter(models.Entry.feed.has(name=feed_name))
+
+    if folder:
+        query = query.filter(models.Entry.feed.has(folder=folder))
 
     if username:
         query = query.filter(models.Entry.username == username)
