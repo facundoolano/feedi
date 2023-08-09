@@ -37,14 +37,11 @@ def entry_list(feed_name=None, username=None, folder=None):
 
     # render home, including feeds sidebar
     return flask.render_template('entries.html', entries=entries,
-                                 shortcut_feeds=shortcut_feeds(),
-                                 folders=feed_folders(),
                                  selected_feed=feed_name,
                                  selected_folder=folder)
 
+
 # TODO move to db module
-
-
 def entry_page(limit, after_ts=None, feed_name=None, username=None, folder=None):
     """
     Fetch a page of entries from db, optionally filtered by feed_name.
@@ -71,45 +68,48 @@ def entry_page(limit, after_ts=None, feed_name=None, username=None, folder=None)
     return [e for (e, ) in db.session.execute(query)]
 
 
-# FIXME having to call this from several views suggests that I need more smarts either in the
-# templates or in the view support functions
-def shortcut_feeds():
-    # get the 5 feeds with most posts in the last 24 hours. these will be the top level shortcuts.
-    # Eventually could be replaced by "most frequently accessed"
+@app.context_processor
+def sidebar_feeds():
+    """
+    For regular browser request (i.e. no ajax requests triggered by htmx),
+    fetch folders and quick access feeds to make available to any template needing to render the sidebar.
+    """
+    if flask.request.headers.get('HX-Request') != 'true':
+        # get the 5 feeds with most posts in the last 24 hours. these will be the top level shortcuts.
+        # Eventually could be replaced by "most frequently accessed"
+        yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
+        top_feeds = db.session.execute(db.select(models.Feed)
+                                       .join(models.Entry)
+                                       .group_by(models.Feed)
+                                       .filter(models.Entry.remote_updated > yesterday)
+                                       .order_by(sa.func.count().desc())
+                                       .limit(5)).all()
+        shortcut_feeds = [feed for (feed,) in top_feeds]
 
-    yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
-    top_feeds = db.session.execute(db.select(models.Feed)
-                                   .join(models.Entry)
-                                   .group_by(models.Feed)
-                                   .filter(models.Entry.remote_updated > yesterday)
-                                   .order_by(sa.func.count().desc())
-                                   .limit(5)).all()
+        in_folder = db.session.execute(db.select(models.Feed)
+                                       .filter(models.Feed.folder != None, models.Feed.folder != '')).all()
 
-    return [feed for (feed,) in top_feeds]
+        feeds_by_folder = defaultdict(list)
+        for (feed,) in in_folder:
+            feeds_by_folder[feed.folder].append(feed)
 
-def feed_folders():
-    in_folder = db.session.execute(db.select(models.Feed)
-                                   .filter(models.Feed.folder != None, models.Feed.folder != '' )).all()
+        return dict(shortcut_feeds=shortcut_feeds,
+                    folders=feeds_by_folder)
+    return {}
 
-    feeds_by_folder = defaultdict(list)
-    for (feed,) in in_folder:
-        feeds_by_folder[feed.folder].append(feed)
-
-    return feeds_by_folder
 
 @app.route("/feeds")
 def feed_list():
     feeds = db.session.execute(db.select(models.Feed)).all()
     feeds = [f for (f, ) in feeds]
     return flask.render_template('feeds.html',
-                                 feeds=feeds,
-                                 folders=feed_folders(),
-                                 shortcut_feeds=shortcut_feeds())
+                                 feeds=feeds)
 
 
 @app.get("/feeds/add")
 def feed_add():
     return flask.render_template('feed_edit.html')
+
 
 @app.post("/feeds/add")
 def feed_add_submit():
@@ -123,6 +123,7 @@ def feed_add_submit():
     db.session.commit()
 
     return flask.redirect(flask.url_for('feed_list'))
+
 
 @app.delete("/feeds/<feed_name>")
 def feed_delete(feed_name):
@@ -180,8 +181,7 @@ def fetch_entry_content(id):
         # this is not ideal for mastodon, but at least doesn't break
         content = entry.body
 
-    return flask.render_template("entry_content.html", entry=entry, content=content,
-                                 shortcut_feeds=shortcut_feeds())
+    return flask.render_template("entry_content.html", entry=entry, content=content)
 
 
 @app.route("/feeds/<int:id>/raw")
