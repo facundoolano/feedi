@@ -181,6 +181,10 @@ def fetch_entry_content(id):
         # this is not ideal for mastodon, but at least doesn't break
         content = entry.body
 
+    # increase the feed views counter
+    entry.feed.views += 1
+    db.session.commit()
+
     return flask.render_template("entry_content.html", entry=entry, content=content)
 
 
