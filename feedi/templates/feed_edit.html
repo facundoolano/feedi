@@ -14,12 +14,14 @@
             </div>
         </div>
 
+        {% if not feed or feed.type == 'rss' %}
         <div class="field">
             <label class="label">URL</label>
             <div class="control">
                 <input class="input" name="url" type="text" placeholder="Text input" value="{{ feed.url }}">
             </div>
         </div>
+        {% endif %}
 
         <div class="field">
             <label class="label">Folder</label>

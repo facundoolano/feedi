@@ -84,22 +84,28 @@ def feed_list():
                                  shortcut_feeds=shortcut_feeds())
 
 
-@app.route("/feeds/<feed_name>")
-def feed_form(feed_name):
+@app.get("/feeds/<feed_name>")
+def feed_edit(feed_name):
     feed = db.session.execute(db.select(models.Feed).filter_by(name=feed_name)).first()
     if not feed:
         flask.abort(404, "Feed not found")
 
     (feed,) = feed
-    return flask.render_template('feed_edit.html',
-                                 feed=feed)
+    return flask.render_template('feed_edit.html', feed=feed)
 
-@app.route("/feeds/<feed_name>", methods=["POST"])
-def feed_submit(feed_name):
-    # FIXME we're assuming rss feeds only here for now, will need to deal with mastodon later
-    statement = sa.update(models.RssFeed).where(models.Feed.name == feed_name).values(**flask.request.form)
-    db.session.execute(statement)
+@app.post("/feeds/<feed_name>")
+def feed_edit_submit(feed_name):
+    feed = db.session.execute(db.select(models.Feed).filter_by(name=feed_name)).first()
+    if not feed:
+        flask.abort(404, "Feed not found")
+    (feed,) = feed
+
+    # setting values at the instance level instead of issuing an update on models.Feed
+    # so we don't need to explicitly inspect the feed to figure out its subclass
+    for (attr, value) in flask.request.form.items():
+        setattr(feed, attr, value)
     db.session.commit()
+
     return flask.redirect(flask.url_for('feed_list'))
 
 
@@ -114,7 +120,7 @@ def raw_feed(id):
     )
 
 
-@app.route("/entries/<int:id>/", methods=['GET'])
+@app.get("/entries/<int:id>/")
 def fetch_entry_content(id):
     result = db.session.execute(db.select(models.Entry).filter_by(id=id)).first()
 
@@ -175,7 +181,8 @@ def extract_article(url):
     return str(soup)
 
 
-@app.route("/session/hide_media/", methods=['POST'])
+# TODO this could be PUT/DELETE to set/unset
+@app.post("/session/hide_media/")
 def toggle_hide_media():
     flask.session['hide_media'] = not flask.session.get('hide_media', False)
     return '', 204
