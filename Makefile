@@ -24,9 +24,6 @@ reset:
 feed-load:
 	$(flask) feed load feeds.csv
 
-feed-delete:
-	$(flask) feed delete $(FEED)
-
 feed-sync:
 	$(flask) feed sync
 

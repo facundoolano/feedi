@@ -1,16 +1,16 @@
 <li>
-  <div class="level is-marginless">
-    <div class="level-left">
+    <div class="level is-marginless">
+        <div class="level-left  {% if selected_folder == name %}is-active"{% endif %}">
         <div class="level-item">
-            <a hx-get="{{ url }}"
+            <a hx-get="/folder/{{ name }}"
                hx-swap="innerHTML show:top"
                hx-push-url="true"
                hx-target="#entry-list"
-               _="on click remove .is-active from  .level-left"
-            ><icon class="icon"><i class="{{ icon or 'far fa-folder-open' }}"></i></icon> {{ name }}</a>
+               _="on click remove .is-active from  .level-left
+                       then add .is-active to the closest .level-left">
+                <icon class="icon"><i class="far fa-folder-open"></i></icon> {{ name }}</a>
         </div>
     </div>
-    {% if feeds %}
     <div class="level-right">
         <a class="level-item"
            _="on click toggle .folder-collapsed on next .folder-feed-list
@@ -19,11 +19,8 @@
             <i class="fas fa-chevron-down fa-sm is-hidden"></i>
         </a>
     </div>
-    {% endif %}
   </div>
-  {% if feeds %}
     <ul class="folder-feed-list folder-collapsed">
       {% include "sidebar_feed_list.html" %}
     </ul>
-  {% endif %}
 </li>

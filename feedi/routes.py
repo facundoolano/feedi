@@ -1,5 +1,6 @@
 import datetime
 import urllib
+from collections import defaultdict
 
 import flask
 import newspaper
@@ -9,12 +10,14 @@ from flask import current_app as app
 
 import feedi.models as models
 from feedi.models import db
+from feedi.sources import rss
 
 
 @app.route("/")
-@app.route("/feeds/<feed_name>")
+@app.route("/folder/<folder>")
+@app.route("/feeds/<feed_name>/entries")
 @app.route("/users/<username>")
-def entry_list(feed_name=None, username=None):
+def entry_list(feed_name=None, username=None, folder=None):
     """
     Generic view to fetch a list of entries. By default renders the home timeline.
     If accessed with a feed name or a pagination timestam, filter the resuls accordingly.
@@ -24,7 +27,7 @@ def entry_list(feed_name=None, username=None):
 
     after_ts = flask.request.args.get('after')
     entries = entry_page(limit=ENTRY_PAGE_SIZE, after_ts=after_ts,
-                         feed_name=feed_name, username=username)
+                         feed_name=feed_name, username=username, folder=folder)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
 
@@ -34,11 +37,12 @@ def entry_list(feed_name=None, username=None):
 
     # render home, including feeds sidebar
     return flask.render_template('entries.html', entries=entries,
-                                 shortcut_feeds=shortcut_feeds(),
-                                 selected_feed=feed_name)
+                                 selected_feed=feed_name,
+                                 selected_folder=folder)
+
 
 # TODO move to db module
-def entry_page(limit, after_ts=None, feed_name=None, username=None):
+def entry_page(limit, after_ts=None, feed_name=None, username=None, folder=None):
     """
     Fetch a page of entries from db, optionally filtered by feed_name.
     The page is selected from entries older than the given date, or the
@@ -53,6 +57,9 @@ def entry_page(limit, after_ts=None, feed_name=None, username=None):
     if feed_name:
         query = query.filter(models.Entry.feed.has(name=feed_name))
 
+    if folder:
+        query = query.filter(models.Entry.feed.has(folder=folder))
+
     if username:
         query = query.filter(models.Entry.username == username)
 
@@ -61,42 +68,103 @@ def entry_page(limit, after_ts=None, feed_name=None, username=None):
     return [e for (e, ) in db.session.execute(query)]
 
 
-# FIXME having to call this from several views suggests that I need more smarts either in the
-# templates or in the view support functions
-def shortcut_feeds():
-    # get the 5 feeds with most posts in the last 24 hours
-    yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
-    feeds = db.session.execute(db.select(models.Feed)
-                               .join(models.Entry)
-                               .group_by(models.Feed)
-                               .filter(models.Entry.remote_updated > yesterday)
-                               .order_by(sa.func.count().desc())
-                               .limit(5)).all()
-    return [feed for (feed,) in feeds]
+@app.context_processor
+def sidebar_feeds():
+    """
+    For regular browser request (i.e. no ajax requests triggered by htmx),
+    fetch folders and quick access feeds to make available to any template needing to render the sidebar.
+    """
+    if flask.request.headers.get('HX-Request') != 'true':
+        # get the 5 feeds with most posts in the last 24 hours. these will be the top level shortcuts.
+        # Eventually could be replaced by "most frequently accessed"
+        yesterday = datetime.datetime.now() - datetime.timedelta(hours=24)
+        top_feeds = db.session.execute(db.select(models.Feed)
+                                       .join(models.Entry)
+                                       .group_by(models.Feed)
+                                       .filter(models.Entry.remote_updated > yesterday)
+                                       .order_by(sa.func.count().desc())
+                                       .limit(5)).all()
+        shortcut_feeds = [feed for (feed,) in top_feeds]
+
+        in_folder = db.session.execute(db.select(models.Feed)
+                                       .filter(models.Feed.folder != None, models.Feed.folder != '')).all()
+
+        feeds_by_folder = defaultdict(list)
+        for (feed,) in in_folder:
+            feeds_by_folder[feed.folder].append(feed)
+
+        return dict(shortcut_feeds=shortcut_feeds,
+                    folders=feeds_by_folder)
+    return {}
 
 
 @app.route("/feeds")
-def feeds():
+def feed_list():
     feeds = db.session.execute(db.select(models.Feed)).all()
-    feeds= [f for (f, ) in feeds]
+    feeds = [f for (f, ) in feeds]
     return flask.render_template('feeds.html',
-                                 feeds=feeds,
-                                 shortcut_feeds=shortcut_feeds())
+                                 feeds=feeds)
 
 
-@app.route("/feeds/<int:id>/raw")
-def raw_feed(id):
-    feed = db.get_or_404(models.Feed, id)
-
-    return app.response_class(
-        response=feed.raw_data,
-        status=200,
-        mimetype='application/json'
-    )
+@app.get("/feeds/add")
+def feed_add():
+    return flask.render_template('feed_edit.html')
 
 
-@app.route("/entries/<int:id>/", methods=['GET'])
+@app.post("/feeds/add")
+def feed_add_submit():
+    # Assume we only explicitly create RSS feeds for now. Mastodon would have a login flow, not a form
+
+    # TODO handle errors, eg required fields, duplicate name
+    values = dict(**flask.request.form)
+    values['icon_url'] = rss.detect_feed_icon(values['url'])
+    feed = models.RssFeed(**values)
+    db.session.add(feed)
+    db.session.commit()
+
+    return flask.redirect(flask.url_for('feed_list'))
+
+
+@app.delete("/feeds/<feed_name>")
+def feed_delete(feed_name):
+    "Remove a feed and its entries from the database."
+    query = db.delete(models.Feed).where(models.Feed.name == feed_name)
+    db.session.execute(query)
+    db.session.commit()
+    return '', 204
+
+
+@app.get("/feeds/edit/<feed_name>")
+def feed_edit(feed_name):
+    feed = db.session.execute(db.select(models.Feed).filter_by(name=feed_name)).first()
+    if not feed:
+        flask.abort(404, "Feed not found")
+
+    (feed,) = feed
+    return flask.render_template('feed_edit.html', feed=feed)
+
+
+@app.post("/feeds/edit/<feed_name>")
+def feed_edit_submit(feed_name):
+    feed = db.session.execute(db.select(models.Feed).filter_by(name=feed_name)).first()
+    if not feed:
+        flask.abort(404, "Feed not found")
+    (feed,) = feed
+
+    # setting values at the instance level instead of issuing an update on models.Feed
+    # so we don't need to explicitly inspect the feed to figure out its subclass
+    for (attr, value) in flask.request.form.items():
+        setattr(feed, attr, value)
+    db.session.commit()
+
+    return flask.redirect(flask.url_for('feed_list'))
+
+
+@app.get("/entries/<int:id>/")
 def fetch_entry_content(id):
+    """
+    Fetch the entry content from the source and display it for reading locally.
+    """
     result = db.session.execute(db.select(models.Entry).filter_by(id=id)).first()
 
     # FIXME fix error handling in templates
@@ -113,12 +181,28 @@ def fetch_entry_content(id):
         # this is not ideal for mastodon, but at least doesn't break
         content = entry.body
 
-    return flask.render_template("entry_content.html", entry=entry, content=content,
-                                 shortcut_feeds=shortcut_feeds())
+    return flask.render_template("entry_content.html", entry=entry, content=content)
+
+
+@app.route("/feeds/<int:id>/raw")
+def raw_feed(id):
+    """
+    Shows a JSON dump of the feed data as received from the source.
+    """
+    feed = db.get_or_404(models.Feed, id)
+
+    return app.response_class(
+        response=feed.raw_data,
+        status=200,
+        mimetype='application/json'
+    )
 
 
 @app.route("/entries/<int:id>/raw")
 def raw_entry(id):
+    """
+    Shows a JSON dump of the entry data as received from the source.
+    """
     entry = db.get_or_404(models.Entry, id)
     return app.response_class(
         response=entry.raw_data,
@@ -126,7 +210,12 @@ def raw_entry(id):
         mimetype='application/json'
     )
 
+
 def extract_article(url):
+    """
+    Given an article URL, fetch its html and clean it up to its minimal readable content
+    (eg no ads, etc)
+    """
     # TODO handle case if not html, eg if destination is a pdf
     # TODO to preserve the author data, maybe show the top image
 
@@ -145,7 +234,6 @@ def extract_article(url):
     soup = BeautifulSoup(article.article_html, 'lxml')
     for img in soup.find_all('img'):
         src = img.get('src')
-        print(src, urllib.parse.urlparse(src).netloc)
         if not src:
             # skip images with missing src
             img.decompose()
@@ -156,7 +244,8 @@ def extract_article(url):
     return str(soup)
 
 
-@app.route("/session/hide_media/", methods=['POST'])
+# TODO this could be PUT/DELETE to set/unset, and make it to work generically with any setting
+@app.post("/session/hide_media/")
 def toggle_hide_media():
     flask.session['hide_media'] = not flask.session.get('hide_media', False)
     return '', 204
