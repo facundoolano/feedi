@@ -25,6 +25,7 @@ feed_cli = flask.cli.AppGroup('feed')
 
 huey = MiniHuey()
 
+
 def huey_task(*huey_args):
     "Wraps a function to make a it a MiniHuey task that is run inside a flask app context."
 
@@ -81,7 +82,7 @@ def sync_all_feeds():
 
 @huey_task()
 def sync_mastodon_feed(feed_name):
-    (db_feed, ) = db.session.execute(db.select(models.Feed).filter_by(name=feed_name)).first()
+    db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     latest_entry = db_feed.entries.order_by(models.Entry.remote_updated.desc()).first()
     args = {}
     if latest_entry:
@@ -101,7 +102,7 @@ def sync_mastodon_feed(feed_name):
 
 @huey_task()
 def sync_rss_feed(feed_name):
-    (db_feed, ) = db.session.execute(db.select(models.Feed).filter_by(name=feed_name)).first()
+    db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     utcnow = datetime.datetime.utcnow()
 
     if db_feed.last_fetch and utcnow - db_feed.last_fetch < datetime.timedelta(minutes=app.config['RSS_SKIP_RECENTLY_UPDATED_MINUTES']):
@@ -122,7 +123,6 @@ def sync_rss_feed(feed_name):
     db.session.commit()
 
     upsert_entries(db_feed.id, entries)
-
 
 
 # NOTE most of this code should probably live in a db related module eg models
