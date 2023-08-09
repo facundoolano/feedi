@@ -9,6 +9,7 @@ from flask import current_app as app
 
 import feedi.models as models
 from feedi.models import db
+from feedi.sources import rss
 
 
 @app.route("/")
@@ -38,6 +39,8 @@ def entry_list(feed_name=None, username=None):
                                  selected_feed=feed_name)
 
 # TODO move to db module
+
+
 def entry_page(limit, after_ts=None, feed_name=None, username=None):
     """
     Fetch a page of entries from db, optionally filtered by feed_name.
@@ -78,13 +81,39 @@ def shortcut_feeds():
 @app.route("/feeds")
 def feed_list():
     feeds = db.session.execute(db.select(models.Feed)).all()
-    feeds= [f for (f, ) in feeds]
+    feeds = [f for (f, ) in feeds]
     return flask.render_template('feeds.html',
                                  feeds=feeds,
                                  shortcut_feeds=shortcut_feeds())
 
 
-@app.get("/feeds/<feed_name>")
+@app.get("/feeds/add")
+def feed_add():
+    return flask.render_template('feed_edit.html')
+
+@app.post("/feeds/add")
+def feed_add_submit():
+    # Assume we only explicitly create RSS feeds for now. Mastodon would have a login flow, not a form
+
+    # TODO handle errors, eg required fields, duplicate name
+    values = dict(**flask.request.form)
+    values['icon_url'] = rss.detect_feed_icon(values['url'])
+    feed = models.RssFeed(**values)
+    db.session.add(feed)
+    db.session.commit()
+
+    return flask.redirect(flask.url_for('feed_list'))
+
+@app.delete("/feeds/<feed_name>")
+def feed_delete(feed_name):
+    "Remove a feed and its entries from the database."
+    query = db.delete(models.Feed).where(models.Feed.name == feed_name)
+    db.session.execute(query)
+    db.session.commit()
+    return '', 204
+
+
+@app.get("/feeds/edit/<feed_name>")
 def feed_edit(feed_name):
     feed = db.session.execute(db.select(models.Feed).filter_by(name=feed_name)).first()
     if not feed:
@@ -93,7 +122,8 @@ def feed_edit(feed_name):
     (feed,) = feed
     return flask.render_template('feed_edit.html', feed=feed)
 
-@app.post("/feeds/<feed_name>")
+
+@app.post("/feeds/edit/<feed_name>")
 def feed_edit_submit(feed_name):
     feed = db.session.execute(db.select(models.Feed).filter_by(name=feed_name)).first()
     if not feed:
@@ -109,19 +139,11 @@ def feed_edit_submit(feed_name):
     return flask.redirect(flask.url_for('feed_list'))
 
 
-@app.route("/feeds/<int:id>/raw")
-def raw_feed(id):
-    feed = db.get_or_404(models.Feed, id)
-
-    return app.response_class(
-        response=feed.raw_data,
-        status=200,
-        mimetype='application/json'
-    )
-
-
 @app.get("/entries/<int:id>/")
 def fetch_entry_content(id):
+    """
+    Fetch the entry content from the source and display it for reading locally.
+    """
     result = db.session.execute(db.select(models.Entry).filter_by(id=id)).first()
 
     # FIXME fix error handling in templates
@@ -142,8 +164,25 @@ def fetch_entry_content(id):
                                  shortcut_feeds=shortcut_feeds())
 
 
+@app.route("/feeds/<int:id>/raw")
+def raw_feed(id):
+    """
+    Shows a JSON dump of the feed data as received from the source.
+    """
+    feed = db.get_or_404(models.Feed, id)
+
+    return app.response_class(
+        response=feed.raw_data,
+        status=200,
+        mimetype='application/json'
+    )
+
+
 @app.route("/entries/<int:id>/raw")
 def raw_entry(id):
+    """
+    Shows a JSON dump of the entry data as received from the source.
+    """
     entry = db.get_or_404(models.Entry, id)
     return app.response_class(
         response=entry.raw_data,
@@ -151,7 +190,12 @@ def raw_entry(id):
         mimetype='application/json'
     )
 
+
 def extract_article(url):
+    """
+    Given an article URL, fetch its html and clean it up to its minimal readable content
+    (eg no ads, etc)
+    """
     # TODO handle case if not html, eg if destination is a pdf
     # TODO to preserve the author data, maybe show the top image
 
@@ -181,7 +225,7 @@ def extract_article(url):
     return str(soup)
 
 
-# TODO this could be PUT/DELETE to set/unset
+# TODO this could be PUT/DELETE to set/unset, and make it to work generically with any setting
 @app.post("/session/hide_media/")
 def toggle_hide_media():
     flask.session['hide_media'] = not flask.session.get('hide_media', False)

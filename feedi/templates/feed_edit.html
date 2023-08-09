@@ -10,7 +10,7 @@
         <div class="field">
             <label class="label">Name</label>
             <div class="control">
-                <input class="input" name="name" type="text" placeholder="Text input" value="{{ feed.name }}">
+                <input class="input" name="name" type="text" placeholder="Text input" {% if feed %}value="{{ feed.name }}" {% endif %}>
             </div>
         </div>
 
@@ -18,7 +18,7 @@
         <div class="field">
             <label class="label">URL</label>
             <div class="control">
-                <input class="input" name="url" type="text" placeholder="Text input" value="{{ feed.url }}">
+                <input class="input" name="url" type="text" placeholder="Text input" {% if feed %}value="{{ feed.url }}"{% endif %}>
             </div>
         </div>
         {% endif %}
@@ -26,7 +26,7 @@
         <div class="field">
             <label class="label">Folder</label>
             <div class="control">
-                <input class="input" name="folder" type="text" placeholder="Folder name" value="{{ feed.folder or '' }}">
+                <input class="input" name="folder" type="text" placeholder="Folder name" {% if feed %}value="{{ feed.folder }}"{% endif %}>
             </div>
         </div>
 

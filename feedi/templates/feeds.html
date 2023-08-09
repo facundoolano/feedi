@@ -20,8 +20,10 @@
                     <a href="/feeds/{{feed.name}}/entries">{{ feed.name }}</a>
                 </td>
                 <td>{% if feed.folder %}<span class="icon"><i class="far fa-folder-open"></i></span> {{ feed.folder }}{% endif %}</td>
-                <td class="is-narrow"><a href="#" title="delete"><span class="icon"><i class="far fa-trash-alt"></i></span></a></td>
-                <td class="is-narrow"><a href="/feeds/{{feed.name}}" title="edit"><span class="icon"><i class="fas fa-edit"></i></span></a></td>
+                <td class="is-narrow"><a hx-delete="/feeds/{{feed.name}}" title="delete"
+                                         _="on click remove the closest <tr/>"
+                                      ><span class="icon"><i class="far fa-trash-alt"></i></span></a></td>
+                <td class="is-narrow"><a href="/feeds/edit/{{feed.name}}" title="edit"><span class="icon"><i class="fas fa-edit"></i></span></a></td>
             </tr>
             {% endfor %}
         </tbody>

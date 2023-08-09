@@ -193,14 +193,4 @@ def create_test_feeds(file):
     db.session.commit()
 
 
-@feed_cli.command('delete')
-@click.argument('feed-name')
-def delete_feed(feed_name):
-    "Remove a feed and its entries from the database."
-
-    query = db.delete(models.Feed).where(models.Feed.name == feed_name)
-    db.session.execute(query)
-    db.session.commit()
-
-
 app.cli.add_command(feed_cli)
