@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from flask import current_app as app
 
 import feedi.models as models
+import feedi.tasks as tasks
 from feedi.models import db
 from feedi.sources import rss
 
@@ -24,36 +25,42 @@ def entry_list(feed_name=None, username=None, folder=None):
     If the request is an html AJAX request, respond only with the entry list HTML fragment.
     """
     ENTRY_PAGE_SIZE = 20
+    next_page = None
 
-    after_ts = flask.request.args.get('after')
-    entries = entry_page(limit=ENTRY_PAGE_SIZE, after_ts=after_ts,
-                         feed_name=feed_name, username=username, folder=folder)
+    page = flask.request.args.get('page')
+    freq_sort = flask.session.get('freq_sort')
+    (entries, next_page) = entries_page(ENTRY_PAGE_SIZE, freq_sort, page=page,
+                                        feed_name=feed_name, username=username, folder=folder)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
 
     if is_htmx:
         # render a single page of the entry list
-        return flask.render_template('entry_list.html', entries=entries)
+        return flask.render_template('entry_list.html',
+                                     entries=entries,
+                                     next_page=next_page)
 
     # render home, including feeds sidebar
-    return flask.render_template('entries.html', entries=entries,
+    return flask.render_template('entries.html',
+                                 entries=entries,
+                                 next_page=next_page,
                                  selected_feed=feed_name,
                                  selected_folder=folder)
 
 
-# TODO move to db module
-def entry_page(limit, after_ts=None, feed_name=None, username=None, folder=None):
+# TODO refactor. most of this should probably move to the models module. (not the page parsing bit)
+# and this requires unit testing, I bet it's full of bugs :P
+def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, folder=None):
     """
-    Fetch a page of entries from db, optionally filtered by feed_name.
-    The page is selected from entries older than the given date, or the
-    most recent ones if no date is given.
+    Fetch a page of entries from db, optionally filtered by feed_name, folder or username.
+    A specific sorting is applied according to `freq_sort` (strictly chronological or
+    least frequent feeds first).
+    `limit` and `page` select the page according to the given sorting criteria.
+    The next page indicator is returned as the second element of the return tuple
     """
     query = db.select(models.Entry)
 
-    if after_ts:
-        dt = datetime.datetime.fromtimestamp(float(after_ts))
-        query = query.filter(models.Entry.remote_updated < dt)
-
+    # apply general filters
     if feed_name:
         query = query.filter(models.Entry.feed.has(name=feed_name))
 
@@ -63,9 +70,53 @@ def entry_page(limit, after_ts=None, feed_name=None, username=None, folder=None)
     if username:
         query = query.filter(models.Entry.username == username)
 
-    query = query.order_by(models.Entry.remote_updated.desc()).limit(limit)
+    # apply specific sorting / pagination
+    if freq_sort:
+        # If the user has toggled the frequency based sorting, order entries by least frequent
+        # feeds first then reverse-chronologically for entries in the same frequency rank.
+        # The results are also put in 48 hours 'buckets' so we only highlight articles during the
+        # first couple of days after their publication. (so as to not have fixed stuff in the top of
+        # the timeline for too long).
 
-    return db.session.scalars(query)
+        if page:
+            start_at, page = page.split(':')
+            page = int(page)
+            start_at = datetime.datetime.fromtimestamp(float(start_at))
+        else:
+            start_at = datetime.datetime.now()
+            page = 1
+
+        # by ordering by a "bucket" of "is it older than 48hs?"
+        # we effectively get all entries in the last 2 days first, without
+        # having to filter out the rest --i.e. without truncating the feed
+        last_48_hours = start_at - datetime.timedelta(hours=48)
+        query = query.join(models.Feed)\
+                     .order_by(
+                         (start_at > models.Entry.remote_updated) & (models.Entry.remote_updated < last_48_hours),
+                         models.Feed.frequency_rank,
+                         models.Entry.remote_updated.desc()).limit(limit)
+
+        # the page marker includes the timestamp at which the first page was fetch, so
+        # it doesn't become a "sliding window" that would produce duplicate results.
+        # FIXME what if there are new entries added between pages (as handled in the other pagination)
+        # also this could obviously trip if the ranks are updated in between calls, but well duplicated entries
+        # in infinity scroll aren't the end of the world (they could also be filtered out in the frontend)
+        next_page = f'{start_at.timestamp()}:{page + 1}'
+        return (db.paginate(query, page=page), next_page)
+
+    else:
+        # if not using freq sort, just return entries in reverse chronological order.
+        if page:
+            dt = datetime.datetime.fromtimestamp(float(page))
+            query = query.filter(models.Entry.remote_updated < dt)
+
+        query = query.order_by(models.Entry.remote_updated.desc()).limit(limit)
+        entries = db.session.scalars(query).all()
+
+        # We don't use regular page numbers, instead timestamps so we don't get repeated
+        # results if there were new entries added in the db after the previous page fetch.
+        next_page = entries[-1].remote_updated.timestamp() if entries else None
+        return entries, next_page
 
 
 @app.context_processor
@@ -113,6 +164,11 @@ def feed_add_submit():
     db.session.add(feed)
     db.session.commit()
 
+    tasks.sync_rss_feed(feed.name)
+    tasks.set_frequency_ranks.schedule(delay=60)
+
+    # NOTE it would be better to redirect to the feed itself, but since we load it async
+    # we'd have to show a spinner or something and poll until it finishes loading
     return flask.redirect(flask.url_for('feed_list'))
 
 
@@ -236,8 +292,10 @@ def extract_article(url):
     return str(soup)
 
 
-# TODO this could be PUT/DELETE to set/unset, and make it to work generically with any setting
-@app.post("/session/hide_media/")
-def toggle_hide_media():
-    flask.session['hide_media'] = not flask.session.get('hide_media', False)
+@app.post("/session/<setting>/")
+def toggle_hide_media(setting):
+    if setting not in ['hide_media', 'freq_sort']:
+        flask.abort(400, "Invalid setting")
+
+    flask.session[setting] = not flask.session.get(setting, False)
     return '', 204

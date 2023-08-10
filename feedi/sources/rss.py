@@ -314,8 +314,10 @@ def detect_feed_icon(url):
         logger.debug("using feed icon: %s", icon_url)
     else:
         favicons = favicon.get(feed['feed'].get('link', url))
-        # if multiple formats, assume the .ico is the canonical one if present
-        favicons = [f for f in favicons if f.height == f.width] or favicons
+        favicons = [f for f in favicons if f.height == f.width]
+        if not favicons:
+            logger.debug("no feed icon found: %s", favicons)
+            return
         icon_url = favicons[0].url
         logger.debug('using favicon %s', icon_url)
 
