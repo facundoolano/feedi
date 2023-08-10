@@ -75,11 +75,15 @@ def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, fol
             start_at = datetime.datetime.now()
             page = 1
 
+        # by ordering by a "bucket" of "is it older than 48hs?"
+        # we effectively get all entries in the last 2 days first, without
+        # having to filter out the rest --i.e. without truncating the feed
         last_48_hours = start_at - datetime.timedelta(hours=48)
         query = query.join(models.Feed)\
-                     .filter(models.Entry.remote_updated > last_48_hours)\
-                     .order_by(models.Feed.frequency_rank,
-                               models.Entry.remote_updated.desc()).limit(limit)
+                     .order_by(
+                         models.Entry.remote_updated < last_48_hours,
+                         models.Feed.frequency_rank,
+                         models.Entry.remote_updated.desc()).limit(limit)
 
         next_page = f'{start_at.timestamp()}:{page + 1}'
         return (db.paginate(query, page=page), next_page)
