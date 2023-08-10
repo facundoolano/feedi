@@ -9,6 +9,7 @@ from bs4 import BeautifulSoup
 from flask import current_app as app
 
 import feedi.models as models
+import feedi.tasks as tasks
 from feedi.models import db
 from feedi.sources import rss
 
@@ -163,6 +164,11 @@ def feed_add_submit():
     db.session.add(feed)
     db.session.commit()
 
+    tasks.sync_rss_feed(feed.name)
+    tasks.set_frequency_ranks.schedule(delay=60)
+
+    # NOTE it would be better to redirect to the feed itself, but since we load it async
+    # we'd have to show a spinner or something and poll until it finishes loading
     return flask.redirect(flask.url_for('feed_list'))
 
 
