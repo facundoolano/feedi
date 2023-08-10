@@ -149,6 +149,7 @@ def upsert_entries(feed_id, entries_values):
 
 
 @feed_cli.command('freq')
+@huey_task(crontab(hour='*/2'))
 def set_frequency_ranks():
     """
     Classify each feed into "buckets" according to how frequently its entries are published.
@@ -179,9 +180,12 @@ def set_frequency_ranks():
         elif count < 45:
             # up to 3 times a day
             rank = 3
-        else:
-            # many times a day
+        elif count < 300:
+            #~ 20 a day
             rank = 4
+        else:
+            # more
+            rank = 5
         feed.frequency_rank = rank
 
     db.session.commit()
