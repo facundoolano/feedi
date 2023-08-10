@@ -11,6 +11,7 @@ from functools import wraps
 
 import click
 import flask
+import sqlalchemy as sa
 import sqlalchemy.dialects.sqlite as sqlite
 from flask import current_app as app
 from huey import crontab
@@ -145,6 +146,45 @@ def upsert_entries(feed_id, entries_values):
 
         # inline commit to avoid sqlite locking when fetching parallel feeds
         db.session.commit()
+
+
+@feed_cli.command('freq')
+def set_frequency_ranks():
+    """
+    Classify each feed into "buckets" according to how frequently its entries are published.
+    This is used to feature more prominently the ones that are less frequent (i.e. preferring occasional
+    blog posts over spammy news articles or social updates).
+    """
+
+    two_weeks_ago = datetime.datetime.now() - datetime.timedelta(days=14)
+    q = db.select(models.Feed, sa.func.count(models.Entry.id))\
+        .join(models.Entry)\
+        .filter(models.Entry.remote_updated >= two_weeks_ago)\
+        .group_by(models.Feed)\
+        .order_by(sa.func.count(models.Entry.id))
+
+    # this is admittedly a dumb/arbitrary way of setting scores
+    # but I'd rather see how it works for a while than spending time in figuring
+    # a fancy weighting algorithm
+    for feed, count in db.session.execute(q).all():
+        if count <= 2:
+            # weekly or less
+            rank = 1
+        elif count < 5:
+            # couple of times a week
+            rank = 2
+        elif count < 15:
+            # up to once a day
+            rank = 3
+        elif count < 45:
+            # up to 3 times a day
+            rank = 3
+        else:
+            # many times a day
+            rank = 4
+        feed.frequency_rank = rank
+
+    db.session.commit()
 
 
 @feed_cli.command('debug')
