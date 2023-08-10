@@ -31,6 +31,7 @@ class Feed(db.Model):
     folder = sa.Column(sa.String, index=True)
     views = sa.Column(sa.Integer, default=0, nullable=False,
                       doc="counts how many times articles of this feed have been read. ")
+    frequency_rank = sa.Column(sa.Integer)
 
     __mapper_args__ = {'polymorphic_on': type,
                        'polymorphic_identity': 'feed'}
