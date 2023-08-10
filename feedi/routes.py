@@ -26,18 +26,10 @@ def entry_list(feed_name=None, username=None, folder=None):
     ENTRY_PAGE_SIZE = 20
     next_page = None
 
-    page = int(flask.request.args.get('page', 1))
-
-    # FIXME check if timeline or fancy sort
-    # entries = timeline_page(limit=ENTRY_PAGE_SIZE, after_ts=page,
-    #                      feed_name=feed_name, username=username, folder=folder)
-    # if entries:
-    #     next_page = entries[0].remote_updated.timestamp()
-
-    entries = higlights_page(limit=ENTRY_PAGE_SIZE, start_at=datetime.datetime.now(),
-                             page=page,
-                             folder=folder)
-    next_page = page + 1 if page else 2
+    page = flask.request.args.get('page')
+    freq_sort = flask.session.get('freq_sort')
+    (entries, next_page) = entries_page(ENTRY_PAGE_SIZE, freq_sort, page=page,
+                                        feed_name=feed_name, username=username, folder=folder)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
 
@@ -55,33 +47,14 @@ def entry_list(feed_name=None, username=None, folder=None):
                                  selected_folder=folder)
 
 
-def higlights_page(limit, start_at, page=1, folder=None):
-    last_48_hours = start_at - datetime.timedelta(hours=48)
-    query = db.select(models.Entry)\
-        .join(models.Entry.feed)\
-        .filter(models.Entry.remote_updated > last_48_hours)
-
-    if folder:
-        query = query.filter(models.Entry.feed.has(folder=folder))
-
-    query = query.order_by(models.Feed.frequency_rank,
-                           models.Entry.remote_updated.desc()).limit(limit)
-
-    return db.paginate(query, page=page)
-
-# TODO move to db module
-def timeline_page(limit, after_ts=None, feed_name=None, username=None, folder=None):
+# TODO refactor
+def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, folder=None):
     """
-    Fetch a page of entries from db, optionally filtered by feed_name.
-    The page is selected from entries older than the given date, or the
-    most recent ones if no date is given.
+    FIXME
     """
     query = db.select(models.Entry)
 
-    if after_ts:
-        dt = datetime.datetime.fromtimestamp(float(after_ts))
-        query = query.filter(models.Entry.remote_updated < dt)
-
+    # apply general filters
     if feed_name:
         query = query.filter(models.Entry.feed.has(name=feed_name))
 
@@ -91,8 +64,36 @@ def timeline_page(limit, after_ts=None, feed_name=None, username=None, folder=No
     if username:
         query = query.filter(models.Entry.username == username)
 
-    query = query.order_by(models.Entry.remote_updated.desc()).limit(limit)
-    return db.session.scalars(query)
+    # apply specific sorting / pagination
+    # FIXME describe
+    if freq_sort:
+        if page:
+            start_at, page = page.split(':')
+            page = int(page)
+            start_at = datetime.datetime.fromtimestamp(float(start_at))
+        else:
+            start_at = datetime.datetime.now()
+            page = 1
+
+        last_48_hours = start_at - datetime.timedelta(hours=48)
+        query = query.join(models.Feed)\
+                     .filter(models.Entry.remote_updated > last_48_hours)\
+                     .order_by(models.Feed.frequency_rank,
+                               models.Entry.remote_updated.desc()).limit(limit)
+
+        next_page = f'{start_at.timestamp()}:{page + 1}'
+        return (db.paginate(query, page=page), next_page)
+
+    else:
+        # FIXME page management is clumsy
+        if page:
+            dt = datetime.datetime.fromtimestamp(float(page))
+            query = query.filter(models.Entry.remote_updated < dt)
+
+        query = query.order_by(models.Entry.remote_updated.desc()).limit(limit)
+        entries = db.session.scalars(query).all()
+        next_page = entries[-1].remote_updated.timestamp() if entries else ''
+        return entries, next_page
 
 
 @app.context_processor
@@ -263,8 +264,10 @@ def extract_article(url):
     return str(soup)
 
 
-# TODO this could be PUT/DELETE to set/unset, and make it to work generically with any setting
-@app.post("/session/hide_media/")
-def toggle_hide_media():
-    flask.session['hide_media'] = not flask.session.get('hide_media', False)
+@app.post("/session/<setting>/")
+def toggle_hide_media(setting):
+    if setting not in ['hide_media', 'freq_sort']:
+        flask.abort(400, "Invalid setting")
+
+    flask.session[setting] = not flask.session.get(setting, False)
     return '', 204
