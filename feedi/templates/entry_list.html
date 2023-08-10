@@ -56,7 +56,7 @@
          </div>
      </div>
  </div>
- {% if loop.last %}
+ {% if loop.last and next_page%}
  <div hx-get="{{ request.path }}?page={{ next_page }}" hx-trigger="revealed" hx-swap="outerHTML"></div>
  {% endif %}
  {% endfor %}

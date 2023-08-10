@@ -154,7 +154,7 @@ def set_frequency_ranks():
     """
     Classify each feed into "buckets" according to how frequently its entries are published.
     This is used to feature more prominently the ones that are less frequent (i.e. preferring occasional
-    blog posts over spammy news articles or social updates).
+    blog posts over spammy news articles or social media updates).
     """
 
     two_weeks_ago = datetime.datetime.now() - datetime.timedelta(days=14)

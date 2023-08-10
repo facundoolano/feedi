@@ -47,10 +47,15 @@ def entry_list(feed_name=None, username=None, folder=None):
                                  selected_folder=folder)
 
 
-# TODO refactor
+# TODO refactor. most of this should probably move to the models module. (not the page parsing bit)
+# and this requires unit testing, I bet it's full of bugs :P
 def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, folder=None):
     """
-    FIXME
+    Fetch a page of entries from db, optionally filtered by feed_name, folder or username.
+    A specific sorting is applied according to `freq_sort` (strictly chronological or
+    least frequent feeds first).
+    `limit` and `page` select the page according to the given sorting criteria.
+    The next page indicator is returned as the second element of the return tuple
     """
     query = db.select(models.Entry)
 
@@ -65,8 +70,13 @@ def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, fol
         query = query.filter(models.Entry.username == username)
 
     # apply specific sorting / pagination
-    # FIXME describe
     if freq_sort:
+        # If the user has toggled the frequency based sorting, order entries by least frequent
+        # feeds first then reverse-chronologically for entries in the same frequency rank.
+        # The results are also put in 48 hours 'buckets' so we only highlight articles during the
+        # first couple of days after their publication. (so as to not have fixed stuff in the top of
+        # the timeline for too long).
+
         if page:
             start_at, page = page.split(':')
             page = int(page)
@@ -81,22 +91,30 @@ def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, fol
         last_48_hours = start_at - datetime.timedelta(hours=48)
         query = query.join(models.Feed)\
                      .order_by(
-                         models.Entry.remote_updated < last_48_hours,
+                         (start_at > models.Entry.remote_updated) & (models.Entry.remote_updated < last_48_hours),
                          models.Feed.frequency_rank,
                          models.Entry.remote_updated.desc()).limit(limit)
 
+        # the page marker includes the timestamp at which the first page was fetch, so
+        # it doesn't become a "sliding window" that would produce duplicate results.
+        # FIXME what if there are new entries added between pages (as handled in the other pagination)
+        # also this could obviously trip if the ranks are updated in between calls, but well duplicated entries
+        # in infinity scroll aren't the end of the world (they could also be filtered out in the frontend)
         next_page = f'{start_at.timestamp()}:{page + 1}'
         return (db.paginate(query, page=page), next_page)
 
     else:
-        # FIXME page management is clumsy
+        # if not using freq sort, just return entries in reverse chronological order.
         if page:
             dt = datetime.datetime.fromtimestamp(float(page))
             query = query.filter(models.Entry.remote_updated < dt)
 
         query = query.order_by(models.Entry.remote_updated.desc()).limit(limit)
         entries = db.session.scalars(query).all()
-        next_page = entries[-1].remote_updated.timestamp() if entries else ''
+
+        # We don't use regular page numbers, instead timestamps so we don't get repeated
+        # results if there were new entries added in the db after the previous page fetch.
+        next_page = entries[-1].remote_updated.timestamp() if entries else None
         return entries, next_page
 
 
