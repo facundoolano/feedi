@@ -26,8 +26,12 @@ def entry_list(feed_name=None, username=None, folder=None):
     ENTRY_PAGE_SIZE = 20
 
     after_ts = flask.request.args.get('after')
-    entries = entry_page(limit=ENTRY_PAGE_SIZE, after_ts=after_ts,
-                         feed_name=feed_name, username=username, folder=folder)
+    # FIXME check if timeline or fancy sort
+    # entries = timeline_page(limit=ENTRY_PAGE_SIZE, after_ts=after_ts,
+    #                      feed_name=feed_name, username=username, folder=folder)
+    entries = higlights_page(limit=ENTRY_PAGE_SIZE, start_at=datetime.datetime.now(),
+                             page=1,
+                             folder=folder)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
 
@@ -41,8 +45,24 @@ def entry_list(feed_name=None, username=None, folder=None):
                                  selected_folder=folder)
 
 
+def higlights_page(limit, start_at, page=1, folder=None):
+    last_48_hours = start_at - datetime.timedelta(hours=48)
+    query = db.select(models.Entry)\
+        .join(models.Entry.feed)\
+        .filter(models.Entry.remote_updated > last_48_hours)
+
+    if folder:
+        query = query.filter(models.Entry.feed.has(folder=folder))
+
+    query = query.order_by(models.Feed.frequency_rank,
+                           models.Entry.remote_updated.desc()).limit(limit)
+
+    # TODO use page
+
+    return db.session.scalars(query)
+
 # TODO move to db module
-def entry_page(limit, after_ts=None, feed_name=None, username=None, folder=None):
+def timeline_page(limit, after_ts=None, feed_name=None, username=None, folder=None):
     """
     Fetch a page of entries from db, optionally filtered by feed_name.
     The page is selected from entries older than the given date, or the
@@ -64,7 +84,6 @@ def entry_page(limit, after_ts=None, feed_name=None, username=None, folder=None)
         query = query.filter(models.Entry.username == username)
 
     query = query.order_by(models.Entry.remote_updated.desc()).limit(limit)
-
     return db.session.scalars(query)
 
 
