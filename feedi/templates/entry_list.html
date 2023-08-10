@@ -57,6 +57,6 @@
      </div>
  </div>
  {% if loop.last %}
- <div hx-get="{{ request.path }}?after={{ entry.remote_updated.timestamp()  }}" hx-trigger="revealed" hx-swap="outerHTML"></div>
+ <div hx-get="{{ request.path }}?page={{ next_page }}" hx-trigger="revealed" hx-swap="outerHTML"></div>
  {% endif %}
  {% endfor %}

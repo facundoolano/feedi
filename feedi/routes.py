@@ -24,23 +24,33 @@ def entry_list(feed_name=None, username=None, folder=None):
     If the request is an html AJAX request, respond only with the entry list HTML fragment.
     """
     ENTRY_PAGE_SIZE = 20
+    next_page = None
 
-    after_ts = flask.request.args.get('after')
+    page = int(flask.request.args.get('page', 1))
+
     # FIXME check if timeline or fancy sort
-    # entries = timeline_page(limit=ENTRY_PAGE_SIZE, after_ts=after_ts,
+    # entries = timeline_page(limit=ENTRY_PAGE_SIZE, after_ts=page,
     #                      feed_name=feed_name, username=username, folder=folder)
+    # if entries:
+    #     next_page = entries[0].remote_updated.timestamp()
+
     entries = higlights_page(limit=ENTRY_PAGE_SIZE, start_at=datetime.datetime.now(),
-                             page=1,
+                             page=page,
                              folder=folder)
+    next_page = page + 1 if page else 2
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
 
     if is_htmx:
         # render a single page of the entry list
-        return flask.render_template('entry_list.html', entries=entries)
+        return flask.render_template('entry_list.html',
+                                     entries=entries,
+                                     next_page=next_page)
 
     # render home, including feeds sidebar
-    return flask.render_template('entries.html', entries=entries,
+    return flask.render_template('entries.html',
+                                 entries=entries,
+                                 next_page=next_page,
                                  selected_feed=feed_name,
                                  selected_folder=folder)
 
@@ -57,9 +67,7 @@ def higlights_page(limit, start_at, page=1, folder=None):
     query = query.order_by(models.Feed.frequency_rank,
                            models.Entry.remote_updated.desc()).limit(limit)
 
-    # TODO use page
-
-    return db.session.scalars(query)
+    return db.paginate(query, page=page)
 
 # TODO move to db module
 def timeline_page(limit, after_ts=None, feed_name=None, username=None, folder=None):
