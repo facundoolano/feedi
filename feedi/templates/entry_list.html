@@ -1,5 +1,6 @@
 {% for entry in entries %}
- <div class="card feed-entry is-radiusless">
+<div class="card feed-entry is-radiusless" tabindex="0"
+     _="on focus go to middle of me">
      <div class="card-content">
          {% if entry.reblogged_by %}
          <div class="columns reblogged">

@@ -66,6 +66,10 @@
     box-shadow: 0 0 0 1px hsl(0, 0%, 90%);
 }
 
+.card.feed-entry:focus {
+    box-shadow: 0 0 0 1px hsl(217, 71%,  53%);
+}
+
 .feeds-sidebar {
     position: sticky;
     display: inline-block;
