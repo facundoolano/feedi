@@ -3,7 +3,6 @@ import urllib
 from collections import defaultdict
 
 import flask
-import gevent
 import newspaper
 import sqlalchemy as sa
 from bs4 import BeautifulSoup
@@ -87,15 +86,27 @@ def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, fol
             start_at = datetime.datetime.now()
             page = 1
 
+        two_weeks_ago = datetime.datetime.now() - datetime.timedelta(days=14)
+        subquery = db.select(models.Feed.id, sa.func.round(sa.func.log(sa.func.count(models.Entry.id))).label('rank'))\
+                     .join(models.Entry)\
+                     .filter(models.Entry.remote_updated >= two_weeks_ago)\
+                     .group_by(models.Feed)\
+                     .subquery()
+
+        print(subquery)
+
         # by ordering by a "bucket" of "is it older than 48hs?"
         # we effectively get all entries in the last 2 days first, without
         # having to filter out the rest --i.e. without truncating the feed
         last_48_hours = start_at - datetime.timedelta(hours=48)
         query = query.join(models.Feed)\
+                     .join(subquery, subquery.c.id == models.Feed.id)\
                      .order_by(
                          (start_at > models.Entry.remote_updated) & (models.Entry.remote_updated < last_48_hours),
-                         models.Feed.frequency_rank,
+                         subquery.c.rank,
                          models.Entry.remote_updated.desc()).limit(limit)
+
+        print(query)
 
         # the page marker includes the timestamp at which the first page was fetch, so
         # it doesn't become a "sliding window" that would produce duplicate results.
@@ -167,11 +178,6 @@ def feed_add_submit():
 
     # run the sync task on a separate green thread
     tasks.sync_rss_feed(feed.name)
-
-    # schedule the set frequencies task for later
-    # (mini huey doesn't seem to support both cron and delay for the same task
-    # so we use spawn later instead)
-    gevent.spawn_later(30, tasks.set_frequency_ranks)
 
     # NOTE it would be better to redirect to the feed itself, but since we load it async
     # we'd have to show a spinner or something and poll until it finishes loading

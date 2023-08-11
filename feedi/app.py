@@ -6,7 +6,7 @@ import logging
 import flask
 from werkzeug.serving import is_running_from_reloader
 
-from feedi.models import db
+import feedi.models as models
 
 
 def create_app():
@@ -16,12 +16,10 @@ def create_app():
 
     app.logger.setLevel(logging.INFO)
 
-    db.init_app(app)
-
     with app.app_context():
-        db.create_all()
-
         from . import filters, routes, tasks
+
+        models.init_db(app)
 
         if not is_running_from_reloader():
             # we want only one huey scheduler running, so we make sure
@@ -33,7 +31,7 @@ def create_app():
 
     @app.teardown_appcontext
     def shutdown_session(exception=None):
-        db.session.remove()
+        models.db.session.remove()
 
     return app
 

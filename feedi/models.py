@@ -1,4 +1,5 @@
 import datetime
+import math
 
 import sqlalchemy as sa
 from flask_sqlalchemy import SQLAlchemy
@@ -6,6 +7,17 @@ from flask_sqlalchemy import SQLAlchemy
 # TODO consider adding explicit support for url columns
 
 db = SQLAlchemy()
+
+def init_db(app):
+    db.init_app(app)
+
+    @sa.event.listens_for(db.engine, 'connect')
+    def on_connect(dbapi_connection, _connection_record):
+        # by default (at least in my system) sqlite is compiled without math functions
+        # this registers the log function to use it in queries
+        dbapi_connection.create_function('log', 1, math.log)
+
+    db.create_all()
 
 
 class Feed(db.Model):
