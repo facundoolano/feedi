@@ -44,9 +44,6 @@ class Feed(db.Model):
     views = sa.Column(sa.Integer, default=0, nullable=False,
                       doc="counts how many times articles of this feed have been read. ")
 
-    # FIXME remove this if we don't use it anymore
-    frequency_rank = sa.Column(sa.Integer, doc="Ranks the feed according to how frequently new entries appear.")
-
     __mapper_args__ = {'polymorphic_on': type,
                        'polymorphic_identity': 'feed'}
 
