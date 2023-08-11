@@ -86,7 +86,8 @@ def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, fol
             start_at = datetime.datetime.now()
             page = 1
 
-        # TODO explain
+        # count the amount of entries per feed seen in the last two weeks and map the count to frequency "buckets"
+        # (see the models.Feed.freq_bucket function) to be used in the order by clause of the next query
         two_weeks_ago = datetime.datetime.now() - datetime.timedelta(days=14)
         subquery = db.select(models.Feed.id, sa.func.freq_bucket(sa.func.count(models.Entry.id)).label('rank'))\
                      .join(models.Entry)\
@@ -94,10 +95,9 @@ def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, fol
                      .group_by(models.Feed)\
                      .subquery()
 
-        # by ordering by a "bucket" of "is it older than 48hs?"
-        # we effectively get all entries in the last 2 days first, without
-        # having to filter out the rest --i.e. without truncating the feed
-        last_48_hours = start_at - datetime.timedelta(hours=24)
+        # by ordering by a "bucket" of "is it older than 48hs?" we effectively get all entries in the last 2 days first,
+        # without having to filter out the rest --i.e. without truncating the feed
+        last_48_hours = start_at - datetime.timedelta(hours=48)
         query = query.join(models.Feed)\
                      .join(subquery, subquery.c.id == models.Feed.id)\
                      .order_by(
@@ -173,11 +173,12 @@ def feed_add_submit():
     db.session.add(feed)
     db.session.commit()
 
-    # run the sync task on a separate green thread
+    # trigger a sync of this feed to fetch its entries on the background
     tasks.sync_rss_feed(feed.name)
 
     # NOTE it would be better to redirect to the feed itself, but since we load it async
     # we'd have to show a spinner or something and poll until it finishes loading
+    # or alternatively hang the response until the feed is processed, neither of which is ideal
     return flask.redirect(flask.url_for('feed_list'))
 
 
