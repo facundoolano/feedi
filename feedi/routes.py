@@ -3,6 +3,7 @@ import urllib
 from collections import defaultdict
 
 import flask
+import gevent
 import newspaper
 import sqlalchemy as sa
 from bs4 import BeautifulSoup
@@ -164,8 +165,13 @@ def feed_add_submit():
     db.session.add(feed)
     db.session.commit()
 
+    # run the sync task on a separate green thread
     tasks.sync_rss_feed(feed.name)
-    tasks.set_frequency_ranks.schedule(delay=60)
+
+    # schedule the set frequencies task for later
+    # (mini huey doesn't seem to support both cron and delay for the same task
+    # so we use spawn later instead)
+    gevent.spawn_later(30, tasks.set_frequency_ranks)
 
     # NOTE it would be better to redirect to the feed itself, but since we load it async
     # we'd have to show a spinner or something and poll until it finishes loading
