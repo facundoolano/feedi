@@ -2,16 +2,15 @@
     <div class="level-left">
         <p>
             <b>
-                <a href="/entries/{{ entry.id }}">{{ entry.title }}</a>
+                <a _="on keyup[key is 'Enter'] from the closest .feed-entry set the location of the window to my @href" href="/entries/{{ entry.id }}">{{ entry.title }}</a>
             </b>
             <br/>
         </p>
     </div>
     <div class="level-right">
-        <a
-            _="on click remove the closest .feed-entry
-               then on keyup[key is 'Delete' or key is 'Backspace'] from the closest .feed-entry trigger click on me"
-            class="level-item icon hover-icon is-white is-rounded trash-entry" title="Remove entry"><i class="fas fa-trash-alt"></i></a>
+        <a _="on click remove the closest .feed-entry
+              then on keyup[key is 'Delete' or key is 'Backspace'] from the closest .feed-entry trigger click on me"
+           class="level-item icon hover-icon is-white is-rounded trash-entry" title="Remove entry"><i class="fas fa-trash-alt"></i></a>
         <a class="level-item icon hover-icon is-white is-rounded" title="Pin entry"><i class="fas fa-thumbtack"></i></a>
 
         <div class="dropdown is-right">

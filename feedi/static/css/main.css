@@ -1,11 +1,7 @@
 /* reduce margins */
 .feed-entry .card-content {
-    padding: 1rem;
-}
-
-.feed-entry .card-content {
     padding-bottom: 0;
-    padding-top: 0.75rem;
+    padding-top: 0;
 }
 
 .reblogged {
@@ -14,7 +10,7 @@
 
 .reblogged .column {
     padding-top: .5rem!important;
-    padding-bottom: .5rem!important;
+    padding-bottom: 0!important;
 }
 
 .body-container {
@@ -39,10 +35,6 @@
     margin-bottom: 0!important;
 }
 
-.feed-header-details {
-    margin-bottom: 0.75rem!important;
-}
-
 .avatar-column {
     padding-right: .25
 }
@@ -63,11 +55,19 @@
 }
 
 .card.feed-entry, .box.feed-entry  {
-    box-shadow: 0 0 0 1px hsl(0, 0%, 90%);
+    box-shadow: 0 0 0 0;
+    border: solid 1px hsl(0, 0%, 90%);
+    border-top:0;
 }
 
 .card.feed-entry:focus {
-    box-shadow: 0 0 0 1px hsl(217, 71%,  53%);
+    border: solid 1px hsl(217, 71%,  53%);
+    z-index: 1
+}
+
+.card .columns {
+    margin-top:0;
+    margin-bottom:0;
 }
 
 .feeds-sidebar {
