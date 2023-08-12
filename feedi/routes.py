@@ -3,7 +3,6 @@ import urllib
 from collections import defaultdict
 
 import flask
-import gevent
 import newspaper
 import sqlalchemy as sa
 from bs4 import BeautifulSoup
@@ -87,14 +86,23 @@ def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, fol
             start_at = datetime.datetime.now()
             page = 1
 
-        # by ordering by a "bucket" of "is it older than 48hs?"
-        # we effectively get all entries in the last 2 days first, without
-        # having to filter out the rest --i.e. without truncating the feed
+        # count the amount of entries per feed seen in the last two weeks and map the count to frequency "buckets"
+        # (see the models.Feed.freq_bucket function) to be used in the order by clause of the next query
+        two_weeks_ago = datetime.datetime.now() - datetime.timedelta(days=14)
+        subquery = db.select(models.Feed.id, sa.func.freq_bucket(sa.func.count(models.Entry.id)).label('rank'))\
+                     .join(models.Entry)\
+                     .filter(models.Entry.remote_updated >= two_weeks_ago)\
+                     .group_by(models.Feed)\
+                     .subquery()
+
+        # by ordering by a "bucket" of "is it older than 48hs?" we effectively get all entries in the last 2 days first,
+        # without having to filter out the rest --i.e. without truncating the feed
         last_48_hours = start_at - datetime.timedelta(hours=48)
         query = query.join(models.Feed)\
+                     .join(subquery, subquery.c.id == models.Feed.id)\
                      .order_by(
                          (start_at > models.Entry.remote_updated) & (models.Entry.remote_updated < last_48_hours),
-                         models.Feed.frequency_rank,
+                         subquery.c.rank,
                          models.Entry.remote_updated.desc()).limit(limit)
 
         # the page marker includes the timestamp at which the first page was fetch, so
@@ -165,16 +173,12 @@ def feed_add_submit():
     db.session.add(feed)
     db.session.commit()
 
-    # run the sync task on a separate green thread
+    # trigger a sync of this feed to fetch its entries on the background
     tasks.sync_rss_feed(feed.name)
-
-    # schedule the set frequencies task for later
-    # (mini huey doesn't seem to support both cron and delay for the same task
-    # so we use spawn later instead)
-    gevent.spawn_later(30, tasks.set_frequency_ranks)
 
     # NOTE it would be better to redirect to the feed itself, but since we load it async
     # we'd have to show a spinner or something and poll until it finishes loading
+    # or alternatively hang the response until the feed is processed, neither of which is ideal
     return flask.redirect(flask.url_for('feed_list'))
 
 

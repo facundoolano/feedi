@@ -1,4 +1,5 @@
 import datetime
+import math
 
 import sqlalchemy as sa
 from flask_sqlalchemy import SQLAlchemy
@@ -6,6 +7,17 @@ from flask_sqlalchemy import SQLAlchemy
 # TODO consider adding explicit support for url columns
 
 db = SQLAlchemy()
+
+def init_db(app):
+    db.init_app(app)
+
+    @sa.event.listens_for(db.engine, 'connect')
+    def on_connect(dbapi_connection, _connection_record):
+        # registers a custom function that can be used during queries
+        # in this case to sort the feed based on the post frequency of the sources
+        dbapi_connection.create_function('freq_bucket', 1, Feed.freq_bucket)
+
+    db.create_all()
 
 
 class Feed(db.Model):
@@ -31,13 +43,39 @@ class Feed(db.Model):
     folder = sa.Column(sa.String, index=True)
     views = sa.Column(sa.Integer, default=0, nullable=False,
                       doc="counts how many times articles of this feed have been read. ")
-    frequency_rank = sa.Column(sa.Integer, doc="Ranks the feed according to how frequently new entries appear.")
 
     __mapper_args__ = {'polymorphic_on': type,
                        'polymorphic_identity': 'feed'}
 
     def __repr__(self):
         return f'<Feed {self.name}>'
+
+    @staticmethod
+    def freq_bucket(count):
+        """
+        To be used as a DB function, this returns a "rank" of the feed based on how
+        many posts we've seen (assuming the count is for the last 2 weeks).
+        This rank classifies the feeds so the least frequent posters are displayed more
+        prominently.
+        """
+        # this is pretty hacky but it's low effort and servers for experimentation
+        if count <= 2:
+            # weekly or less
+            rank = 1
+        elif count < 5:
+            # couple of times a week
+            rank = 2
+        elif count < 15:
+            # up to once a day
+            rank = 3
+        elif count < 45:
+            # up to 3 times a day
+            rank = 3
+        else:
+            # more
+            rank = 5
+        return rank
+
 
 
 class RssFeed(Feed):
