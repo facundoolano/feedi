@@ -299,6 +299,12 @@ def extract_article(url):
             # fix paths of relative img urls by joining with the main articule url
             img['src'] = urllib.parse.urljoin(url, src)
 
+    # preserver readability of code snippets by stripping the <p> tags inside them
+    # (I assume they are being inserted as part of the newspaper cleanup)
+    for tag in soup.find_all(['pre', 'code']):
+        for p in tag.find_all('p'):
+            p.unwrap()
+
     return str(soup)
 
 
