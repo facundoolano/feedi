@@ -185,6 +185,8 @@ def feed_add_submit():
 @app.delete("/feeds/<feed_name>")
 def feed_delete(feed_name):
     "Remove a feed and its entries from the database."
+    # FIXME this should probably do a "logic" delete and keep stuff around
+    # especially considering that it will kill child entries as well
     query = db.delete(models.Feed).where(models.Feed.name == feed_name)
     db.session.execute(query)
     db.session.commit()
@@ -214,7 +216,6 @@ def feed_edit_submit(feed_name):
 
     return flask.redirect(flask.url_for('feed_list'))
 
-
 @app.get("/entries/<int:id>/")
 def fetch_entry_content(id):
     """
@@ -240,6 +241,14 @@ def fetch_entry_content(id):
     db.session.commit()
 
     return flask.render_template("entry_content.html", entry=entry, content=content)
+
+@app.delete("/entries/<int:id>/")
+def entry_delete(id):
+    "Remove a feed and its entries from the database."
+    stmt = db.update(models.Entry).where(id==id).values(deleted=datetime.datetime.utcnow())
+    db.session.execute(stmt)
+    db.session.commit()
+    return '', 204
 
 
 @app.route("/feeds/<int:id>/raw")
