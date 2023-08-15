@@ -33,9 +33,21 @@
                  <div class="columns body-container">
                      {% if entry.media_url %}
                      <div class="column is-one-quarter media-url-container {% if session.hide_media %}is-hidden{% endif %}">
-                         <figure class="image media-url is-5by3">
+                         <figure class="image media-url is-5by3" tabindex="-1"
+                                 _="on click add .is-active to the next .modal then halt">
                              <img src="{{ entry.media_url }}" alt="article preview" onerror='this.parentNode.parentNode.style.display = "none"'>
                          </figure>
+                     </div>
+                     <div class="modal">
+                         <div class="modal-background"
+                              _="on click remove .is-active from the closest .modal"
+                         ></div>
+                         <div class="modal-content"
+                              _="on keydown[key is 'Escape'] elsewhere remove .is-active from the closest .modal">
+                             <p class="image ">
+                                 <img src="{{ entry.media_url }}" alt="article preview">
+                             </p>
+                         </div>
                      </div>
                      {% endif %}
                      {% if entry.body %}
