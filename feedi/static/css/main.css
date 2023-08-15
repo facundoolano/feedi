@@ -41,8 +41,13 @@
 
 /* entry effects on hover  */
 
-.feed-entry .hover-icon {
+.feed-entry .hover-icon:not(.toggled) {
     visibility: hidden;
+}
+
+/* style for favorite icon */
+.hover-icon.toggled .fa-star {
+    color: #ca8f04;
 }
 
 .feed-entry:hover .hover-icon {

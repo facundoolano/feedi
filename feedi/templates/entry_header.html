@@ -27,6 +27,9 @@
            class="level-item icon hover-icon is-white is-rounded trash-entry" title="Restore entry"><i class="fas fa-trash-restore-alt"></i></a>
         {% endif %}
         <a class="level-item icon hover-icon is-white is-rounded" title="Pin entry"><i class="fas fa-thumbtack"></i></a>
+        <a class="level-item icon hover-icon is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite entry"
+           _="on click toggle .toggled"
+        ><i class="fas fa-star"></i></a>
 
         <div class="dropdown is-right">
             <div class="dropdown-trigger">
