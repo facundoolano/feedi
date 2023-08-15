@@ -50,7 +50,7 @@ def entry_list(feed_name=None, username=None, folder=None):
 
 # TODO refactor. most of this should probably move to the models module. (not the page parsing bit)
 # and this requires unit testing, I bet it's full of bugs :P
-def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, folder=None):
+def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, folder=None, deleted=False):
     """
     Fetch a page of entries from db, optionally filtered by feed_name, folder or username.
     A specific sorting is applied according to `freq_sort` (strictly chronological or
@@ -61,6 +61,11 @@ def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, fol
     query = db.select(models.Entry)
 
     # apply general filters
+    if deleted:
+        query = query.filter(models.Entry.deleted.is_not(None))
+    else:
+        query = query.filter(models.Entry.deleted.is_(None))
+
     if feed_name:
         query = query.filter(models.Entry.feed.has(name=feed_name))
 
@@ -245,7 +250,7 @@ def fetch_entry_content(id):
 @app.delete("/entries/<int:id>/")
 def entry_delete(id):
     "Remove a feed and its entries from the database."
-    stmt = db.update(models.Entry).where(id==id).values(deleted=datetime.datetime.utcnow())
+    stmt = db.update(models.Entry).where(models.Entry.id==id).values(deleted=datetime.datetime.utcnow())
     db.session.execute(stmt)
     db.session.commit()
     return '', 204
