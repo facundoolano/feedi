@@ -42,11 +42,9 @@
                          <div class="modal-background"
                               _="on click remove .is-active from the closest .modal"
                          ></div>
-                         <div class="modal-content"
+                         <div class="modal-content preview-modal"
                               _="on keydown[key is 'Escape'] elsewhere remove .is-active from the closest .modal">
-                             <p class="image ">
-                                 <img src="{{ entry.media_url }}" alt="article preview">
-                             </p>
+                             <p><img src="{{ entry.media_url }}" alt="article preview"></p>
                          </div>
                      </div>
                      {% endif %}

@@ -59,6 +59,11 @@
     object-fit: cover;
 }
 
+.preview-modal {
+    /* center preview image */
+    width: auto!important;
+}
+
 .card.feed-entry, .box.feed-entry  {
     box-shadow: 0 0 0 0;
     border: solid 1px hsl(0, 0%, 90%);
