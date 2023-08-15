@@ -266,38 +266,18 @@ def fetch_entry_content(id):
 
 @app.put("/entries/favorites/<int:id>/")
 def entry_favorite(id):
-    "Remove an entry."
-    stmt = db.update(models.Entry).where(models.Entry.id == id).values(
-        favorited=datetime.datetime.utcnow())
-    db.session.execute(stmt)
-    db.session.commit()
-    return '', 204
-
-
-@app.delete("/entries/favorites/<int:id>/")
-def entry_unfavorite(id):
-    "Remove an entry."
-    stmt = db.update(models.Entry).where(models.Entry.id == id).values(favorited=None)
-    db.session.execute(stmt)
+    "Toggle the favorite status of the given entry."
+    entry = db.get_or_404(models.Entry, id)
+    entry.favorited = None if entry.favorited else datetime.datetime.now()
     db.session.commit()
     return '', 204
 
 
 @app.put("/entries/thrash/<int:id>/")
 def entry_delete(id):
-    "Remove an entry."
-    stmt = db.update(models.Entry).where(models.Entry.id ==
-                                         id).values(deleted=datetime.datetime.utcnow())
-    db.session.execute(stmt)
-    db.session.commit()
-    return '', 204
-
-
-@app.delete("/entries/trash/<int:id>/")
-def entry_restore(id):
-    "Restore a deleted entry."
-    stmt = db.update(models.Entry).where(models.Entry.id == id).values(deleted=None)
-    db.session.execute(stmt)
+    "Toggle the deleted status of the given entry."
+    entry = db.get_or_404(models.Entry, id)
+    entry.deleted = None if entry.deleted else datetime.datetime.now()
     db.session.commit()
     return '', 204
 
