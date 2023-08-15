@@ -254,8 +254,17 @@ def fetch_entry_content(id):
 
 @app.delete("/entries/<int:id>/")
 def entry_delete(id):
-    "Remove a feed and its entries from the database."
+    "Remove an entry."
     stmt = db.update(models.Entry).where(models.Entry.id==id).values(deleted=datetime.datetime.utcnow())
+    db.session.execute(stmt)
+    db.session.commit()
+    return '', 204
+
+
+@app.post("/entries/<int:id>/restore")
+def entry_restore(id):
+    "Restore a deleted entry."
+    stmt = db.update(models.Entry).where(models.Entry.id==id).values(deleted=None)
     db.session.execute(stmt)
     db.session.commit()
     return '', 204
