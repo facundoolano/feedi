@@ -18,7 +18,7 @@ from feedi.sources import rss
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
 @app.route("/users/<username>")
-def entry_list(feed_name=None, username=None, folder=None):
+def entry_list(feed_name=None, username=None, folder=None, deleted=False):
     """
     Generic view to fetch a list of entries. By default renders the home timeline.
     If accessed with a feed name or a pagination timestam, filter the resuls accordingly.
@@ -29,7 +29,7 @@ def entry_list(feed_name=None, username=None, folder=None):
 
     page = flask.request.args.get('page')
     freq_sort = flask.session.get('freq_sort')
-    (entries, next_page) = entries_page(ENTRY_PAGE_SIZE, freq_sort, page=page,
+    (entries, next_page) = entries_page(ENTRY_PAGE_SIZE, freq_sort, deleted, page=page,
                                         feed_name=feed_name, username=username, folder=folder)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
@@ -48,9 +48,14 @@ def entry_list(feed_name=None, username=None, folder=None):
                                  selected_folder=folder)
 
 
+@app.route("/trash")
+def trashed_entries():
+    return entry_list(deleted=True)
+
+
 # TODO refactor. most of this should probably move to the models module. (not the page parsing bit)
 # and this requires unit testing, I bet it's full of bugs :P
-def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, folder=None, deleted=False):
+def entries_page(limit, freq_sort, deleted, page=None, feed_name=None, username=None, folder=None):
     """
     Fetch a page of entries from db, optionally filtered by feed_name, folder or username.
     A specific sorting is applied according to `freq_sort` (strictly chronological or
