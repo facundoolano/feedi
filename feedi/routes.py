@@ -18,7 +18,7 @@ from feedi.sources import rss
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
 @app.route("/users/<username>")
-def entry_list(feed_name=None, username=None, folder=None, deleted=False):
+def entry_list(feed_name=None, username=None, folder=None, deleted=False, favorited=False):
     """
     Generic view to fetch a list of entries. By default renders the home timeline.
     If accessed with a feed name or a pagination timestam, filter the resuls accordingly.
@@ -29,7 +29,7 @@ def entry_list(feed_name=None, username=None, folder=None, deleted=False):
 
     page = flask.request.args.get('page')
     freq_sort = flask.session.get('freq_sort')
-    (entries, next_page) = entries_page(ENTRY_PAGE_SIZE, freq_sort, deleted, page=page,
+    (entries, next_page) = entries_page(ENTRY_PAGE_SIZE, freq_sort, deleted, favorited, page=page,
                                         feed_name=feed_name, username=username, folder=folder)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
@@ -48,14 +48,20 @@ def entry_list(feed_name=None, username=None, folder=None, deleted=False):
                                  selected_folder=folder)
 
 
-@app.route("/trash")
+@app.route("/entries/trash")
 def trashed_entries():
     return entry_list(deleted=True)
 
 
+@app.route("/entries/favorites")
+def favorites():
+    return entry_list(favorited=True)
+
+
 # TODO refactor. most of this should probably move to the models module. (not the page parsing bit)
 # and this requires unit testing, I bet it's full of bugs :P
-def entries_page(limit, freq_sort, deleted, page=None, feed_name=None, username=None, folder=None):
+def entries_page(limit, freq_sort, deleted, favorited,
+                 page=None, feed_name=None, username=None, folder=None):
     """
     Fetch a page of entries from db, optionally filtered by feed_name, folder or username.
     A specific sorting is applied according to `freq_sort` (strictly chronological or
@@ -70,6 +76,9 @@ def entries_page(limit, freq_sort, deleted, page=None, feed_name=None, username=
         query = query.filter(models.Entry.deleted.is_not(None))
     else:
         query = query.filter(models.Entry.deleted.is_(None))
+
+    if favorited:
+        query = query.filter(models.Entry.favorited.is_not(None))
 
     if feed_name:
         query = query.filter(models.Entry.feed.has(name=feed_name))
@@ -111,7 +120,8 @@ def entries_page(limit, freq_sort, deleted, page=None, feed_name=None, username=
         query = query.join(models.Feed)\
                      .join(subquery, subquery.c.id == models.Feed.id)\
                      .order_by(
-                         (start_at > models.Entry.remote_updated) & (models.Entry.remote_updated < last_48_hours),
+                         (start_at > models.Entry.remote_updated) & (
+                             models.Entry.remote_updated < last_48_hours),
                          subquery.c.rank,
                          models.Entry.remote_updated.desc()).limit(limit)
 
@@ -226,6 +236,7 @@ def feed_edit_submit(feed_name):
 
     return flask.redirect(flask.url_for('feed_list'))
 
+
 @app.get("/entries/<int:id>/")
 def fetch_entry_content(id):
     """
@@ -252,19 +263,40 @@ def fetch_entry_content(id):
 
     return flask.render_template("entry_content.html", entry=entry, content=content)
 
-@app.delete("/entries/<int:id>/")
-def entry_delete(id):
+
+@app.put("/entries/favorites/<int:id>/")
+def entry_favorite(id):
     "Remove an entry."
-    stmt = db.update(models.Entry).where(models.Entry.id==id).values(deleted=datetime.datetime.utcnow())
+    stmt = db.update(models.Entry).where(models.Entry.id == id).values(
+        favorited=datetime.datetime.utcnow())
     db.session.execute(stmt)
     db.session.commit()
     return '', 204
 
 
-@app.post("/entries/<int:id>/restore")
+@app.delete("/entries/favorites/<int:id>/")
+def entry_unfavorite(id):
+    "Remove an entry."
+    stmt = db.update(models.Entry).where(models.Entry.id == id).values(favorited=None)
+    db.session.execute(stmt)
+    db.session.commit()
+    return '', 204
+
+
+@app.put("/entries/thrash/<int:id>/")
+def entry_delete(id):
+    "Remove an entry."
+    stmt = db.update(models.Entry).where(models.Entry.id ==
+                                         id).values(deleted=datetime.datetime.utcnow())
+    db.session.execute(stmt)
+    db.session.commit()
+    return '', 204
+
+
+@app.delete("/entries/trash/<int:id>/")
 def entry_restore(id):
     "Restore a deleted entry."
-    stmt = db.update(models.Entry).where(models.Entry.id==id).values(deleted=None)
+    stmt = db.update(models.Entry).where(models.Entry.id == id).values(deleted=None)
     db.session.execute(stmt)
     db.session.commit()
     return '', 204

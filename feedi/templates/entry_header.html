@@ -16,12 +16,12 @@
     </div>
     <div class="level-right">
         {% if not entry.deleted %}
-        <a hx-delete="/entries/{{entry.id}}"
+        <a hx-put="/entries/thrash/{{entry.id}}/"
            _="on click remove the closest .feed-entry
                       then on keyup[key is 'Delete' or key is 'Backspace'] from the closest .feed-entry focus() the next .feed-entry then trigger click on me"
            class="level-item icon hover-icon is-white is-rounded trash-entry" title="Remove entry"><i class="fas fa-trash-alt"></i></a>
         {% else %}
-        <a hx-post="/entries/{{entry.id}}/restore"
+        <a hx-delete="/entries/trash/{{entry.id}}/"
            _="on click remove the closest .feed-entry
                       then on keyup[key is 'Delete' or key is 'Backspace'] from the closest .feed-entry focus() the next .feed-entry then trigger click on me"
            class="level-item icon hover-icon is-white is-rounded trash-entry" title="Restore entry"><i class="fas fa-trash-restore-alt"></i></a>
