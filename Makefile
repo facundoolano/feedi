@@ -7,7 +7,7 @@ venv:
 	python -m venv venv
 
 deps:
-	$(venv) pip install -r requirements.txt
+	$(venv) pip install -r requirements.txt && npm install
 
 deps-dev: deps
 	$(venv) pip install ipython
