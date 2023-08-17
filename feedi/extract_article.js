@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+// dumb node.js script that fetches and parses the HTML from the given urls
+// and passes it to the readability package to clean it up
+// The clean HTML is printed to stdout
 
 const { JSDOM } = require("jsdom");
 const { Readability } = require('@mozilla/readability');
