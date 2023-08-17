@@ -6,7 +6,6 @@ sqlalchemy>=2.0.19
 flask-sqlalchemy>=3.0.5
 beautifulsoup4>=4.12.2
 lxml>=4.9.3
-newspaper3k>=0.2.8
 Mastodon-py>=1.8.1
 gevent==23.7.0
 huey==2.4.5
