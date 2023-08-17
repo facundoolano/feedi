@@ -242,6 +242,14 @@ def fetch_entry_content(id):
 
     return flask.render_template("entry_content.html", entry=entry, content=content)
 
+# FIXME experimental route, should give it proper support
+@app.get("/entries/preview")
+def preview_content():
+    url = flask.request.args['url']
+    content = extract_article(url)
+    # FIXME hacked, should get meta?
+    entry = {"content_url": url, "title": "preview"}
+    return flask.render_template("content_preview.html", content=content, entry=entry)
 
 @app.route("/feeds/<int:id>/raw")
 def raw_feed(id):

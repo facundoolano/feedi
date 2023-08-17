@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block sidebar_left %}{%endblock%}
+{% block sidebar_right %}{%endblock%}
+
+{% block content %}
+
+<div class="box is-radiusless feed-entry">
+    <article class="media">
+  <div class="media-content">
+      <a href="{{ entry.content_url }}" target="_blank"><strong>{{ entry.title }}</strong></a>
+  </div>
+  <div class="media-right">
+  </div>
+    </article>
+    <div class="content entry-content">
+        {{ content | safe }}
+    </div>
+</div>
+{% endblock content %}
