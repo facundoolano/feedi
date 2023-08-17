@@ -1,4 +1,5 @@
 import datetime
+import subprocess
 import urllib
 from collections import defaultdict
 
@@ -270,42 +271,12 @@ def raw_entry(id):
 
 
 def extract_article(url):
-    """
-    Given an article URL, fetch its html and clean it up to its minimal readable content
-    (eg no ads, etc)
-    """
-    # TODO handle case if not html, eg if destination is a pdf
-    # TODO to preserve the author data, maybe show the top image
-
-    # https://stackoverflow.com/questions/62943152/shortcomings-of-newspaper3k-how-to-scrape-only-article-html-python
-    config = newspaper.Config()
-    config.fetch_images = True
-    config.request_timeout = 30
-    config.keep_article_html = True
-    article = newspaper.Article(url, config=config)
-
-    article.download()
-    article.parse()
-
-    # TODO unit test this
-    # cleanup images from the article html
-    soup = BeautifulSoup(article.article_html, 'lxml')
-    for img in soup.find_all('img'):
-        src = img.get('src')
-        if not src:
-            # skip images with missing src
-            img.decompose()
-        elif not urllib.parse.urlparse(src).netloc:
-            # fix paths of relative img urls by joining with the main articule url
-            img['src'] = urllib.parse.urljoin(url, src)
-
-    # preserver readability of code snippets by stripping the <p> tags inside them
-    # (I assume they are being inserted as part of the newspaper cleanup)
-    for tag in soup.find_all(['pre', 'code']):
-        for p in tag.find_all('p'):
-            p.unwrap()
-
-    return str(soup)
+    # The mozilla/readability npm package shows better results at extracting the
+    # article content than all the python libraries I've tried... even than the readabilipy
+    # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
+    # for parsing the article sadly this adds a dependency to node and a few npm pacakges
+    r = subprocess.run(["feedi/extract_article.js", url], capture_output=True, text=True)
+    return r.stdout
 
 
 @app.post("/session/<setting>/")
