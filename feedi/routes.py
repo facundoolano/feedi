@@ -41,7 +41,7 @@ def entry_list(feed_name=None, username=None, folder=None, deleted=False, favori
 
     # render home, including feeds sidebar
     return flask.render_template('entry_list.html',
-                                 pinned=query_pinned_entries(feed_name, username, folder),
+                                 pinned=models.Entry.select_pinned(feed_name, username, folder),
                                  entries=entries,
                                  next_page=next_page,
                                  selected_feed=feed_name,
@@ -146,25 +146,6 @@ def query_entries_page(limit, freq_sort, deleted, favorited,
         # results if there were new entries added in the db after the previous page fetch.
         next_page = entries[-1].remote_updated.timestamp() if entries else None
         return entries, next_page
-
-
-# TODO this too should go to the models folder
-def query_pinned_entries(feed_name=None, username=None, folder=None):
-    "Return the full list of pinned entries considering the optional filters."
-    query = db.select(models.Entry)\
-              .filter(models.Entry.pinned.is_not(None))\
-              .order_by(models.Entry.pinned.desc())
-
-    if feed_name:
-        query = query.filter(models.Entry.feed.has(name=feed_name))
-
-    if folder:
-        query = query.filter(models.Entry.feed.has(folder=folder))
-
-    if username:
-        query = query.filter(models.Entry.username == username)
-
-    return db.session.scalars(query).all()
 
 
 @app.context_processor
@@ -321,7 +302,8 @@ def entry_pin(id, folder=None, feed_name=None, username=None):
     db.session.commit()
 
     # get the new list of pinned based on filters
-    pinned = query_pinned_entries(feed_name=feed_name, username=username, folder=folder)
+    pinned = models.Entry.select_pinned(feed_name=feed_name, username=username, folder=folder)
+
     # FIXME this, together with the template is a patch to prevent the newly rendered pinned list
     # to base their pin links on this route's url.
     # this is a consequence of sending the htmx fragment as part of this specialized url.

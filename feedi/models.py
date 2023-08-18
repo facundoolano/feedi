@@ -137,3 +137,22 @@ class Entry(db.Model):
 
     def __repr__(self):
         return f'<Entry {self.feed_id}/{self.remote_id}>'
+
+    @classmethod
+    def select_pinned(cls, feed_name=None, username=None, folder=None):
+        "Return the full list of pinned entries considering the optional filters."
+        query = db.select(cls)\
+                  .filter(cls.pinned.is_not(None))\
+                  .order_by(cls.pinned.desc())
+
+        if feed_name:
+            query = query.filter(cls.feed.has(name=feed_name))
+
+        if folder:
+            query = query.filter(cls.feed.has(folder=folder))
+
+        if username:
+            query = query.filter(cls.username == username)
+            pass
+
+        return db.session.scalars(query).all()
