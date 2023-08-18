@@ -19,7 +19,7 @@ from feedi.sources import rss
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
 @app.route("/users/<username>")
-def entry_list(feed_name=None, username=None, folder=None):
+def entry_list(feed_name=None, username=None, folder=None, deleted=False, favorited=False):
     """
     Generic view to fetch a list of entries. By default renders the home timeline.
     If accessed with a feed name or a pagination timestam, filter the resuls accordingly.
@@ -30,7 +30,7 @@ def entry_list(feed_name=None, username=None, folder=None):
 
     page = flask.request.args.get('page')
     freq_sort = flask.session.get('freq_sort')
-    (entries, next_page) = entries_page(ENTRY_PAGE_SIZE, freq_sort, page=page,
+    (entries, next_page) = entries_page(ENTRY_PAGE_SIZE, freq_sort, deleted, favorited, page=page,
                                         feed_name=feed_name, username=username, folder=folder)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
@@ -49,9 +49,20 @@ def entry_list(feed_name=None, username=None, folder=None):
                                  selected_folder=folder)
 
 
+@app.route("/entries/trash")
+def trashed_entries():
+    return entry_list(deleted=True)
+
+
+@app.route("/entries/favorites")
+def favorites():
+    return entry_list(favorited=True)
+
+
 # TODO refactor. most of this should probably move to the models module. (not the page parsing bit)
 # and this requires unit testing, I bet it's full of bugs :P
-def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, folder=None):
+def entries_page(limit, freq_sort, deleted, favorited,
+                 page=None, feed_name=None, username=None, folder=None):
     """
     Fetch a page of entries from db, optionally filtered by feed_name, folder or username.
     A specific sorting is applied according to `freq_sort` (strictly chronological or
@@ -62,6 +73,14 @@ def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, fol
     query = db.select(models.Entry)
 
     # apply general filters
+    if deleted:
+        query = query.filter(models.Entry.deleted.is_not(None))
+    else:
+        query = query.filter(models.Entry.deleted.is_(None))
+
+    if favorited:
+        query = query.filter(models.Entry.favorited.is_not(None))
+
     if feed_name:
         query = query.filter(models.Entry.feed.has(name=feed_name))
 
@@ -102,7 +121,8 @@ def entries_page(limit, freq_sort, page=None, feed_name=None, username=None, fol
         query = query.join(models.Feed)\
                      .join(subquery, subquery.c.id == models.Feed.id)\
                      .order_by(
-                         (start_at > models.Entry.remote_updated) & (models.Entry.remote_updated < last_48_hours),
+                         (start_at > models.Entry.remote_updated) & (
+                             models.Entry.remote_updated < last_48_hours),
                          subquery.c.rank,
                          models.Entry.remote_updated.desc()).limit(limit)
 
@@ -186,6 +206,8 @@ def feed_add_submit():
 @app.delete("/feeds/<feed_name>")
 def feed_delete(feed_name):
     "Remove a feed and its entries from the database."
+    # FIXME this should probably do a "logic" delete and keep stuff around
+    # especially considering that it will kill child entries as well
     query = db.delete(models.Feed).where(models.Feed.name == feed_name)
     db.session.execute(query)
     db.session.commit()
@@ -250,6 +272,24 @@ def preview_content():
     # FIXME hacked, should get meta?
     entry = {"content_url": url, "title": "preview"}
     return flask.render_template("content_preview.html", content=content, entry=entry)
+
+@app.put("/entries/favorites/<int:id>/")
+def entry_favorite(id):
+    "Toggle the favorite status of the given entry."
+    entry = db.get_or_404(models.Entry, id)
+    entry.favorited = None if entry.favorited else datetime.datetime.now()
+    db.session.commit()
+    return '', 204
+
+
+@app.put("/entries/thrash/<int:id>/")
+def entry_delete(id):
+    "Toggle the deleted status of the given entry."
+    entry = db.get_or_404(models.Entry, id)
+    entry.deleted = None if entry.deleted else datetime.datetime.now()
+    db.session.commit()
+    return '', 204
+
 
 @app.route("/feeds/<int:id>/raw")
 def raw_feed(id):

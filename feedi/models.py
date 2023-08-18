@@ -123,6 +123,10 @@ class Entry(db.Model):
     remote_created = sa.Column(sa.TIMESTAMP, nullable=False)
     remote_updated = sa.Column(sa.TIMESTAMP, nullable=False)
 
+    deleted = sa.Column(sa.TIMESTAMP)
+    favorited = sa.Column(sa.TIMESTAMP)
+    pinned = sa.Column(sa.TIMESTAMP)
+
     raw_data = sa.Column(sa.String, doc="The original entry data received from the feed, as JSON")
 
     # mastodon specific
