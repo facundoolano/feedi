@@ -8,6 +8,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+
 def init_db(app):
     db.init_app(app)
 
@@ -36,9 +37,11 @@ class Feed(db.Model):
     icon_url = sa.Column(sa.String)
 
     created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
-    updated = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    updated = sa.Column(sa.TIMESTAMP, nullable=False,
+                        default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
-    entries = sa.orm.relationship("Entry", back_populates="feed", cascade="all, delete-orphan", lazy='dynamic')
+    entries = sa.orm.relationship("Entry", back_populates="feed",
+                                  cascade="all, delete-orphan", lazy='dynamic')
     raw_data = sa.Column(sa.String, doc="The original feed data received from the feed, as JSON")
     folder = sa.Column(sa.String, index=True)
     views = sa.Column(sa.Integer, default=0, nullable=False,
@@ -77,12 +80,13 @@ class Feed(db.Model):
         return rank
 
 
-
 class RssFeed(Feed):
     url = sa.Column(sa.String)
     last_fetch = sa.Column(sa.TIMESTAMP)
-    etag = sa.Column(sa.String, doc="Etag received on last parsed rss, to prevent re-fetching if it hasn't changed.")
-    modified_header = sa.Column(sa.String, doc="Last-modified received on last parsed rss, to prevent re-fetching if it hasn't changed.")
+    etag = sa.Column(
+        sa.String, doc="Etag received on last parsed rss, to prevent re-fetching if it hasn't changed.")
+    modified_header = sa.Column(
+        sa.String, doc="Last-modified received on last parsed rss, to prevent re-fetching if it hasn't changed.")
 
     __mapper_args__ = {'polymorphic_identity': 'rss'}
 
@@ -106,20 +110,26 @@ class Entry(db.Model):
 
     feed_id = sa.orm.mapped_column(sa.ForeignKey("feeds.id"))
     feed = sa.orm.relationship("Feed", back_populates="entries")
-    remote_id = sa.Column(sa.String, nullable=False, doc="The identifier of this entry in its source feed.")
+    remote_id = sa.Column(sa.String, nullable=False,
+                          doc="The identifier of this entry in its source feed.")
 
     title = sa.Column(sa.String, nullable=False)
     username = sa.Column(sa.String, index=True)
     user_url = sa.Column(sa.String, doc="The url of the user that authored the entry.")
-    avatar_url = sa.Column(sa.String, doc="The url of the avatar image to be displayed for the entry.")
+    avatar_url = sa.Column(
+        sa.String, doc="The url of the avatar image to be displayed for the entry.")
 
-    body = sa.Column(sa.String, doc="The content to be displayed in the feed preview. HTML is supported. For article entries, it would be an excerpt of the full article content.")
-    entry_url = sa.Column(sa.String, doc="The URL of this entry in the source. For link aggregators this would be the comments page.")
-    content_url = sa.Column(sa.String, doc="The URL where the full content can be fetched or read. For link aggregators this would be the article redirect url.")
+    body = sa.Column(
+        sa.String, doc="The content to be displayed in the feed preview. HTML is supported. For article entries, it would be an excerpt of the full article content.")
+    entry_url = sa.Column(
+        sa.String, doc="The URL of this entry in the source. For link aggregators this would be the comments page.")
+    content_url = sa.Column(
+        sa.String, doc="The URL where the full content can be fetched or read. For link aggregators this would be the article redirect url.")
     media_url = sa.Column(sa.String, doc="URL of a media attachement or preview.")
 
     created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
-    updated = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    updated = sa.Column(sa.TIMESTAMP, nullable=False,
+                        default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
     remote_created = sa.Column(sa.TIMESTAMP, nullable=False)
     remote_updated = sa.Column(sa.TIMESTAMP, nullable=False)
 
@@ -140,7 +150,7 @@ class Entry(db.Model):
 
     @classmethod
     def _filtered_query(cls, deleted=None, favorited=None,
-                      feed_name=None, username=None, folder=None):
+                        feed_name=None, username=None, folder=None):
         """TODO"""
 
         query = db.select(cls)
@@ -174,11 +184,13 @@ class Entry(db.Model):
 
         return db.session.scalars(query).all()
 
-
     @classmethod
-    def select_page_chronological(cls, limit, older_than, **kwargs):
-        """TODO"""
-        query = cls._filtered_query(**kwargs)
+    def select_page_chronologically(cls, limit, older_than, **filters):
+        """
+        Return up to `limit` entries in reverse chronological order, considering the given
+        `filters`.
+        """
+        query = cls._filtered_query(**filters)
 
         if older_than:
             # FIXME move float conversion outside
@@ -187,11 +199,15 @@ class Entry(db.Model):
         query = query.order_by(cls.remote_updated.desc()).limit(limit)
         return db.session.scalars(query).all()
 
-
     @classmethod
-    def select_page_by_frequency(cls, limit, start_at, page, **kwargs):
-        """TODO"""
-        query = cls._filtered_query(**kwargs)
+    def select_page_by_frequency(cls, limit, start_at, page, **filters):
+        """
+        Order entries by least frequent feeds first then reverse-chronologically for entries in the same
+        frequency rank. The results are also put in 48 hours 'buckets' so we only highlight articles
+        during the first couple of days after their publication. (so as to not have fixed stuff in the
+        top of the timeline for too long).
+        """
+        query = cls._filtered_query(**filters)
 
         # count the amount of entries per feed seen in the last two weeks and map the count to frequency "buckets"
         # (see the models.Feed.freq_bucket function) to be used in the order by clause of the next query

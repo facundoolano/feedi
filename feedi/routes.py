@@ -71,14 +71,7 @@ def query_entries_page(limit, freq_sort, page=None, **kwargs):
     The next page indicator is returned as the second element of the return tuple
     """
 
-    # apply specific sorting / pagination
     if freq_sort:
-        # If the user has toggled the frequency based sorting, order entries by least frequent
-        # feeds first then reverse-chronologically for entries in the same frequency rank.
-        # The results are also put in 48 hours 'buckets' so we only highlight articles during the
-        # first couple of days after their publication. (so as to not have fixed stuff in the top of
-        # the timeline for too long).
-
         if page:
             start_at, page = page.split(':')
             page = int(page)
@@ -95,14 +88,13 @@ def query_entries_page(limit, freq_sort, page=None, **kwargs):
         # also this could obviously trip if the ranks are updated in between calls, but well duplicated entries
         # in infinity scroll aren't the end of the world (they could also be filtered out in the frontend)
         next_page = f'{start_at.timestamp()}:{page + 1}'
-        return (entries, next_page)
+        return entries, next_page
 
     else:
-        # if not using freq sort, just return entries in reverse chronological order.
         if page:
             page = datetime.datetime.fromtimestamp(float(page))
 
-        entries = models.Entry.select_page_chronological(limit, page, **kwargs)
+        entries = models.Entry.select_page_chronologically(limit, page, **kwargs)
 
         # We don't use regular page numbers, instead timestamps so we don't get repeated
         # results if there were new entries added in the db after the previous page fetch.
