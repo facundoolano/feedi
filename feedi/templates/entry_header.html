@@ -23,6 +23,8 @@
            hx-put="{{pin_base_path|default(request.path.rstrip('/'))}}/pinned/{{entry.id}}"
            hx-target="#pinned-entry-list"
            _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />
+                     then toggle .is-hidden on < [data-id='{{entry.id}}'] />
+                     then go to top of the body smoothly
                      then on keyup[key is 'p'] from the closest .feed-entry trigger click on me">
             <i class="fas fa-thumbtack"></i></a>
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite entry"

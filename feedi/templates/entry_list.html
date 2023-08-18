@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-  {% with entries = pinned, next_page = None%}
+  {% with entries = pinned, next_page = None, is_pinned_list = True%}
     <div id="pinned-entry-list">
         {% include "entry_list_page.html" %}
     </div>

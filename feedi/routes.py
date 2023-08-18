@@ -114,6 +114,7 @@ def entry_pin(id, **filters):
     pin_base_path = flask.request.path.split('/pinned')[0]
 
     return flask.render_template("entry_list_page.html",
+                                 is_pinned_list=True,
                                  pin_base_path=pin_base_path,
                                  entries=pinned)
 
