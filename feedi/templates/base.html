@@ -75,9 +75,14 @@
                        <div class="field">
                            <p class="control has-icons-left">
                                <input class="input  is-small" type="search" placeholder="Type '/'"
-                                      _="on keydown[key is '/'] elsewhere focus() me then halt">
+                                      _="on keydown[key is '/'] elsewhere focus() me then halt
+                                             then on drop set the value of me to event.dataTransfer.getData('Text')
+                                             then add .is-hidden to the next .fa-search
+                                             then remove .is-hidden from the next .fa-spinner
+                                             then go to url `/entries/preview?url=${event.dataTransfer.getData('Text')}`">
                                <span class="icon is-small is-left">
                                    <i class="fas fa-search"></i>
+                                   <i class="fas fa-spinner fa-spin is-hidden"></i>
                                </span>
                            </p>
                        </div>
