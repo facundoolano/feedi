@@ -48,7 +48,9 @@ def entry_list(feed_name=None, username=None, folder=None, deleted=False, favori
                                  entries=entries,
                                  next_page=next_page,
                                  selected_feed=feed_name,
-                                 selected_folder=folder)
+                                 selected_folder=folder,
+                                 favorites=favorited,
+                                 trash=deleted)
 
 
 @app.route("/entries/trash")
