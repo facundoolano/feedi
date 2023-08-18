@@ -1,0 +1,74 @@
+{% for entry in entries %}
+<div class="card feed-entry is-radiusless" tabindex="0"
+     _="on keyup[key is 'ArrowDown'] focus() the next .feed-entry then halt
+            then on keyup[key is 'ArrowUp'] focus() the previous .feed-entry then halt
+            then on focus go to middle of me">
+     <div class="card-content">
+         {% if entry.reblogged_by %}
+         <div class="columns reblogged">
+             <div class="column">
+                 <small class="has-text-grey-light"><i class="fas fa-retweet"></i> {{ entry.reblogged_by }} boosted</small>
+                 <br/>
+             </div>
+         </div>
+         {% endif %}
+         <div class="columns is-mobile">
+             <div class="column is-narrow avatar-column">
+                 <figure class="image is-32x32">
+                     {% if entry.avatar_url %}
+                     <a href="/users/{{ entry.username }}">
+                         <img class="is-rounded" src="{{ entry.avatar_url }}" alt="{{ entry.username }}" title="{{ entry.username }}">
+                     </a>
+                     {% else %}
+                     <a href="/feeds/{{ entry.feed.name }}/entries">
+                         <img class="is-rounded" src="{{ entry.feed.icon_url }}" alt="{{ entry.feed.name}}" title="{{ entry.feed.name }}">
+                     </a>
+                     {% endif %}
+                 </figure>
+             </div>
+             <div class="column">
+                 {% include "entry_header.html" %}
+
+                 {% if entry.body or entry.media_url %}
+                 <div class="columns body-container">
+                     {% if entry.media_url %}
+                     <div class="column is-one-quarter media-url-container {% if session.hide_media %}is-hidden{% endif %}">
+                         <figure class="image media-url is-5by3" tabindex="-1"
+                                 _="on click add .is-active to the next .modal then halt">
+                             <img src="{{ entry.media_url }}" alt="article preview" onerror='this.parentNode.parentNode.style.display = "none"'>
+                         </figure>
+                     </div>
+                     <div class="modal">
+                         <div class="modal-background"
+                              _="on click remove .is-active from the closest .modal"
+                         ></div>
+                         <div class="modal-content preview-modal"
+                              _="on keydown[key is 'Escape'] elsewhere remove .is-active from the closest .modal">
+                             <p><img src="{{ entry.media_url }}" alt="article preview"></p>
+                         </div>
+                     </div>
+                     {% endif %}
+                     {% if entry.body %}
+                     <div class="column content">
+                         {% if entry.content_url and not entry.body %}
+                         <small>click to expand</small>
+                         {% endif %}
+
+                         {% if entry.feed.type == 'mastodon' %}
+                         {{ entry.body | safe }}
+                         {% else %}
+                         {{ entry.body | sanitize | safe }}
+                         {% endif %}
+
+                     </div>
+                     {% endif %}
+                 </div>
+                 {% endif %}
+             </div>
+         </div>
+     </div>
+ </div>
+ {% if loop.last and not is_pinned_list and next_page %}
+ <div hx-get="{{ request.path }}?page={{ next_page }}" hx-trigger="revealed" hx-swap="outerHTML"></div>
+ {% endif %}
+ {% endfor %}

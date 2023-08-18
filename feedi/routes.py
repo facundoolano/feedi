@@ -1,12 +1,9 @@
 import datetime
 import subprocess
-import urllib
 from collections import defaultdict
 
 import flask
-import newspaper
 import sqlalchemy as sa
-from bs4 import BeautifulSoup
 from flask import current_app as app
 
 import feedi.models as models
@@ -37,12 +34,12 @@ def entry_list(feed_name=None, username=None, folder=None, deleted=False, favori
 
     if is_htmx:
         # render a single page of the entry list
-        return flask.render_template('entry_list.html',
+        return flask.render_template('entry_list_page.html',
                                      entries=entries,
                                      next_page=next_page)
 
     # render home, including feeds sidebar
-    return flask.render_template('entries.html',
+    return flask.render_template('entry_list.html',
                                  pinned=query_pinned_entries(feed_name, username, folder),
                                  entries=entries,
                                  next_page=next_page,
