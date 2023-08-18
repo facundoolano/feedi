@@ -151,7 +151,9 @@ class Entry(db.Model):
     @classmethod
     def _filtered_query(cls, deleted=None, favorited=None,
                         feed_name=None, username=None, folder=None):
-        """TODO"""
+        """
+        Return a base Entry query applying any combination of filters.
+        """
 
         query = db.select(cls)
 
