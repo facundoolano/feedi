@@ -12,6 +12,7 @@ from feedi.models import db
 from feedi.sources import rss
 
 
+# FIXME the feed_name/entries url is inconsistent with the rest
 @app.route("/")
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
@@ -307,13 +308,22 @@ def entry_delete(id):
     db.session.commit()
     return '', 204
 
-@app.put("/entries/pinned/<int:id>/")
-def entry_pin(id):
+
+# FIXME the feed_name/entries url is inconsistent with the rest
+@app.put("/pinned/<int:id>")
+@app.put("/folder/<folder>/pinned/<int:id>")
+@app.put("/feeds/<feed_name>/entries/pinned/<int:id>")
+@app.put("/users/<username>/pinned/<int:id>")
+def entry_pin(id, folder=None, feed_name=None, username=None):
     "Toggle the favorite status of the given entry."
     entry = db.get_or_404(models.Entry, id)
     entry.pinned = None if entry.pinned else datetime.datetime.now()
     db.session.commit()
-    return '', 204
+
+    # get the new list of pinned based on filters
+    pinned = query_pinned_entries(feed_name=feed_name, username=username, folder=folder)
+    return flask.render_template("entry_list_page.html",
+                                 entries=pinned)
 
 
 @app.route("/feeds/<int:id>/raw")
