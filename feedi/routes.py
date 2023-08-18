@@ -17,7 +17,9 @@ from feedi.sources import rss
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
 @app.route("/users/<username>")
-def entry_list(feed_name=None, username=None, folder=None, deleted=False, favorited=False):
+@app.route("/entries/trash", defaults={'deleted': True})
+@app.route("/entries/favorites", defaults={'favorited': True})
+def entry_list(**filters):
     """
     Generic view to fetch a list of entries. By default renders the home timeline.
     If accessed with a feed name or a pagination timestam, filter the resuls accordingly.
@@ -28,9 +30,7 @@ def entry_list(feed_name=None, username=None, folder=None, deleted=False, favori
 
     page = flask.request.args.get('page')
     freq_sort = flask.session.get('freq_sort')
-    (entries, next_page) = query_entries_page(ENTRY_PAGE_SIZE, freq_sort, page=page,
-                                              deleted=deleted, favorited=favorited,
-                                              feed_name=feed_name, username=username, folder=folder)
+    (entries, next_page) = query_entries_page(ENTRY_PAGE_SIZE, freq_sort, page=page, **filters)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
 
@@ -42,25 +42,10 @@ def entry_list(feed_name=None, username=None, folder=None, deleted=False, favori
 
     # render home, including feeds sidebar
     return flask.render_template('entry_list.html',
-                                 pinned=models.Entry.select_pinned(feed_name=feed_name,
-                                                                   username=username,
-                                                                   folder=folder),
+                                 pinned=models.Entry.select_pinned(**filters),
                                  entries=entries,
                                  next_page=next_page,
-                                 selected_feed=feed_name,
-                                 selected_folder=folder,
-                                 favorites=favorited,
-                                 trash=deleted)
-
-
-@app.route("/entries/trash")
-def trashed_entries():
-    return entry_list(deleted=True)
-
-
-@app.route("/entries/favorites")
-def favorites():
-    return entry_list(favorited=True)
+                                 filters=filters)
 
 
 # TODO this requires unit testing, I bet it's full of bugs :P
@@ -251,7 +236,9 @@ def entry_delete(id):
 @app.put("/folder/<folder>/pinned/<int:id>")
 @app.put("/feeds/<feed_name>/entries/pinned/<int:id>")
 @app.put("/users/<username>/pinned/<int:id>")
-def entry_pin(id, folder=None, feed_name=None, username=None):
+@app.put("/entries/trash/pinned/<int:id>", defaults={'deleted': True})
+@app.put("/entries/favorites/pinned/<int:id>", defaults={'favorited': True})
+def entry_pin(id, **filters):
     """
     Toggle the pinned status of the given entry and return the new list of pinned
     entries, respecting the url filters.
@@ -261,7 +248,7 @@ def entry_pin(id, folder=None, feed_name=None, username=None):
     db.session.commit()
 
     # get the new list of pinned based on filters
-    pinned = models.Entry.select_pinned(feed_name=feed_name, username=username, folder=folder)
+    pinned = models.Entry.select_pinned(**filters)
 
     # FIXME this, together with the template is a patch to prevent the newly rendered pinned list
     # to base their pin links on this route's url.

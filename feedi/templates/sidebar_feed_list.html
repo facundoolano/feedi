@@ -1,5 +1,5 @@
 {% for feed in feeds %}
-  <li class="level-left {% if selected_feed == feed.name %}is-active{% endif %}">
+  <li class="level-left {% if filters.feed_name == feed.name %}is-active{% endif %}">
     <div class="level-item">
         <a href="/feeds/{{feed.name}}/entries">
             <span class="icon ">
