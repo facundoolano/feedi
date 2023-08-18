@@ -89,6 +89,53 @@ def query_entries_page(limit, freq_sort, page=None, **kwargs):
         return entries, next_page_ts
 
 
+@app.put("/pinned/<int:id>")
+@app.put("/folder/<folder>/pinned/<int:id>")
+@app.put("/feeds/<feed_name>/entries/pinned/<int:id>")
+@app.put("/users/<username>/pinned/<int:id>")
+@app.put("/entries/trash/pinned/<int:id>", defaults={'deleted': True})
+@app.put("/entries/favorites/pinned/<int:id>", defaults={'favorited': True})
+def entry_pin(id, **filters):
+    """
+    Toggle the pinned status of the given entry and return the new list of pinned
+    entries, respecting the url filters.
+    """
+    entry = db.get_or_404(models.Entry, id)
+    entry.pinned = None if entry.pinned else datetime.datetime.now()
+    db.session.commit()
+
+    # get the new list of pinned based on filters
+    pinned = models.Entry.select_pinned(**filters)
+
+    # FIXME this, together with the template is a patch to prevent the newly rendered pinned list
+    # to base their pin links on this route's url.
+    # this is a consequence of sending the htmx fragment as part of this specialized url.
+    # there should be a better way to handle this
+    pin_base_path = flask.request.path.split('/pinned')[0]
+
+    return flask.render_template("entry_list_page.html",
+                                 pin_base_path=pin_base_path,
+                                 entries=pinned)
+
+
+@app.put("/entries/favorites/<int:id>/")
+def entry_favorite(id):
+    "Toggle the favorite status of the given entry."
+    entry = db.get_or_404(models.Entry, id)
+    entry.favorited = None if entry.favorited else datetime.datetime.now()
+    db.session.commit()
+    return '', 204
+
+
+@app.put("/entries/thrash/<int:id>/")
+def entry_delete(id):
+    "Toggle the deleted status of the given entry."
+    entry = db.get_or_404(models.Entry, id)
+    entry.deleted = None if entry.deleted else datetime.datetime.now()
+    db.session.commit()
+    return '', 204
+
+
 @app.context_processor
 def sidebar_feeds():
     """
@@ -204,6 +251,7 @@ def fetch_entry_content(id):
 
     return flask.render_template("entry_content.html", entry=entry, content=content)
 
+
 # FIXME experimental route, should give it proper support
 @app.get("/entries/preview")
 def preview_content():
@@ -213,52 +261,14 @@ def preview_content():
     entry = {"content_url": url, "title": "preview"}
     return flask.render_template("content_preview.html", content=content, entry=entry)
 
-@app.put("/entries/favorites/<int:id>/")
-def entry_favorite(id):
-    "Toggle the favorite status of the given entry."
-    entry = db.get_or_404(models.Entry, id)
-    entry.favorited = None if entry.favorited else datetime.datetime.now()
-    db.session.commit()
-    return '', 204
 
-
-@app.put("/entries/thrash/<int:id>/")
-def entry_delete(id):
-    "Toggle the deleted status of the given entry."
-    entry = db.get_or_404(models.Entry, id)
-    entry.deleted = None if entry.deleted else datetime.datetime.now()
-    db.session.commit()
-    return '', 204
-
-
-# FIXME the feed_name/entries url is inconsistent with the rest
-@app.put("/pinned/<int:id>")
-@app.put("/folder/<folder>/pinned/<int:id>")
-@app.put("/feeds/<feed_name>/entries/pinned/<int:id>")
-@app.put("/users/<username>/pinned/<int:id>")
-@app.put("/entries/trash/pinned/<int:id>", defaults={'deleted': True})
-@app.put("/entries/favorites/pinned/<int:id>", defaults={'favorited': True})
-def entry_pin(id, **filters):
-    """
-    Toggle the pinned status of the given entry and return the new list of pinned
-    entries, respecting the url filters.
-    """
-    entry = db.get_or_404(models.Entry, id)
-    entry.pinned = None if entry.pinned else datetime.datetime.now()
-    db.session.commit()
-
-    # get the new list of pinned based on filters
-    pinned = models.Entry.select_pinned(**filters)
-
-    # FIXME this, together with the template is a patch to prevent the newly rendered pinned list
-    # to base their pin links on this route's url.
-    # this is a consequence of sending the htmx fragment as part of this specialized url.
-    # there should be a better way to handle this
-    pin_base_path = flask.request.path.split('/pinned')[0]
-
-    return flask.render_template("entry_list_page.html",
-                                 pin_base_path=pin_base_path,
-                                 entries=pinned)
+def extract_article(url):
+    # The mozilla/readability npm package shows better results at extracting the
+    # article content than all the python libraries I've tried... even than the readabilipy
+    # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
+    # for parsing the article sadly this adds a dependency to node and a few npm pacakges
+    r = subprocess.run(["feedi/extract_article.js", url], capture_output=True, text=True)
+    return r.stdout
 
 
 @app.route("/feeds/<int:id>/raw")
@@ -286,15 +296,6 @@ def raw_entry(id):
         status=200,
         mimetype='application/json'
     )
-
-
-def extract_article(url):
-    # The mozilla/readability npm package shows better results at extracting the
-    # article content than all the python libraries I've tried... even than the readabilipy
-    # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
-    # for parsing the article sadly this adds a dependency to node and a few npm pacakges
-    r = subprocess.run(["feedi/extract_article.js", url], capture_output=True, text=True)
-    return r.stdout
 
 
 @app.post("/session/<setting>/")
