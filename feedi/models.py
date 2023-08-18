@@ -176,7 +176,7 @@ class Entry(db.Model):
 
 
     @classmethod
-    def select_page_chronological(cls, limit, older_than=None, **kwargs):
+    def select_page_chronological(cls, limit, older_than, **kwargs):
         """TODO"""
         query = cls._filtered_query(**kwargs)
 
@@ -186,3 +186,31 @@ class Entry(db.Model):
 
         query = query.order_by(cls.remote_updated.desc()).limit(limit)
         return db.session.scalars(query).all()
+
+
+    @classmethod
+    def select_page_by_frequency(cls, limit, start_at, page, **kwargs):
+        """TODO"""
+        query = cls._filtered_query(**kwargs)
+
+        # count the amount of entries per feed seen in the last two weeks and map the count to frequency "buckets"
+        # (see the models.Feed.freq_bucket function) to be used in the order by clause of the next query
+        two_weeks_ago = datetime.datetime.now() - datetime.timedelta(days=14)
+        subquery = db.select(Feed.id, sa.func.freq_bucket(sa.func.count(cls.id)).label('rank'))\
+                     .join(cls)\
+                     .filter(cls.remote_updated >= two_weeks_ago)\
+                     .group_by(Feed)\
+                     .subquery()
+
+        # by ordering by a "bucket" of "is it older than 48hs?" we effectively get all entries in the last 2 days first,
+        # without having to filter out the rest --i.e. without truncating the feed
+        last_48_hours = start_at - datetime.timedelta(hours=48)
+        query = query.join(Feed)\
+                     .join(subquery, subquery.c.id == Feed.id)\
+                     .order_by(
+                         (start_at > cls.remote_updated) & (
+                             cls.remote_updated < last_48_hours),
+                         subquery.c.rank,
+                         cls.remote_updated.desc()).limit(limit)
+
+        return db.paginate(query, page=page)
