@@ -250,7 +250,10 @@ def entry_delete(id):
 @app.put("/feeds/<feed_name>/entries/pinned/<int:id>")
 @app.put("/users/<username>/pinned/<int:id>")
 def entry_pin(id, folder=None, feed_name=None, username=None):
-    "Toggle the favorite status of the given entry."
+    """
+    Toggle the pinned status of the given entry and return the new list of pinned
+    entries, respecting the url filters.
+    """
     entry = db.get_or_404(models.Entry, id)
     entry.pinned = None if entry.pinned else datetime.datetime.now()
     db.session.commit()

@@ -157,7 +157,6 @@ class Entry(db.Model):
 
         query = db.select(cls)
 
-        # apply general filters
         if deleted:
             query = query.filter(cls.deleted.is_not(None))
         else:
