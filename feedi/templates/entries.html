@@ -2,5 +2,8 @@
 
 
 {% block content %}
+  {% with entries = pinned, next_page = None %}
     {% include "entry_list.html" %}
+  {% endwith %}
+  {% include "entry_list.html" %}
 {% endblock %}

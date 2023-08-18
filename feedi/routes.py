@@ -30,7 +30,7 @@ def entry_list(feed_name=None, username=None, folder=None, deleted=False, favori
 
     page = flask.request.args.get('page')
     freq_sort = flask.session.get('freq_sort')
-    (entries, next_page) = entries_page(ENTRY_PAGE_SIZE, freq_sort, deleted, favorited, page=page,
+    (entries, next_page) = query_entries_page(ENTRY_PAGE_SIZE, freq_sort, deleted, favorited, page=page,
                                         feed_name=feed_name, username=username, folder=folder)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
@@ -43,6 +43,7 @@ def entry_list(feed_name=None, username=None, folder=None, deleted=False, favori
 
     # render home, including feeds sidebar
     return flask.render_template('entries.html',
+                                 pinned=query_pinned_entries(feed_name, username, folder),
                                  entries=entries,
                                  next_page=next_page,
                                  selected_feed=feed_name,
@@ -61,7 +62,7 @@ def favorites():
 
 # TODO refactor. most of this should probably move to the models module. (not the page parsing bit)
 # and this requires unit testing, I bet it's full of bugs :P
-def entries_page(limit, freq_sort, deleted, favorited,
+def query_entries_page(limit, freq_sort, deleted, favorited,
                  page=None, feed_name=None, username=None, folder=None):
     """
     Fetch a page of entries from db, optionally filtered by feed_name, folder or username.
@@ -147,6 +148,25 @@ def entries_page(limit, freq_sort, deleted, favorited,
         # results if there were new entries added in the db after the previous page fetch.
         next_page = entries[-1].remote_updated.timestamp() if entries else None
         return entries, next_page
+
+
+# TODO this too should go to the models folder
+def query_pinned_entries(feed_name=None, username=None, folder=None):
+    "Return the full list of pinned entries considering the optional filters."
+    query = db.select(models.Entry)\
+              .filter(models.Entry.pinned.is_not(None))\
+              .order_by(models.Entry.pinned.desc())
+
+    if feed_name:
+        query = query.filter(models.Entry.feed.has(name=feed_name))
+
+    if folder:
+        query = query.filter(models.Entry.feed.has(folder=folder))
+
+    if username:
+        query = query.filter(models.Entry.username == username)
+
+    return db.session.scalars(query).all()
 
 
 @app.context_processor
