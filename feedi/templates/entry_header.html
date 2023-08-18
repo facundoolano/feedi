@@ -19,7 +19,11 @@
            _="on click remove the closest .feed-entry
                      then on keyup[key is 'Delete' or key is 'Backspace'] from the closest .feed-entry focus() the next .feed-entry then trigger click on me"
            class="level-item icon hover-icon is-white is-rounded trash-entry" title="Remove entry"><i class="fas {% if entry.deleted %}fa-trash-restore-alt{% else %}fa-trash-alt{% endif %}"></i></a>
-        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="Pin entry"><i class="fas fa-thumbtack"></i></a>
+        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %}" title="Pin entry"
+           hx-put="/entries/pinned/{{entry.id}}/"
+           _="on click toggle .toggled"
+        >
+            <i class="fas fa-thumbtack"></i></a>
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite entry"
            hx-put="/entries/favorites/{{entry.id}}/"
            _="on click toggle .toggled"

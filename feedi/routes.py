@@ -290,6 +290,14 @@ def entry_delete(id):
     db.session.commit()
     return '', 204
 
+@app.put("/entries/pinned/<int:id>/")
+def entry_pin(id):
+    "Toggle the favorite status of the given entry."
+    entry = db.get_or_404(models.Entry, id)
+    entry.pinned = None if entry.pinned else datetime.datetime.now()
+    db.session.commit()
+    return '', 204
+
 
 @app.route("/feeds/<int:id>/raw")
 def raw_feed(id):
