@@ -322,7 +322,14 @@ def entry_pin(id, folder=None, feed_name=None, username=None):
 
     # get the new list of pinned based on filters
     pinned = query_pinned_entries(feed_name=feed_name, username=username, folder=folder)
+    # FIXME this, together with the template is a patch to prevent the newly rendered pinned list
+    # to base their pin links on this route's url.
+    # this is a consequence of sending the htmx fragment as part of this specialized url.
+    # there should be a better way to handle this
+    pin_base_path = flask.request.path.split('/pinned')[0]
+
     return flask.render_template("entry_list_page.html",
+                                 pin_base_path=pin_base_path,
                                  entries=pinned)
 
 
