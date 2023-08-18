@@ -1,10 +1,7 @@
 {% for feed in feeds %}
-  <li class="level-left {% if selected_feed == feed.name %}is-active{% endif %}">
+  <li class="level-left {% if filters.feed_name == feed.name %}is-active{% endif %}">
     <div class="level-item">
-        <a hx-get="/feeds/{{feed.name}}/entries" hx-push-url="true" hx-target="#entry-list"
-           hx-swap="innerHTML show:top"
-           _="on click remove .is-active from  .level-left
-                   then add .is-active to the closest .level-left">
+        <a href="/feeds/{{feed.name}}/entries">
             <span class="icon ">
                 <figure class="is-16x16 image">
                 <img class="is-rounded" src="{{ feed.icon_url }}">

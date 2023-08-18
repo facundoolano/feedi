@@ -1,12 +1,9 @@
 import datetime
 import subprocess
-import urllib
 from collections import defaultdict
 
 import flask
-import newspaper
 import sqlalchemy as sa
-from bs4 import BeautifulSoup
 from flask import current_app as app
 
 import feedi.models as models
@@ -15,11 +12,14 @@ from feedi.models import db
 from feedi.sources import rss
 
 
+# FIXME the feed_name/entries url is inconsistent with the rest
 @app.route("/")
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
 @app.route("/users/<username>")
-def entry_list(feed_name=None, username=None, folder=None, deleted=False, favorited=False):
+@app.route("/entries/trash", defaults={'deleted': True})
+@app.route("/entries/favorites", defaults={'favorited': True})
+def entry_list(**filters):
     """
     Generic view to fetch a list of entries. By default renders the home timeline.
     If accessed with a feed name or a pagination timestam, filter the resuls accordingly.
@@ -30,39 +30,26 @@ def entry_list(feed_name=None, username=None, folder=None, deleted=False, favori
 
     page = flask.request.args.get('page')
     freq_sort = flask.session.get('freq_sort')
-    (entries, next_page) = entries_page(ENTRY_PAGE_SIZE, freq_sort, deleted, favorited, page=page,
-                                        feed_name=feed_name, username=username, folder=folder)
+    (entries, next_page) = query_entries_page(ENTRY_PAGE_SIZE, freq_sort, page=page, **filters)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
 
     if is_htmx:
         # render a single page of the entry list
-        return flask.render_template('entry_list.html',
+        return flask.render_template('entry_list_page.html',
                                      entries=entries,
                                      next_page=next_page)
 
     # render home, including feeds sidebar
-    return flask.render_template('entries.html',
+    return flask.render_template('entry_list.html',
+                                 pinned=models.Entry.select_pinned(**filters),
                                  entries=entries,
                                  next_page=next_page,
-                                 selected_feed=feed_name,
-                                 selected_folder=folder)
+                                 filters=filters)
 
 
-@app.route("/entries/trash")
-def trashed_entries():
-    return entry_list(deleted=True)
-
-
-@app.route("/entries/favorites")
-def favorites():
-    return entry_list(favorited=True)
-
-
-# TODO refactor. most of this should probably move to the models module. (not the page parsing bit)
-# and this requires unit testing, I bet it's full of bugs :P
-def entries_page(limit, freq_sort, deleted, favorited,
-                 page=None, feed_name=None, username=None, folder=None):
+# TODO this requires unit testing, I bet it's full of bugs :P
+def query_entries_page(limit, freq_sort, page=None, **kwargs):
     """
     Fetch a page of entries from db, optionally filtered by feed_name, folder or username.
     A specific sorting is applied according to `freq_sort` (strictly chronological or
@@ -70,34 +57,8 @@ def entries_page(limit, freq_sort, deleted, favorited,
     `limit` and `page` select the page according to the given sorting criteria.
     The next page indicator is returned as the second element of the return tuple
     """
-    query = db.select(models.Entry)
 
-    # apply general filters
-    if deleted:
-        query = query.filter(models.Entry.deleted.is_not(None))
-    else:
-        query = query.filter(models.Entry.deleted.is_(None))
-
-    if favorited:
-        query = query.filter(models.Entry.favorited.is_not(None))
-
-    if feed_name:
-        query = query.filter(models.Entry.feed.has(name=feed_name))
-
-    if folder:
-        query = query.filter(models.Entry.feed.has(folder=folder))
-
-    if username:
-        query = query.filter(models.Entry.username == username)
-
-    # apply specific sorting / pagination
     if freq_sort:
-        # If the user has toggled the frequency based sorting, order entries by least frequent
-        # feeds first then reverse-chronologically for entries in the same frequency rank.
-        # The results are also put in 48 hours 'buckets' so we only highlight articles during the
-        # first couple of days after their publication. (so as to not have fixed stuff in the top of
-        # the timeline for too long).
-
         if page:
             start_at, page = page.split(':')
             page = int(page)
@@ -106,25 +67,7 @@ def entries_page(limit, freq_sort, deleted, favorited,
             start_at = datetime.datetime.now()
             page = 1
 
-        # count the amount of entries per feed seen in the last two weeks and map the count to frequency "buckets"
-        # (see the models.Feed.freq_bucket function) to be used in the order by clause of the next query
-        two_weeks_ago = datetime.datetime.now() - datetime.timedelta(days=14)
-        subquery = db.select(models.Feed.id, sa.func.freq_bucket(sa.func.count(models.Entry.id)).label('rank'))\
-                     .join(models.Entry)\
-                     .filter(models.Entry.remote_updated >= two_weeks_ago)\
-                     .group_by(models.Feed)\
-                     .subquery()
-
-        # by ordering by a "bucket" of "is it older than 48hs?" we effectively get all entries in the last 2 days first,
-        # without having to filter out the rest --i.e. without truncating the feed
-        last_48_hours = start_at - datetime.timedelta(hours=48)
-        query = query.join(models.Feed)\
-                     .join(subquery, subquery.c.id == models.Feed.id)\
-                     .order_by(
-                         (start_at > models.Entry.remote_updated) & (
-                             models.Entry.remote_updated < last_48_hours),
-                         subquery.c.rank,
-                         models.Entry.remote_updated.desc()).limit(limit)
+        entries = models.Entry.select_page_by_frequency(limit, start_at, page, **kwargs)
 
         # the page marker includes the timestamp at which the first page was fetch, so
         # it doesn't become a "sliding window" that would produce duplicate results.
@@ -132,21 +75,66 @@ def entries_page(limit, freq_sort, deleted, favorited,
         # also this could obviously trip if the ranks are updated in between calls, but well duplicated entries
         # in infinity scroll aren't the end of the world (they could also be filtered out in the frontend)
         next_page = f'{start_at.timestamp()}:{page + 1}'
-        return (db.paginate(query, page=page), next_page)
+        return entries, next_page
 
     else:
-        # if not using freq sort, just return entries in reverse chronological order.
         if page:
-            dt = datetime.datetime.fromtimestamp(float(page))
-            query = query.filter(models.Entry.remote_updated < dt)
+            page = datetime.datetime.fromtimestamp(float(page))
 
-        query = query.order_by(models.Entry.remote_updated.desc()).limit(limit)
-        entries = db.session.scalars(query).all()
+        entries = models.Entry.select_page_chronologically(limit, page, **kwargs)
 
         # We don't use regular page numbers, instead timestamps so we don't get repeated
         # results if there were new entries added in the db after the previous page fetch.
-        next_page = entries[-1].remote_updated.timestamp() if entries else None
-        return entries, next_page
+        next_page_ts = entries[-1].remote_updated.timestamp() if entries else None
+        return entries, next_page_ts
+
+
+@app.put("/pinned/<int:id>")
+@app.put("/folder/<folder>/pinned/<int:id>")
+@app.put("/feeds/<feed_name>/entries/pinned/<int:id>")
+@app.put("/users/<username>/pinned/<int:id>")
+@app.put("/entries/trash/pinned/<int:id>", defaults={'deleted': True})
+@app.put("/entries/favorites/pinned/<int:id>", defaults={'favorited': True})
+def entry_pin(id, **filters):
+    """
+    Toggle the pinned status of the given entry and return the new list of pinned
+    entries, respecting the url filters.
+    """
+    entry = db.get_or_404(models.Entry, id)
+    entry.pinned = None if entry.pinned else datetime.datetime.now()
+    db.session.commit()
+
+    # get the new list of pinned based on filters
+    pinned = models.Entry.select_pinned(**filters)
+
+    # FIXME this, together with the template is a patch to prevent the newly rendered pinned list
+    # to base their pin links on this route's url.
+    # this is a consequence of sending the htmx fragment as part of this specialized url.
+    # there should be a better way to handle this
+    pin_base_path = flask.request.path.split('/pinned')[0]
+
+    return flask.render_template("entry_list_page.html",
+                                 is_pinned_list=True,
+                                 pin_base_path=pin_base_path,
+                                 entries=pinned)
+
+
+@app.put("/entries/favorites/<int:id>/")
+def entry_favorite(id):
+    "Toggle the favorite status of the given entry."
+    entry = db.get_or_404(models.Entry, id)
+    entry.favorited = None if entry.favorited else datetime.datetime.now()
+    db.session.commit()
+    return '', 204
+
+
+@app.put("/entries/thrash/<int:id>/")
+def entry_delete(id):
+    "Toggle the deleted status of the given entry."
+    entry = db.get_or_404(models.Entry, id)
+    entry.deleted = None if entry.deleted else datetime.datetime.now()
+    db.session.commit()
+    return '', 204
 
 
 @app.context_processor
@@ -168,7 +156,7 @@ def sidebar_feeds():
         for feed in in_folder:
             folders[feed.folder].append(feed)
 
-        return dict(shortcut_feeds=shortcut_feeds, folders=folders)
+        return dict(shortcut_feeds=shortcut_feeds, folders=folders, filters={})
     return {}
 
 
@@ -264,6 +252,7 @@ def fetch_entry_content(id):
 
     return flask.render_template("entry_content.html", entry=entry, content=content)
 
+
 # FIXME experimental route, should give it proper support
 @app.get("/entries/preview")
 def preview_content():
@@ -273,22 +262,14 @@ def preview_content():
     entry = {"content_url": url, "title": "preview"}
     return flask.render_template("content_preview.html", content=content, entry=entry)
 
-@app.put("/entries/favorites/<int:id>/")
-def entry_favorite(id):
-    "Toggle the favorite status of the given entry."
-    entry = db.get_or_404(models.Entry, id)
-    entry.favorited = None if entry.favorited else datetime.datetime.now()
-    db.session.commit()
-    return '', 204
 
-
-@app.put("/entries/thrash/<int:id>/")
-def entry_delete(id):
-    "Toggle the deleted status of the given entry."
-    entry = db.get_or_404(models.Entry, id)
-    entry.deleted = None if entry.deleted else datetime.datetime.now()
-    db.session.commit()
-    return '', 204
+def extract_article(url):
+    # The mozilla/readability npm package shows better results at extracting the
+    # article content than all the python libraries I've tried... even than the readabilipy
+    # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
+    # for parsing the article sadly this adds a dependency to node and a few npm pacakges
+    r = subprocess.run(["feedi/extract_article.js", url], capture_output=True, text=True)
+    return r.stdout
 
 
 @app.route("/feeds/<int:id>/raw")
@@ -316,15 +297,6 @@ def raw_entry(id):
         status=200,
         mimetype='application/json'
     )
-
-
-def extract_article(url):
-    # The mozilla/readability npm package shows better results at extracting the
-    # article content than all the python libraries I've tried... even than the readabilipy
-    # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
-    # for parsing the article sadly this adds a dependency to node and a few npm pacakges
-    r = subprocess.run(["feedi/extract_article.js", url], capture_output=True, text=True)
-    return r.stdout
 
 
 @app.post("/session/<setting>/")

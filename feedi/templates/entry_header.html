@@ -19,10 +19,18 @@
            _="on click remove the closest .feed-entry
                      then on keyup[key is 'Delete' or key is 'Backspace'] from the closest .feed-entry focus() the next .feed-entry then trigger click on me"
            class="level-item icon hover-icon is-white is-rounded trash-entry" title="Remove entry"><i class="fas {% if entry.deleted %}fa-trash-restore-alt{% else %}fa-trash-alt{% endif %}"></i></a>
-        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="Pin entry"><i class="fas fa-thumbtack"></i></a>
+        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
+           hx-put="{{pin_base_path|default(request.path.rstrip('/'))}}/pinned/{{entry.id}}"
+           hx-target="#pinned-entry-list"
+           _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />
+                     then toggle .is-hidden on < [data-id='{{entry.id}}'] />
+                     then go to top of the body smoothly
+                     then on keyup[key is 'p'] from the closest .feed-entry trigger click on me">
+            <i class="fas fa-thumbtack"></i></a>
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite entry"
-           hx-put="/entries/favorites/{{entry.id}}/"
-           _="on click toggle .toggled"
+           hx-put="/entries/favorites/{{entry.id}}"
+           _="on click toggle .toggled
+                     then on keyup[key is 'f'] from the closest .feed-entry trigger click on me"
         ><i class="fas fa-star"></i></a>
 
         <div class="dropdown is-right">
