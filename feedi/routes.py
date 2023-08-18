@@ -156,7 +156,7 @@ def sidebar_feeds():
         for feed in in_folder:
             folders[feed.folder].append(feed)
 
-        return dict(shortcut_feeds=shortcut_feeds, folders=folders)
+        return dict(shortcut_feeds=shortcut_feeds, folders=folders, filters={})
     return {}
 
 
