@@ -28,8 +28,9 @@ def entry_list(feed_name=None, username=None, folder=None, deleted=False, favori
 
     page = flask.request.args.get('page')
     freq_sort = flask.session.get('freq_sort')
-    (entries, next_page) = query_entries_page(ENTRY_PAGE_SIZE, freq_sort, deleted, favorited, page=page,
-                                        feed_name=feed_name, username=username, folder=folder)
+    (entries, next_page) = query_entries_page(ENTRY_PAGE_SIZE, freq_sort, page=page,
+                                              deleted=deleted, favorited=favorited,
+                                              feed_name=feed_name, username=username, folder=folder)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
 
@@ -41,7 +42,9 @@ def entry_list(feed_name=None, username=None, folder=None, deleted=False, favori
 
     # render home, including feeds sidebar
     return flask.render_template('entry_list.html',
-                                 pinned=models.Entry.select_pinned(feed_name, username, folder),
+                                 pinned=models.Entry.select_pinned(feed_name=feed_name,
+                                                                   username=username,
+                                                                   folder=folder),
                                  entries=entries,
                                  next_page=next_page,
                                  selected_feed=feed_name,
@@ -60,8 +63,7 @@ def favorites():
 
 # TODO refactor. most of this should probably move to the models module. (not the page parsing bit)
 # and this requires unit testing, I bet it's full of bugs :P
-def query_entries_page(limit, freq_sort, deleted, favorited,
-                 page=None, feed_name=None, username=None, folder=None):
+def query_entries_page(limit, freq_sort, page=None, **kwargs):
     """
     Fetch a page of entries from db, optionally filtered by feed_name, folder or username.
     A specific sorting is applied according to `freq_sort` (strictly chronological or
@@ -69,25 +71,6 @@ def query_entries_page(limit, freq_sort, deleted, favorited,
     `limit` and `page` select the page according to the given sorting criteria.
     The next page indicator is returned as the second element of the return tuple
     """
-    query = db.select(models.Entry)
-
-    # apply general filters
-    if deleted:
-        query = query.filter(models.Entry.deleted.is_not(None))
-    else:
-        query = query.filter(models.Entry.deleted.is_(None))
-
-    if favorited:
-        query = query.filter(models.Entry.favorited.is_not(None))
-
-    if feed_name:
-        query = query.filter(models.Entry.feed.has(name=feed_name))
-
-    if folder:
-        query = query.filter(models.Entry.feed.has(folder=folder))
-
-    if username:
-        query = query.filter(models.Entry.username == username)
 
     # apply specific sorting / pagination
     if freq_sort:
@@ -136,16 +119,14 @@ def query_entries_page(limit, freq_sort, deleted, favorited,
     else:
         # if not using freq sort, just return entries in reverse chronological order.
         if page:
-            dt = datetime.datetime.fromtimestamp(float(page))
-            query = query.filter(models.Entry.remote_updated < dt)
+            page = datetime.datetime.fromtimestamp(float(page))
 
-        query = query.order_by(models.Entry.remote_updated.desc()).limit(limit)
-        entries = db.session.scalars(query).all()
+        entries = models.Entry.select_page_chronological(limit, page, **kwargs)
 
         # We don't use regular page numbers, instead timestamps so we don't get repeated
         # results if there were new entries added in the db after the previous page fetch.
-        next_page = entries[-1].remote_updated.timestamp() if entries else None
-        return entries, next_page
+        next_page_ts = entries[-1].remote_updated.timestamp() if entries else None
+        return entries, next_page_ts
 
 
 @app.context_processor

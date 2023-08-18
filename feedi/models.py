@@ -139,11 +139,20 @@ class Entry(db.Model):
         return f'<Entry {self.feed_id}/{self.remote_id}>'
 
     @classmethod
-    def select_pinned(cls, feed_name=None, username=None, folder=None):
-        "Return the full list of pinned entries considering the optional filters."
-        query = db.select(cls)\
-                  .filter(cls.pinned.is_not(None))\
-                  .order_by(cls.pinned.desc())
+    def _filtered_query(cls, deleted=None, favorited=None,
+                      feed_name=None, username=None, folder=None):
+        """TODO"""
+
+        query = db.select(cls)
+
+        # apply general filters
+        if deleted:
+            query = query.filter(cls.deleted.is_not(None))
+        else:
+            query = query.filter(cls.deleted.is_(None))
+
+        if favorited:
+            query = query.filter(cls.favorited.is_not(None))
 
         if feed_name:
             query = query.filter(cls.feed.has(name=feed_name))
@@ -153,6 +162,27 @@ class Entry(db.Model):
 
         if username:
             query = query.filter(cls.username == username)
-            pass
 
+        return query
+
+    @classmethod
+    def select_pinned(cls, **kwargs):
+        "Return the full list of pinned entries considering the optional filters."
+        query = cls._filtered_query(**kwargs)\
+                   .filter(cls.pinned.is_not(None))\
+                   .order_by(cls.pinned.desc())
+
+        return db.session.scalars(query).all()
+
+
+    @classmethod
+    def select_page_chronological(cls, limit, older_than=None, **kwargs):
+        """TODO"""
+        query = cls._filtered_query(**kwargs)
+
+        if older_than:
+            # FIXME move float conversion outside
+            query = query.filter(cls.remote_updated < older_than)
+
+        query = query.order_by(cls.remote_updated.desc()).limit(limit)
         return db.session.scalars(query).all()
