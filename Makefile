@@ -21,7 +21,7 @@ shell:
 dbshell:
 	sqlite3 -cmd ".open instance/feedi.db"
 
-reset:
+dbreset:
 	rm instance/feedi.db
 
 feed-load:
