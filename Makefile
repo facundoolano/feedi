@@ -12,11 +12,14 @@ deps:
 deps-dev: deps
 	$(venv) pip install ipython
 
+serve:
+	$(flask) run --debug --reload
+
 shell:
 	$(venv) ipython
 
-serve:
-	$(flask) run --debug --reload
+dbshell:
+	sqlite3 -cmd ".open instance/feedi.db"
 
 reset:
 	rm instance/feedi.db
