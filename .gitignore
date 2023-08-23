@@ -167,3 +167,4 @@ feeds.csv
 .DS_Store
 
 node_modules/
+kindle.creds
