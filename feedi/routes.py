@@ -1,11 +1,14 @@
 import datetime
 import json
 import pathlib
+import shutil
 import subprocess
 import tempfile
+import zipfile
 from collections import defaultdict
 
 import flask
+import requests
 import sqlalchemy as sa
 import stkclient
 from favicon.favicon import BeautifulSoup
@@ -274,7 +277,7 @@ def preview_content():
 @app.post("/entries/kindle")
 def send_to_kindle():
     """
-    TODO
+    If there's a registered device, send the article in the given URL through kindle.
     """
     credentials = app.config.get('KINDLE_CREDENTIALS_PATH')
     if not credentials:
@@ -292,20 +295,45 @@ def send_to_kindle():
     url = flask.request.args['url']
     article = extract_article(url)
 
+    # a tempfile is necessary because the kindle client expects a local filepath to upload
+    # the file contents are a zip including the article.html and its image assets
     with tempfile.NamedTemporaryFile(mode='w+', delete=False) as fp:
-        # pass it through bs4 so it's a well-formed html (otherwise kindle will reject it)
-        html_content = str(BeautifulSoup(article['content'], 'lxml'))
-
-        fp.write(html_content)
-        fp.close()
+        compress_article(fp.name, article)
 
         serials = [d.device_serial_number for d in kindle_client.get_owned_devices()]
         kindle_client.send_file(pathlib.Path(fp.name), serials,
-                                format='html',
+                                format='zip',
                                 author=article['byline'],
                                 title=article['title'])
 
         return '', 204
+
+
+def compress_article(outfilename, article):
+    """
+    Extract the article content, convert it to a valid html doc, localize its images and write
+    everything as a zip in the given file (which should be open for writing).
+    """
+
+    # pass it through bs4 so it's a well-formed html (otherwise kindle will reject it)
+    soup = BeautifulSoup(article['content'], 'lxml')
+
+    with zipfile.ZipFile(outfilename, 'w', compression=zipfile.ZIP_DEFLATED) as zip:
+        # create a subdir in the zip for image assets
+        zip.mkdir('article_files')
+
+        for img in soup.findAll('img'):
+            img_url = img['src']
+            img_filename = 'article_files/' + img['src'].split('/')[-1]
+
+            # update each img src url to point to the local copy of the file
+            img['src'] = img_filename
+
+            # download the image into the zip, inside the files subdir
+            with requests.get(img_url, stream=True) as img_src, zip.open(img_filename, mode='w') as img_dest:
+                shutil.copyfileobj(img_src.raw, img_dest)
+
+        zip.writestr('article.html', str(soup))
 
 
 def extract_article(url):
@@ -317,7 +345,7 @@ def extract_article(url):
     return json.loads(r.stdout)
 
 
-@app.route("/feeds/<int:id>/raw")
+@ app.route("/feeds/<int:id>/raw")
 def raw_feed(id):
     """
     Shows a JSON dump of the feed data as received from the source.
@@ -331,7 +359,7 @@ def raw_feed(id):
     )
 
 
-@app.route("/entries/<int:id>/raw")
+@ app.route("/entries/<int:id>/raw")
 def raw_entry(id):
     """
     Shows a JSON dump of the entry data as received from the source.
@@ -344,7 +372,7 @@ def raw_entry(id):
     )
 
 
-@app.post("/session/<setting>/")
+@ app.post("/session/<setting>/")
 def toggle_hide_media(setting):
     if setting not in ['hide_media', 'freq_sort']:
         flask.abort(400, "Invalid setting")
