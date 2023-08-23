@@ -97,6 +97,15 @@
                                </div>
                            </div>
                        </li>
+                       {% if filters.feed_name %}
+                       <li>
+                           <div class="level-left">
+                               <div class="level-item">
+                                   <a href="/feeds/edit/{{filters.feed_name}}"><icon class="icon"><i class="fas fa-edit"></i></icon> Edit {{filters.feed_name}}</a>
+                               </div>
+                           </div>
+                       </li>
+                       {% endif %}
                        <hr class="dropdown-divider"/>
                        <li>
                            <div class="level-left">
