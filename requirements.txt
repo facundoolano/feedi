@@ -10,3 +10,4 @@ Mastodon-py>=1.8.1
 gevent==23.7.0
 huey==2.4.5
 alembic==1.11.2
+stkclient==0.1.1
