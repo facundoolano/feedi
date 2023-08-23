@@ -9,7 +9,6 @@ from collections import defaultdict
 
 import flask
 import requests
-import sqlalchemy as sa
 import stkclient
 from favicon.favicon import BeautifulSoup
 from flask import current_app as app
@@ -348,7 +347,7 @@ def extract_article(url):
     return json.loads(r.stdout)
 
 
-@ app.route("/feeds/<int:id>/raw")
+@app.route("/feeds/<int:id>/raw")
 def raw_feed(id):
     """
     Shows a JSON dump of the feed data as received from the source.
@@ -362,7 +361,7 @@ def raw_feed(id):
     )
 
 
-@ app.route("/entries/<int:id>/raw")
+@app.route("/entries/<int:id>/raw")
 def raw_entry(id):
     """
     Shows a JSON dump of the entry data as received from the source.
@@ -375,7 +374,7 @@ def raw_entry(id):
     )
 
 
-@ app.post("/session/<setting>/")
+@app.post("/session/<setting>/")
 def toggle_hide_media(setting):
     if setting not in ['hide_media', 'freq_sort']:
         flask.abort(400, "Invalid setting")
