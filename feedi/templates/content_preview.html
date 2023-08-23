@@ -1,14 +1,18 @@
-{% extends "base.html" %}
-
-{% block sidebar_left %}{%endblock%}
-{% block sidebar_right %}{%endblock%}
+{% extends "entry_content.html" %}
 
 {% block content %}
-
 <div class="box is-radiusless feed-entry">
     <article class="media">
+        <figure class="media-left">
+            <p class="image is-64x64"></p>
+        </figure>
+
   <div class="media-content">
       <a href="{{ entry.content_url }}" target="_blank"><strong>{{ entry.title }}</strong></a>
+      <div class="feed-header-details">
+          <small class="has-text-grey-light">{{ entry.username }}</small>
+      </div>
+
   </div>
   <div class="media-right">
   </div>

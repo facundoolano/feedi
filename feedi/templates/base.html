@@ -1,5 +1,6 @@
 <!doctype html>
-<head>
+<html class="has-background-light">
+    <head>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="stylesheet" href="/static/css/bulma.min.css">
@@ -9,7 +10,6 @@
     <title>Feedi {% block title %}{% endblock %}</title>
     <meta name="htmx-config" content='{"refreshOnHistoryMiss": true}'>
 </head>
-<html class="has-background-light">
 <body>
     <section class="container">
         <div class="columns">
@@ -97,6 +97,15 @@
                                </div>
                            </div>
                        </li>
+                       {% if filters.feed_name %}
+                       <li>
+                           <div class="level-left">
+                               <div class="level-item">
+                                   <a href="/feeds/edit/{{filters.feed_name}}"><icon class="icon"><i class="fas fa-edit"></i></icon> Edit {{filters.feed_name}}</a>
+                               </div>
+                           </div>
+                       </li>
+                       {% endif %}
                        <hr class="dropdown-divider"/>
                        <li>
                            <div class="level-left">

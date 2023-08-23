@@ -1,9 +1,16 @@
 import datetime
+import json
+import pathlib
+import shutil
 import subprocess
+import tempfile
+import zipfile
 from collections import defaultdict
 
 import flask
-import sqlalchemy as sa
+import requests
+import stkclient
+from favicon.favicon import BeautifulSoup
 from flask import current_app as app
 
 import feedi.models as models
@@ -239,7 +246,7 @@ def fetch_entry_content(id):
 
     if entry.feed.type == models.Feed.TYPE_RSS:
         try:
-            content = extract_article(entry.content_url)
+            content = extract_article(entry.content_url)['content']
         except Exception as e:
             return flask.render_template("error_message.html", message=f"Error fetching article: {repr(e)}")
     else:
@@ -253,14 +260,82 @@ def fetch_entry_content(id):
     return flask.render_template("entry_content.html", entry=entry, content=content)
 
 
-# FIXME experimental route, should give it proper support
+# for now this is accesible dragging an url to the searchbox
+# later it will be an autocomplete command there
 @app.get("/entries/preview")
 def preview_content():
+    """
+    Preview an url content in the reader, as if it was an entry parsed from a feed.
+    """
     url = flask.request.args['url']
-    content = extract_article(url)
-    # FIXME hacked, should get meta?
-    entry = {"content_url": url, "title": "preview"}
-    return flask.render_template("content_preview.html", content=content, entry=entry)
+    article = extract_article(url)
+    entry = {"content_url": url,
+             "title": article['title'],
+             "username": article['byline']}
+
+    return flask.render_template("content_preview.html", content=article['content'], entry=entry)
+
+
+@app.post("/entries/kindle")
+def send_to_kindle():
+    """
+    If there's a registered device, send the article in the given URL through kindle.
+    """
+    credentials = app.config.get('KINDLE_CREDENTIALS_PATH')
+    if not credentials:
+        return '', 204
+
+    credentials = pathlib.Path(credentials)
+    try:
+        credentials.stat
+    except FileNotFoundError:
+        return '', 204
+
+    with open(credentials) as fp:
+        kindle_client = stkclient.Client.load(fp)
+
+    url = flask.request.args['url']
+    article = extract_article(url)
+
+    # a tempfile is necessary because the kindle client expects a local filepath to upload
+    # the file contents are a zip including the article.html and its image assets
+    with tempfile.NamedTemporaryFile(mode='w+', delete=False) as fp:
+        compress_article(fp.name, article)
+
+        serials = [d.device_serial_number for d in kindle_client.get_owned_devices()]
+        kindle_client.send_file(pathlib.Path(fp.name), serials,
+                                format='zip',
+                                author=article['byline'],
+                                title=article['title'])
+
+        return '', 204
+
+
+def compress_article(outfilename, article):
+    """
+    Extract the article content, convert it to a valid html doc, localize its images and write
+    everything as a zip in the given file (which should be open for writing).
+    """
+
+    # pass it through bs4 so it's a well-formed html (otherwise kindle will reject it)
+    soup = BeautifulSoup(article['content'], 'lxml')
+
+    with zipfile.ZipFile(outfilename, 'w', compression=zipfile.ZIP_DEFLATED) as zip:
+        # create a subdir in the zip for image assets
+        zip.mkdir('article_files')
+
+        for img in soup.findAll('img'):
+            img_url = img['src']
+            img_filename = 'article_files/' + img['src'].split('/')[-1]
+
+            # update each img src url to point to the local copy of the file
+            img['src'] = img_filename
+
+            # download the image into the zip, inside the files subdir
+            with requests.get(img_url, stream=True) as img_src, zip.open(img_filename, mode='w') as img_dest:
+                shutil.copyfileobj(img_src.raw, img_dest)
+
+        zip.writestr('article.html', str(soup))
 
 
 def extract_article(url):
@@ -269,7 +344,7 @@ def extract_article(url):
     # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
     # for parsing the article sadly this adds a dependency to node and a few npm pacakges
     r = subprocess.run(["feedi/extract_article.js", url], capture_output=True, text=True)
-    return r.stdout
+    return json.loads(r.stdout)
 
 
 @app.route("/feeds/<int:id>/raw")
