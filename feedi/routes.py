@@ -1,9 +1,14 @@
 import datetime
+import json
+import pathlib
 import subprocess
+import tempfile
 from collections import defaultdict
 
 import flask
 import sqlalchemy as sa
+import stkclient
+from favicon.favicon import BeautifulSoup
 from flask import current_app as app
 
 import feedi.models as models
@@ -239,7 +244,7 @@ def fetch_entry_content(id):
 
     if entry.feed.type == models.Feed.TYPE_RSS:
         try:
-            content = extract_article(entry.content_url)
+            content = extract_article(entry.content_url)['content']
         except Exception as e:
             return flask.render_template("error_message.html", message=f"Error fetching article: {repr(e)}")
     else:
@@ -257,10 +262,50 @@ def fetch_entry_content(id):
 @app.get("/entries/preview")
 def preview_content():
     url = flask.request.args['url']
-    content = extract_article(url)
+    article = extract_article(url)
     # FIXME hacked, should get meta?
-    entry = {"content_url": url, "title": "preview"}
-    return flask.render_template("content_preview.html", content=content, entry=entry)
+    entry = {"content_url": url,
+             "title": article['title'],
+             "username": article['byline']}
+
+    return flask.render_template("content_preview.html", content=article['content'], entry=entry)
+
+
+@app.post("/entries/kindle")
+def send_to_kindle():
+    """
+    TODO
+    """
+    credentials = app.config.get('KINDLE_CREDENTIALS_PATH')
+    if not credentials:
+        return '', 204
+
+    credentials = pathlib.Path(credentials)
+    try:
+        credentials.stat
+    except FileNotFoundError:
+        return '', 204
+
+    with open(credentials) as fp:
+        kindle_client = stkclient.Client.load(fp)
+
+    url = flask.request.args['url']
+    article = extract_article(url)
+
+    with tempfile.NamedTemporaryFile(mode='w+', delete=False) as fp:
+        # pass it through bs4 so it's a well-formed html (otherwise kindle will reject it)
+        html_content = str(BeautifulSoup(article['content'], 'lxml'))
+
+        fp.write(html_content)
+        fp.close()
+
+        serials = [d.device_serial_number for d in kindle_client.get_owned_devices()]
+        kindle_client.send_file(pathlib.Path(fp.name), serials,
+                                format='html',
+                                author=article['byline'],
+                                title=article['title'])
+
+        return '', 204
 
 
 def extract_article(url):
@@ -269,7 +314,7 @@ def extract_article(url):
     # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
     # for parsing the article sadly this adds a dependency to node and a few npm pacakges
     r = subprocess.run(["feedi/extract_article.js", url], capture_output=True, text=True)
-    return r.stdout
+    return json.loads(r.stdout)
 
 
 @app.route("/feeds/<int:id>/raw")

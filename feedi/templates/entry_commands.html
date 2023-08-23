@@ -3,7 +3,13 @@
 <a href="{{ entry.entry_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="far fa-comment-alt"></i></span> Go to discussion</a>
 {% endif %}
 <a class="dropdown-item" _="on click writeText('{{ entry.content_url }}') into the navigator's clipboard"><span class="icon"><i class="fas fa-link"></i></span> Copy URL</a>
-<a class="dropdown-item"><span class="icon"><i class="fas fa-rss"></i></span> Crawl origin feed</a>
+<a class="dropdown-item" hx-post="/entries/kindle?url={{ entry.content_url }}"
+   _="on htmx:beforeRequest or htmx:afterRequest
+          toggle .is-hidden on .fa-spinner in me
+          then toggle .is-hidden on .fa-tablet-alt in me"
+><span class="icon">
+    <i class="fas fa-spinner fa-spin is-hidden"></i>
+    <i class="fas fa-tablet-alt "></i></span> Send to Kindle</a>
 <hr class="dropdown-divider">
 {% if entry.username %}
 <a class="dropdown-item" href="/users/{{ entry.username }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.username }}</a>
