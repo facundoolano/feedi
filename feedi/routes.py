@@ -261,12 +261,15 @@ def fetch_entry_content(id):
     return flask.render_template("entry_content.html", entry=entry, content=content)
 
 
-# FIXME experimental route, should give it proper support
+# for now this is accesible dragging an url to the searchbox
+# later it will be an autocomplete command there
 @app.get("/entries/preview")
 def preview_content():
+    """
+    Preview an url content in the reader, as if it was an entry parsed from a feed.
+    """
     url = flask.request.args['url']
     article = extract_article(url)
-    # FIXME hacked, should get meta?
     entry = {"content_url": url,
              "title": article['title'],
              "username": article['byline']}
