@@ -6,8 +6,7 @@
                       on keydown[key is 'Enter' and metaKey and shiftKey ] from the closest .feed-entry go to url '{{ entry.content_url}}' in new window then halt
                       on keydown[key is 'Enter' and metaKey and not shiftKey] from the closest .feed-entry go to url '/entries/{{ entry.id }}' in new window then halt
                       on keydown[key is 'Enter' and not metaKey and not shiftKey] from the closest .feed-entry go to url '/entries/{{ entry.id }}'
-                      then on click[metaKey and shiftKey] go to url '{{ entry.content_url}}' in new window then halt
-                      then on click[metaKey and not shiftKey] go to url '/entries/{{ entry.id }}' in new window then halt"
+                      then on click[metaKey and shiftKey] go to url '{{ entry.content_url}}' in new window then halt"
 
                    href="/entries/{{ entry.id }}">{{ entry.title }}</a>
             </b>
