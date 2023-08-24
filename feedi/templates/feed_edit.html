@@ -30,6 +30,16 @@
             </div>
         </div>
 
+        {% if feed %}
+        <div class="field">
+            <label class="label">Frequency rank</label>
+
+            <div class="control">
+                <input class="input" type="text" value="{{ feed.frequency_rank() }}" readonly>
+            </div>
+        </div>
+        {% endif %}
+
         <br/>
 
         <div class="field is-grouped is-grouped-right">

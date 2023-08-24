@@ -53,6 +53,34 @@ class Feed(db.Model):
     def __repr__(self):
         return f'<Feed {self.name}>'
 
+    @classmethod
+    def frequency_rank_query(cls):
+        """
+        Count the daily average amount of entries per feed seen in the last two weeks
+        and put the result into "buckets". The rationale is to show least frequent first,
+        but not long sequences of the same feed if there are several at the "same order" of frequency.
+        """
+        two_weeks_ago = datetime.datetime.now() - datetime.timedelta(days=14)
+        days_since_creation = sa.func.min(14, sa.func.round(
+            sa.func.julianday('now'), sa.func.julianday(cls.created)))
+        rank_func = sa.func.round(sa.func.log(sa.func.round(
+            (sa.func.count(cls.id) / days_since_creation * 10))))
+        return db.select(cls.id, rank_func.label('rank'))\
+            .join(Entry)\
+            .filter(Entry.remote_updated >= two_weeks_ago)\
+            .group_by(cls)\
+            .subquery()
+
+    def frequency_rank(self):
+        """
+        Return the frequency rank of this feed.
+        """
+        subquery = self.frequency_rank_query()
+        query = db.select(subquery.c.rank)\
+                  .select_from(Feed)\
+                  .join(subquery, subquery.c.id == self.id)
+        return db.session.scalar(query)
+
 
 class RssFeed(Feed):
     url = sa.Column(sa.String)
@@ -194,33 +222,19 @@ class Entry(db.Model):
         during the first couple of days after their publication. (so as to not have fixed stuff in the
         top of the timeline for too long).
         """
-        query = cls._filtered_query(**filters)
-
-        # count the daily average amount of entries per feed seen in the last two weeks
-        # and put the numbers into "buckets" using log and round, to be used in the order by clause of the next query
-        # the rationale is to show least frequent first, but not long sequences of the same feed
-        # if there are several at the "same order" of frequency
-        # TODO can this bit be extracted out to Feed model, and put as a field in the edit?
-        two_weeks_ago = datetime.datetime.now() - datetime.timedelta(days=14)
-        days_since_creation = sa.func.min(14, sa.func.round(
-            sa.func.julianday('now'), sa.func.julianday(Feed.created)))
-        rank_func = sa.func.round(sa.func.log(sa.func.round(
-            (sa.func.count(cls.id) / days_since_creation * 10))))
-        subquery = db.select(Feed.id, rank_func.label('rank'))\
-                     .join(cls)\
-                     .filter(cls.remote_updated >= two_weeks_ago)\
-                     .group_by(Feed)\
-                     .subquery()
+        # prepare a subquery to make a frequency rank column available in the page filtering
+        subquery = Feed.frequency_rank_query()
 
         # by ordering with a "is it older than 24hs?" column we effectively get all entries from the last day first,
         # without excluding the rest --i.e. without truncating the feed after today's entries
         last_day = start_at - datetime.timedelta(hours=24)
-        query = query.join(Feed)\
-                     .join(subquery, subquery.c.id == Feed.id)\
-                     .order_by(
-                         (start_at > cls.remote_updated) & (
-                             cls.remote_updated < last_day),
-                         subquery.c.rank,
-                         cls.remote_updated.desc()).limit(limit)
+        query = cls._filtered_query(**filters)\
+                   .join(Feed)\
+                   .join(subquery, subquery.c.id == Feed.id)\
+                   .order_by(
+                       (start_at > cls.remote_updated) & (
+                           cls.remote_updated < last_day),
+                       subquery.c.rank,
+                       cls.remote_updated.desc()).limit(limit)
 
         return db.paginate(query, page=page)
