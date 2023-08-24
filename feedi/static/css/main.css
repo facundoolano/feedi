@@ -155,6 +155,15 @@ img[src=""] {
     font-size: 0.9rem;
 }
 
+.feeds-sidebar label {
+    padding: .5em .75em;
+    display: block
+}
+
+.feeds-sidebar input[type=checkbox], .feeds-sidebar input[type=radio] {
+    width: 1.5rem;
+}
+
 .feeds-sidebar .image {
     display: inline-block;
     margin-right: 0.2rem;

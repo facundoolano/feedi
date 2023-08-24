@@ -36,8 +36,8 @@ def entry_list(**filters):
     next_page = None
 
     page = flask.request.args.get('page')
-    freq_sort = flask.session.get('freq_sort')
-    (entries, next_page) = query_entries_page(ENTRY_PAGE_SIZE, freq_sort, page=page, **filters)
+    ordering = flask.session.get('ordering')
+    (entries, next_page) = query_entries_page(ENTRY_PAGE_SIZE, ordering, page=page, **filters)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
 
@@ -56,7 +56,7 @@ def entry_list(**filters):
 
 
 # TODO this requires unit testing, I bet it's full of bugs :P
-def query_entries_page(limit, freq_sort, page=None, **kwargs):
+def query_entries_page(limit, ordering, page=None, **kwargs):
     """
     Fetch a page of entries from db, optionally filtered by feed_name, folder or username.
     A specific sorting is applied according to `freq_sort` (strictly chronological or
@@ -65,7 +65,7 @@ def query_entries_page(limit, freq_sort, page=None, **kwargs):
     The next page indicator is returned as the second element of the return tuple
     """
 
-    if freq_sort:
+    if ordering == 'frequency':
         if page:
             start_at, page = page.split(':')
             page = int(page)
@@ -84,6 +84,7 @@ def query_entries_page(limit, freq_sort, page=None, **kwargs):
         next_page = f'{start_at.timestamp()}:{page + 1}'
         return entries, next_page
 
+    # elif ordering == 'recency':
     else:
         if page:
             page = datetime.datetime.fromtimestamp(float(page))
@@ -94,6 +95,11 @@ def query_entries_page(limit, freq_sort, page=None, **kwargs):
         # results if there were new entries added in the db after the previous page fetch.
         next_page_ts = entries[-1].remote_updated.timestamp() if entries else None
         return entries, next_page_ts
+    # elif ordering == 'views':
+    #     # TODO
+    #     pass
+    # else:
+    #     app.logger.error("invalid ordering %s", ordering)
 
 
 @app.put("/pinned/<int:id>")
@@ -374,10 +380,17 @@ def raw_entry(id):
     )
 
 
+# TODO improve this views to accept only valid values
 @app.post("/session/<setting>/")
-def toggle_hide_media(setting):
-    if setting not in ['hide_media', 'freq_sort']:
-        flask.abort(400, "Invalid setting")
-
+def toggle_setting(setting):
     flask.session[setting] = not flask.session.get(setting, False)
+    return '', 204
+
+
+# TODO improve this views to accept only valid values
+@app.put("/session/")
+def update_setting():
+    for (key, value) in flask.request.form.items():
+        flask.session[key] = value
+
     return '', 204
