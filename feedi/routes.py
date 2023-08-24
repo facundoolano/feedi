@@ -95,8 +95,14 @@ def query_entries_page(limit, ordering, page=None, **kwargs):
         next_page_ts = entries[-1].remote_updated.timestamp() if entries else None
         return entries, next_page_ts
     elif ordering == 'score':
-        # FIXME implement
-        return [], None
+        if page:
+            page = int(page)
+        else:
+            page = 1
+
+        entries = models.Entry.select_page_by_score(limit, page, **kwargs)
+        # TODO should we do something to avoid duplicates?
+        return entries, page + 1
     else:
         app.logger.error("invalid ordering %s", ordering)
 

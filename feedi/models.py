@@ -174,6 +174,19 @@ class Entry(db.Model):
         return db.session.scalars(query).all()
 
     @classmethod
+    def select_page_by_score(cls, limit, page, **filters):
+        """
+        Return up to `limit` entries in reverse chronological order, considering the given
+        `filters`.
+        """
+        query = cls._filtered_query(**filters)\
+            .join(Feed)\
+            .limit(limit)\
+            .order_by(Feed.score.desc(), cls.remote_updated.desc())
+
+        return db.paginate(query, page=page)
+
+    @classmethod
     def select_page_by_frequency(cls, limit, start_at, page, **filters):
         """
         Order entries by least frequent feeds first then reverse-chronologically for entries in the same

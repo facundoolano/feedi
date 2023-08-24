@@ -139,7 +139,7 @@
                                    <label class="radio">
                                        <input hx-put="/session/"
                                            _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
-                                              {% if session.ordering == "views" %} checked {% endif %}
+                                              {% if session.ordering == "score" %} checked {% endif %}
                                            type="radio" name="ordering" value="score">
                                    Best score
                                </label>
