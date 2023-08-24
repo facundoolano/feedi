@@ -14,9 +14,9 @@ def init_db(app):
 
     @sa.event.listens_for(db.engine, 'connect')
     def on_connect(dbapi_connection, _connection_record):
-        # registers a custom function that can be used during queries
-        # in this case to sort the feed based on the post frequency of the sources
-        dbapi_connection.create_function('freq_bucket', 1, Feed.freq_bucket)
+        # math functions are not available by default in sqlite
+        # so registering log as a custom function on connection
+        dbapi_connection.create_function('log', 1, math.log)
 
     db.create_all()
 
@@ -52,32 +52,6 @@ class Feed(db.Model):
 
     def __repr__(self):
         return f'<Feed {self.name}>'
-
-    @staticmethod
-    def freq_bucket(count):
-        """
-        To be used as a DB function, this returns a "rank" of the feed based on how
-        many posts we've seen (assuming the count is for the last 2 weeks).
-        This rank classifies the feeds so the least frequent posters are displayed more
-        prominently.
-        """
-        # this is pretty hacky but it's low effort and servers for experimentation
-        if count <= 2:
-            # weekly or less
-            rank = 1
-        elif count < 5:
-            # couple of times a week
-            rank = 2
-        elif count < 15:
-            # up to once a day
-            rank = 3
-        elif count < 45:
-            # up to 3 times a day
-            rank = 3
-        else:
-            # more
-            rank = 5
-        return rank
 
 
 class RssFeed(Feed):
@@ -210,23 +184,29 @@ class Entry(db.Model):
         """
         query = cls._filtered_query(**filters)
 
-        # count the amount of entries per feed seen in the last two weeks and map the count to frequency "buckets"
-        # (see the models.Feed.freq_bucket function) to be used in the order by clause of the next query
+        # count the daily average amount of entries per feed seen in the last two weeks
+        # and put the numbers into "buckets" using log and round, to be used in the order by clause of the next query
+        # the rationale is to show least frequent first, but not long sequences of the same feed
+        # if there are several at the "same order" of frequency
         two_weeks_ago = datetime.datetime.now() - datetime.timedelta(days=14)
-        subquery = db.select(Feed.id, sa.func.freq_bucket(sa.func.count(cls.id)).label('rank'))\
+        days_since_creation = sa.func.min(14, sa.func.round(
+            sa.func.julianday('now'), sa.func.julianday(Feed.created)))
+        rank_func = sa.func.round(sa.func.log(sa.func.round(
+            (sa.func.count(cls.id) / days_since_creation * 10))))
+        subquery = db.select(Feed.id, rank_func.label('rank'))\
                      .join(cls)\
                      .filter(cls.remote_updated >= two_weeks_ago)\
                      .group_by(Feed)\
                      .subquery()
 
-        # by ordering by a "bucket" of "is it older than 48hs?" we effectively get all entries in the last 2 days first,
-        # without having to filter out the rest --i.e. without truncating the feed
-        last_48_hours = start_at - datetime.timedelta(hours=48)
+        # by ordering with a "is it older than 24hs?" column we effectively get all entries from the last day first,
+        # without excluding the rest --i.e. without truncating the feed after today's entries
+        last_day = start_at - datetime.timedelta(hours=24)
         query = query.join(Feed)\
                      .join(subquery, subquery.c.id == Feed.id)\
                      .order_by(
                          (start_at > cls.remote_updated) & (
-                             cls.remote_updated < last_48_hours),
+                             cls.remote_updated < last_day),
                          subquery.c.rank,
                          cls.remote_updated.desc()).limit(limit)
 
