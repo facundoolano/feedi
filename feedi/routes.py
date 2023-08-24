@@ -113,7 +113,11 @@ def entry_pin(id, **filters):
     entries, respecting the url filters.
     """
     entry = db.get_or_404(models.Entry, id)
-    entry.pinned = None if entry.pinned else datetime.datetime.now()
+    if entry.pinned:
+        entry.pinned = None
+    else:
+        entry.pinned = datetime.datetime.now()
+        entry.feed.score += 2
     db.session.commit()
 
     # get the new list of pinned based on filters
@@ -135,7 +139,12 @@ def entry_pin(id, **filters):
 def entry_favorite(id):
     "Toggle the favorite status of the given entry."
     entry = db.get_or_404(models.Entry, id)
-    entry.favorited = None if entry.favorited else datetime.datetime.now()
+    if entry.favorited:
+        entry.favorited = None
+    else:
+        entry.favorited = datetime.datetime.now()
+        entry.feed.score += 2
+
     db.session.commit()
     return '', 204
 
@@ -144,7 +153,13 @@ def entry_favorite(id):
 def entry_delete(id):
     "Toggle the deleted status of the given entry."
     entry = db.get_or_404(models.Entry, id)
-    entry.deleted = None if entry.deleted else datetime.datetime.now()
+
+    if entry.deleted:
+        entry.deleted = None
+    else:
+        entry.deleted = datetime.datetime.now()
+        entry.feed.score -= 1
+
     db.session.commit()
     return '', 204
 
@@ -157,12 +172,12 @@ def sidebar_feeds():
     """
     if flask.request.headers.get('HX-Request') != 'true':
         shortcut_feeds = db.session.scalars(db.select(models.Feed)
-                                            .order_by(models.Feed.views.desc())
+                                            .order_by(models.Feed.score.desc())
                                             .limit(5)).all()
 
         in_folder = db.session.scalars(db.select(models.Feed)
                                        .filter(models.Feed.folder != None, models.Feed.folder != '')
-                                       .order_by(models.Feed.views.desc())).all()
+                                       .order_by(models.Feed.score.desc())).all()
 
         folders = defaultdict(list)
         for feed in in_folder:
@@ -258,8 +273,8 @@ def fetch_entry_content(id):
         # this is not ideal for mastodon, but at least doesn't break
         content = entry.body
 
-    # increase the feed views counter
-    entry.feed.views += 1
+    # increase the feed score counter
+    entry.feed.score += 1
     db.session.commit()
 
     return flask.render_template("entry_content.html", entry=entry, content=content)

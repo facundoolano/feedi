@@ -44,8 +44,8 @@ class Feed(db.Model):
                                   cascade="all, delete-orphan", lazy='dynamic')
     raw_data = sa.Column(sa.String, doc="The original feed data received from the feed, as JSON")
     folder = sa.Column(sa.String, index=True)
-    views = sa.Column(sa.Integer, default=0, nullable=False,
-                      doc="counts how many times articles of this feed have been read. ")
+    score = sa.Column(sa.Integer, default=0, nullable=False,
+                      doc="counts how many times articles of this feed have been interacted with. ")
 
     __mapper_args__ = {'polymorphic_on': type,
                        'polymorphic_identity': 'feed'}
@@ -168,7 +168,6 @@ class Entry(db.Model):
         query = cls._filtered_query(**filters)
 
         if older_than:
-            # FIXME move float conversion outside
             query = query.filter(cls.remote_updated < older_than)
 
         query = query.order_by(cls.remote_updated.desc()).limit(limit)
