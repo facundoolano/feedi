@@ -188,6 +188,7 @@ class Entry(db.Model):
         # and put the numbers into "buckets" using log and round, to be used in the order by clause of the next query
         # the rationale is to show least frequent first, but not long sequences of the same feed
         # if there are several at the "same order" of frequency
+        # TODO can this bit be extracted out to Feed model, and put as a field in the edit?
         two_weeks_ago = datetime.datetime.now() - datetime.timedelta(days=14)
         days_since_creation = sa.func.min(14, sa.func.round(
             sa.func.julianday('now'), sa.func.julianday(Feed.created)))

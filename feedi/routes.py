@@ -84,8 +84,7 @@ def query_entries_page(limit, ordering, page=None, **kwargs):
         next_page = f'{start_at.timestamp()}:{page + 1}'
         return entries, next_page
 
-    # elif ordering == 'recency':
-    else:
+    elif ordering == 'recency':
         if page:
             page = datetime.datetime.fromtimestamp(float(page))
 
@@ -95,11 +94,11 @@ def query_entries_page(limit, ordering, page=None, **kwargs):
         # results if there were new entries added in the db after the previous page fetch.
         next_page_ts = entries[-1].remote_updated.timestamp() if entries else None
         return entries, next_page_ts
-    # elif ordering == 'views':
-    #     # TODO
-    #     pass
-    # else:
-    #     app.logger.error("invalid ordering %s", ordering)
+    elif ordering == 'score':
+        # FIXME implement
+        return [], None
+    else:
+        app.logger.error("invalid ordering %s", ordering)
 
 
 @app.put("/pinned/<int:id>")
