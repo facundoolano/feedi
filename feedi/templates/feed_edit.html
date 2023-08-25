@@ -30,6 +30,24 @@
             </div>
         </div>
 
+        {% if feed %}
+        <div class="field">
+            <label class="label">Score</label>
+            <p class="help">A count of views, pins, favorites and deletes of entries of this feed. It can be overridden to tweak the "best score" sorting.</p>
+            <div class="control">
+                <input class="input" name="score" type="text" {% if feed and feed.folder %}value="{{ feed.score }}"{% endif %}>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="label">Frequency rank</label>
+            <p class="help">This is a ranking based on how frequently new entries arrived in the last 2 weeks. It's used by the Least frequent sorting.</p>
+            <div class="control">
+                <input class="input" type="text" value="{{ feed.frequency_rank() or '' }}" readonly>
+            </div>
+        </div>
+        {% endif %}
+
         <br/>
 
         <div class="field is-grouped is-grouped-right">

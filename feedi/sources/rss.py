@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
+
 def fetch(url, previous_fetch, skip_older_than, etag=None, modified=None):
     # using standard feed headers to prevent re-fetching unchanged feeds
     # https://feedparser.readthedocs.io/en/latest/http-etag.html
@@ -76,7 +77,7 @@ class BaseParser:
                 continue
 
             # or that is too old
-            if 'published_parsed' in entry and datetime.datetime.now() - to_datetime(entry['published_parsed']) > datetime.timedelta(days=skip_older_than):
+            if 'published_parsed' in entry and datetime.datetime.utcnow() - to_datetime(entry['published_parsed']) > datetime.timedelta(days=skip_older_than):
                 logger.debug('skipping old entry %s', entry['link'])
                 continue
 
@@ -323,10 +324,12 @@ def detect_feed_icon(url):
 
     return icon_url
 
+
 def pretty_print(url):
     feed = feedparser.parse(url)
     pp = pprint.PrettyPrinter(depth=10)
     pp.pprint(feed)
+
 
 def to_datetime(struct_time):
     return datetime.datetime.fromtimestamp(time.mktime(struct_time))

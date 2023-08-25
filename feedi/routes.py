@@ -32,12 +32,11 @@ def entry_list(**filters):
     If accessed with a feed name or a pagination timestam, filter the resuls accordingly.
     If the request is an html AJAX request, respond only with the entry list HTML fragment.
     """
-    ENTRY_PAGE_SIZE = 20
     next_page = None
 
     page = flask.request.args.get('page')
-    freq_sort = flask.session.get('freq_sort')
-    (entries, next_page) = query_entries_page(ENTRY_PAGE_SIZE, freq_sort, page=page, **filters)
+    ordering = flask.session.get('ordering')
+    (entries, next_page) = query_entries_page(ordering, page=page, **filters)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
 
@@ -55,45 +54,30 @@ def entry_list(**filters):
                                  filters=filters)
 
 
-# TODO this requires unit testing, I bet it's full of bugs :P
-def query_entries_page(limit, freq_sort, page=None, **kwargs):
+def query_entries_page(ordering, page=None, **kwargs):
     """
-    Fetch a page of entries from db, optionally filtered by feed_name, folder or username.
-    A specific sorting is applied according to `freq_sort` (strictly chronological or
-    least frequent feeds first).
-    `limit` and `page` select the page according to the given sorting criteria.
-    The next page indicator is returned as the second element of the return tuple
+    Fetch a `page` of entries from db, optionally filtered by feed_name, folder or username.
+    and according to the provided `ordering` criteria.
+    The return value is a tuple with the page of resulting entries and a string to
+    be passed to fetch the next page in a subsequent request.
     """
+    ENTRY_PAGE_SIZE = 20
 
-    if freq_sort:
-        if page:
-            start_at, page = page.split(':')
-            page = int(page)
-            start_at = datetime.datetime.fromtimestamp(float(start_at))
-        else:
-            start_at = datetime.datetime.now()
-            page = 1
-
-        entries = models.Entry.select_page_by_frequency(limit, start_at, page, **kwargs)
-
-        # the page marker includes the timestamp at which the first page was fetch, so
-        # it doesn't become a "sliding window" that would produce duplicate results.
-        # FIXME what if there are new entries added between pages (as handled in the other pagination)
-        # also this could obviously trip if the ranks are updated in between calls, but well duplicated entries
-        # in infinity scroll aren't the end of the world (they could also be filtered out in the frontend)
-        next_page = f'{start_at.timestamp()}:{page + 1}'
-        return entries, next_page
-
+    # pagination includes a start at timestamp so the entry set remains the same
+    # even if new entries are added between requests
+    if page:
+        start_at, page = page.split(':')
+        page = int(page)
+        start_at = datetime.datetime.fromtimestamp(float(start_at))
     else:
-        if page:
-            page = datetime.datetime.fromtimestamp(float(page))
+        start_at = datetime.datetime.utcnow()
+        page = 1
 
-        entries = models.Entry.select_page_chronologically(limit, page, **kwargs)
+    next_page = f'{start_at.timestamp()}:{page + 1}'
 
-        # We don't use regular page numbers, instead timestamps so we don't get repeated
-        # results if there were new entries added in the db after the previous page fetch.
-        next_page_ts = entries[-1].remote_updated.timestamp() if entries else None
-        return entries, next_page_ts
+    query = models.Entry.sorted_by(ordering, start_at, **kwargs)
+    entries = db.paginate(query, per_page=ENTRY_PAGE_SIZE, page=page)
+    return entries, next_page
 
 
 @app.put("/pinned/<int:id>")
@@ -108,7 +92,11 @@ def entry_pin(id, **filters):
     entries, respecting the url filters.
     """
     entry = db.get_or_404(models.Entry, id)
-    entry.pinned = None if entry.pinned else datetime.datetime.now()
+    if entry.pinned:
+        entry.pinned = None
+    else:
+        entry.pinned = datetime.datetime.utcnow()
+        entry.feed.score += 2
     db.session.commit()
 
     # get the new list of pinned based on filters
@@ -130,7 +118,12 @@ def entry_pin(id, **filters):
 def entry_favorite(id):
     "Toggle the favorite status of the given entry."
     entry = db.get_or_404(models.Entry, id)
-    entry.favorited = None if entry.favorited else datetime.datetime.now()
+    if entry.favorited:
+        entry.favorited = None
+    else:
+        entry.favorited = datetime.datetime.utcnow()
+        entry.feed.score += 2
+
     db.session.commit()
     return '', 204
 
@@ -139,7 +132,13 @@ def entry_favorite(id):
 def entry_delete(id):
     "Toggle the deleted status of the given entry."
     entry = db.get_or_404(models.Entry, id)
-    entry.deleted = None if entry.deleted else datetime.datetime.now()
+
+    if entry.deleted:
+        entry.deleted = None
+    else:
+        entry.deleted = datetime.datetime.utcnow()
+        entry.feed.score -= 1
+
     db.session.commit()
     return '', 204
 
@@ -152,12 +151,12 @@ def sidebar_feeds():
     """
     if flask.request.headers.get('HX-Request') != 'true':
         shortcut_feeds = db.session.scalars(db.select(models.Feed)
-                                            .order_by(models.Feed.views.desc())
+                                            .order_by(models.Feed.score.desc())
                                             .limit(5)).all()
 
         in_folder = db.session.scalars(db.select(models.Feed)
                                        .filter(models.Feed.folder != None, models.Feed.folder != '')
-                                       .order_by(models.Feed.views.desc())).all()
+                                       .order_by(models.Feed.score.desc())).all()
 
         folders = defaultdict(list)
         for feed in in_folder:
@@ -253,8 +252,8 @@ def fetch_entry_content(id):
         # this is not ideal for mastodon, but at least doesn't break
         content = entry.body
 
-    # increase the feed views counter
-    entry.feed.views += 1
+    # increase the feed score counter
+    entry.feed.score += 1
     db.session.commit()
 
     return flask.render_template("entry_content.html", entry=entry, content=content)
@@ -374,10 +373,17 @@ def raw_entry(id):
     )
 
 
+# TODO improve this views to accept only valid values
 @app.post("/session/<setting>/")
-def toggle_hide_media(setting):
-    if setting not in ['hide_media', 'freq_sort']:
-        flask.abort(400, "Invalid setting")
-
+def toggle_setting(setting):
     flask.session[setting] = not flask.session.get(setting, False)
+    return '', 204
+
+
+# TODO improve this views to accept only valid values
+@app.put("/session/")
+def update_setting():
+    for (key, value) in flask.request.form.items():
+        flask.session[key] = value
+
     return '', 204
