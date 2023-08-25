@@ -152,12 +152,16 @@ class Entry(db.Model):
 
     @classmethod
     def _filtered_query(cls, deleted=None, favorited=None,
-                        feed_name=None, username=None, folder=None):
+                        feed_name=None, username=None, folder=None,
+                        older_than=None):
         """
         Return a base Entry query applying any combination of filters.
         """
 
         query = db.select(cls)
+
+        if older_than:
+            query = query.filter(older_than > cls.updated)
 
         if deleted:
             query = query.filter(cls.deleted.is_not(None))
@@ -188,41 +192,36 @@ class Entry(db.Model):
         return db.session.scalars(query).all()
 
     @classmethod
-    def select_page_chronologically(cls, limit, older_than, **filters):
+    def filter_chronologically(cls, **filters):
         """
+        FIXME review
         Return up to `limit` entries in reverse chronological order, considering the given
         `filters`.
         """
-        query = cls._filtered_query(**filters)
-
-        if older_than:
-            query = query.filter(cls.remote_updated < older_than)
-
-        query = query.order_by(cls.remote_updated.desc()).limit(limit)
-        return db.session.scalars(query).all()
+        return cls._filtered_query(**filters)\
+                  .order_by(cls.remote_updated.desc())
 
     @classmethod
-    def select_page_by_score(cls, limit, page, **filters):
+    def filter_by_score(cls, **filters):
         """
+        FIXME review
         Return up to `limit` entries in reverse chronological order, considering the given
         `filters`.
         """
         # order by score but within 6 hour buckets, so we don't get everything from the top score feed
         # first, then the 2nd, etc
-        query = cls._filtered_query(**filters)\
+        return cls._filtered_query(**filters)\
             .join(Feed)\
-            .limit(limit)\
             .order_by(
                 sa.func.DATE(cls.remote_updated).desc(),
                 sa.func.round(sa.func.extract('hour', cls.remote_updated) / 6).desc(),
                 Feed.score.desc(),
                 cls.remote_updated.desc())
 
-        return db.paginate(query, page=page)
-
     @classmethod
-    def select_page_by_frequency(cls, limit, start_at, page, **filters):
+    def filter_by_frequency(cls, start_at, **filters):
         """
+        FIXME review
         Order entries by least frequent feeds first then reverse-chronologically for entries in the same
         frequency rank. The results are also put in 48 hours 'buckets' so we only highlight articles
         during the first couple of days after their publication. (so as to not have fixed stuff in the
@@ -234,13 +233,10 @@ class Entry(db.Model):
         # by ordering with a "is it older than 24hs?" column we effectively get all entries from the last day first,
         # without excluding the rest --i.e. without truncating the feed after today's entries
         last_day = start_at - datetime.timedelta(hours=24)
-        query = cls._filtered_query(**filters)\
-                   .join(Feed)\
-                   .join(subquery, subquery.c.id == Feed.id)\
-                   .order_by(
-                       (start_at > cls.remote_updated) & (
-                           cls.remote_updated < last_day),
-                       subquery.c.rank,
-                       cls.remote_updated.desc()).limit(limit)
-
-        return db.paginate(query, page=page)
+        return cls._filtered_query(**filters)\
+            .join(Feed)\
+            .join(subquery, subquery.c.id == Feed.id)\
+            .order_by(
+                cls.remote_updated < last_day,
+                subquery.c.rank,
+                cls.remote_updated.desc())

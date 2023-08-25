@@ -32,12 +32,11 @@ def entry_list(**filters):
     If accessed with a feed name or a pagination timestam, filter the resuls accordingly.
     If the request is an html AJAX request, respond only with the entry list HTML fragment.
     """
-    ENTRY_PAGE_SIZE = 20
     next_page = None
 
     page = flask.request.args.get('page')
     ordering = flask.session.get('ordering')
-    (entries, next_page) = query_entries_page(ENTRY_PAGE_SIZE, ordering, page=page, **filters)
+    (entries, next_page) = query_entries_page(ordering, page=page, **filters)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
 
@@ -56,55 +55,45 @@ def entry_list(**filters):
 
 
 # TODO this requires unit testing, I bet it's full of bugs :P
-def query_entries_page(limit, ordering, page=None, **kwargs):
+def query_entries_page(ordering, page=None, **kwargs):
     """
+    FIXME review
     Fetch a page of entries from db, optionally filtered by feed_name, folder or username.
     A specific sorting is applied according to `freq_sort` (strictly chronological or
     least frequent feeds first).
     `limit` and `page` select the page according to the given sorting criteria.
     The next page indicator is returned as the second element of the return tuple
     """
+    ENTRY_PAGE_SIZE = 20
+
+    # pagination includes a start at timestamp so the entry set remains the same
+    # even if new entries are added between requests
+    if page:
+        start_at, page = page.split(':')
+        page = int(page)
+        start_at = datetime.datetime.fromtimestamp(float(start_at))
+    else:
+        start_at = datetime.datetime.now()
+        page = 1
+
+    next_page = f'{start_at.timestamp()}:{page + 1}'
+
+    kwargs['older_than'] = start_at
 
     if ordering == 'frequency':
-        if page:
-            start_at, page = page.split(':')
-            page = int(page)
-            start_at = datetime.datetime.fromtimestamp(float(start_at))
-        else:
-            start_at = datetime.datetime.now()
-            page = 1
-
-        entries = models.Entry.select_page_by_frequency(limit, start_at, page, **kwargs)
-
-        # the page marker includes the timestamp at which the first page was fetch, so
-        # it doesn't become a "sliding window" that would produce duplicate results.
-        # FIXME what if there are new entries added between pages (as handled in the other pagination)
-        # also this could obviously trip if the ranks are updated in between calls, but well duplicated entries
-        # in infinity scroll aren't the end of the world (they could also be filtered out in the frontend)
-        next_page = f'{start_at.timestamp()}:{page + 1}'
-        return entries, next_page
+        query = models.Entry.filter_by_frequency(start_at, **kwargs)
 
     elif ordering == 'recency':
-        if page:
-            page = datetime.datetime.fromtimestamp(float(page))
+        query = models.Entry.filter_chronologically(**kwargs)
 
-        entries = models.Entry.select_page_chronologically(limit, page, **kwargs)
-
-        # We don't use regular page numbers, instead timestamps so we don't get repeated
-        # results if there were new entries added in the db after the previous page fetch.
-        next_page_ts = entries[-1].remote_updated.timestamp() if entries else None
-        return entries, next_page_ts
     elif ordering == 'score':
-        if page:
-            page = int(page)
-        else:
-            page = 1
+        query = models.Entry.filter_by_score(**kwargs)
 
-        entries = models.Entry.select_page_by_score(limit, page, **kwargs)
-        # TODO should we do something to avoid duplicates?
-        return entries, page + 1
     else:
-        app.logger.error("invalid ordering %s", ordering)
+        flask.abort(400, "invalid ordering %s" % ordering)
+
+    entries = db.paginate(query, per_page=ENTRY_PAGE_SIZE, page=page)
+    return entries, next_page
 
 
 @app.put("/pinned/<int:id>")
