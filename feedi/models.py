@@ -23,7 +23,7 @@ def init_db(app):
 
 class Feed(db.Model):
     """
-    TODO
+    Represents an external source of items, e.g. an RSS feed or social app account.
     """
     __tablename__ = 'feeds'
 
@@ -60,7 +60,7 @@ class Feed(db.Model):
         and put the result into "buckets". The rationale is to show least frequent first,
         but not long sequences of the same feed if there are several at the "same order" of frequency.
         """
-        two_weeks_ago = datetime.datetime.now() - datetime.timedelta(days=14)
+        two_weeks_ago = datetime.datetime.utcnow() - datetime.timedelta(days=14)
         days_since_creation = sa.func.min(14, sa.func.round(
             sa.func.julianday('now'), sa.func.julianday(cls.created)))
         rank_func = sa.func.round(sa.func.log(sa.func.round(
@@ -104,8 +104,15 @@ class MastodonAccount(Feed):
 
 class Entry(db.Model):
     """
-    TODO
+    Represents an item within a Feed.
     """
+    # FIXME doc
+    ORDER_RECENCY = 'recency'
+    # FIXME doc
+    ORDER_SCORE = 'score'
+    # FIXME doc
+    ORDER_FREQUENCY = 'frequency'
+
     __tablename__ = 'entries'
 
     id = sa.Column(sa.Integer, primary_key=True)
@@ -161,7 +168,7 @@ class Entry(db.Model):
         query = db.select(cls)
 
         if older_than:
-            query = query.filter(older_than > cls.updated)
+            query = query.filter(cls.updated < older_than)
 
         if deleted:
             query = query.filter(cls.deleted.is_not(None))
@@ -192,51 +199,43 @@ class Entry(db.Model):
         return db.session.scalars(query).all()
 
     @classmethod
-    def filter_chronologically(cls, **filters):
+    def sorted_by(cls, ordering, start_at, **filters):
         """
-        FIXME review
-        Return up to `limit` entries in reverse chronological order, considering the given
-        `filters`.
+        FIXME
         """
-        return cls._filtered_query(**filters)\
-                  .order_by(cls.remote_updated.desc())
+        query = cls._filtered_query(older_than=start_at, **filters)
 
-    @classmethod
-    def filter_by_score(cls, **filters):
-        """
-        FIXME review
-        Return up to `limit` entries in reverse chronological order, considering the given
-        `filters`.
-        """
-        # order by score but within 6 hour buckets, so we don't get everything from the top score feed
-        # first, then the 2nd, etc
-        return cls._filtered_query(**filters)\
-            .join(Feed)\
-            .order_by(
-                sa.func.DATE(cls.remote_updated).desc(),
-                sa.func.round(sa.func.extract('hour', cls.remote_updated) / 6).desc(),
-                Feed.score.desc(),
-                cls.remote_updated.desc())
+        if ordering == cls.ORDER_RECENCY:
+            return query.order_by(cls.remote_updated.desc())
 
-    @classmethod
-    def filter_by_frequency(cls, start_at, **filters):
-        """
-        FIXME review
-        Order entries by least frequent feeds first then reverse-chronologically for entries in the same
-        frequency rank. The results are also put in 48 hours 'buckets' so we only highlight articles
-        during the first couple of days after their publication. (so as to not have fixed stuff in the
-        top of the timeline for too long).
-        """
-        # prepare a subquery to make a frequency rank column available in the page filtering
-        subquery = Feed.frequency_rank_query()
+        elif ordering == cls.ORDER_SCORE:
+            # order by score but within 6 hour buckets, so we don't get everything from the top score feed
+            # first, then the 2nd, etc
+            return query.join(Feed)\
+                        .order_by(
+                            sa.func.DATE(cls.remote_updated).desc(),
+                            sa.func.round(sa.func.extract('hour', cls.remote_updated) / 6).desc(),
+                            Feed.score.desc(),
+                            cls.remote_updated.desc())
 
-        # by ordering with a "is it older than 24hs?" column we effectively get all entries from the last day first,
-        # without excluding the rest --i.e. without truncating the feed after today's entries
-        last_day = start_at - datetime.timedelta(hours=24)
-        return cls._filtered_query(**filters)\
-            .join(Feed)\
-            .join(subquery, subquery.c.id == Feed.id)\
-            .order_by(
-                cls.remote_updated < last_day,
-                subquery.c.rank,
-                cls.remote_updated.desc())
+        elif ordering == cls.ORDER_FREQUENCY:
+            # FIXME review
+            # Order entries by least frequent feeds first then reverse-chronologically for entries in the same
+            # frequency rank. The results are also put in 48 hours 'buckets' so we only highlight articles
+            # during the first couple of days after their publication. (so as to not have fixed stuff in the
+            # top of the timeline for too long).
+
+            # prepare a subquery to make a frequency rank column available in the page filtering
+            subquery = Feed.frequency_rank_query()
+
+            # by ordering with a "is it older than 24hs?" column we effectively get all entries from the last day first,
+            # without excluding the rest --i.e. without truncating the feed after today's entries
+            last_day = start_at - datetime.timedelta(hours=24)
+            return query.join(Feed)\
+                        .join(subquery, subquery.c.id == Feed.id)\
+                        .order_by(
+                            cls.remote_updated < last_day,
+                            subquery.c.rank,
+                            cls.remote_updated.desc())
+        else:
+            raise ValueError('unknown ordering')

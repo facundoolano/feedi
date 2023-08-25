@@ -54,15 +54,12 @@ def entry_list(**filters):
                                  filters=filters)
 
 
-# TODO this requires unit testing, I bet it's full of bugs :P
 def query_entries_page(ordering, page=None, **kwargs):
     """
-    FIXME review
-    Fetch a page of entries from db, optionally filtered by feed_name, folder or username.
-    A specific sorting is applied according to `freq_sort` (strictly chronological or
-    least frequent feeds first).
-    `limit` and `page` select the page according to the given sorting criteria.
-    The next page indicator is returned as the second element of the return tuple
+    Fetch a `page` of entries from db, optionally filtered by feed_name, folder or username.
+    and according to the provided `ordering` criteria.
+    The return value is a tuple with the page of resulting entries and a string to
+    be passed to fetch the next page in a subsequent request.
     """
     ENTRY_PAGE_SIZE = 20
 
@@ -73,25 +70,12 @@ def query_entries_page(ordering, page=None, **kwargs):
         page = int(page)
         start_at = datetime.datetime.fromtimestamp(float(start_at))
     else:
-        start_at = datetime.datetime.now()
+        start_at = datetime.datetime.utcnow()
         page = 1
 
     next_page = f'{start_at.timestamp()}:{page + 1}'
 
-    kwargs['older_than'] = start_at
-
-    if ordering == 'frequency':
-        query = models.Entry.filter_by_frequency(start_at, **kwargs)
-
-    elif ordering == 'recency':
-        query = models.Entry.filter_chronologically(**kwargs)
-
-    elif ordering == 'score':
-        query = models.Entry.filter_by_score(**kwargs)
-
-    else:
-        flask.abort(400, "invalid ordering %s" % ordering)
-
+    query = models.Entry.sorted_by(ordering, start_at, **kwargs)
     entries = db.paginate(query, per_page=ENTRY_PAGE_SIZE, page=page)
     return entries, next_page
 
@@ -111,7 +95,7 @@ def entry_pin(id, **filters):
     if entry.pinned:
         entry.pinned = None
     else:
-        entry.pinned = datetime.datetime.now()
+        entry.pinned = datetime.datetime.utcnow()
         entry.feed.score += 2
     db.session.commit()
 
@@ -137,7 +121,7 @@ def entry_favorite(id):
     if entry.favorited:
         entry.favorited = None
     else:
-        entry.favorited = datetime.datetime.now()
+        entry.favorited = datetime.datetime.utcnow()
         entry.feed.score += 2
 
     db.session.commit()
@@ -152,7 +136,7 @@ def entry_delete(id):
     if entry.deleted:
         entry.deleted = None
     else:
-        entry.deleted = datetime.datetime.now()
+        entry.deleted = datetime.datetime.utcnow()
         entry.feed.score -= 1
 
     db.session.commit()
