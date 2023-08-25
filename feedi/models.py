@@ -106,11 +106,14 @@ class Entry(db.Model):
     """
     Represents an item within a Feed.
     """
-    # FIXME doc
+
+    "Sort entries in reverse chronological order."
     ORDER_RECENCY = 'recency'
-    # FIXME doc
+
+    "Sort entries based on the parent's Feeds.score value."
     ORDER_SCORE = 'score'
-    # FIXME doc
+
+    "Sort entries based on the post frequency of the parent feed."
     ORDER_FREQUENCY = 'frequency'
 
     __tablename__ = 'entries'
@@ -201,11 +204,13 @@ class Entry(db.Model):
     @classmethod
     def sorted_by(cls, ordering, start_at, **filters):
         """
-        FIXME
+        Return a query to filter entries added after the `start_at` datetime,
+        sorted according to the specified `ordering` criteria and with optional filters.
         """
         query = cls._filtered_query(older_than=start_at, **filters)
 
         if ordering == cls.ORDER_RECENCY:
+            # reverse chronological order
             return query.order_by(cls.remote_updated.desc())
 
         elif ordering == cls.ORDER_SCORE:
@@ -219,13 +224,8 @@ class Entry(db.Model):
                             cls.remote_updated.desc())
 
         elif ordering == cls.ORDER_FREQUENCY:
-            # FIXME review
             # Order entries by least frequent feeds first then reverse-chronologically for entries in the same
-            # frequency rank. The results are also put in 48 hours 'buckets' so we only highlight articles
-            # during the first couple of days after their publication. (so as to not have fixed stuff in the
-            # top of the timeline for too long).
-
-            # prepare a subquery to make a frequency rank column available in the page filtering
+            # frequency rank.
             subquery = Feed.frequency_rank_query()
 
             # by ordering with a "is it older than 24hs?" column we effectively get all entries from the last day first,
