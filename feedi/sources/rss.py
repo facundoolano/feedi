@@ -314,7 +314,11 @@ def detect_feed_icon(url):
     if icon_url and requests.head(icon_url).ok:
         logger.debug("using feed icon: %s", icon_url)
     else:
-        favicons = favicon.get(feed['feed'].get('link', url))
+        try:
+            favicons = favicon.get(feed['feed'].get('link', url))
+        except:
+            logger.exception("error fetching favicon: %s", url)
+            return
         favicons = [f for f in favicons if f.height == f.width]
         if not favicons:
             logger.debug("no feed icon found: %s", favicons)
