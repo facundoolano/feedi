@@ -207,10 +207,16 @@ class Entry(db.Model):
         Return up to `limit` entries in reverse chronological order, considering the given
         `filters`.
         """
+        # order by score but within 6 hour buckets, so we don't get everything from the top score feed
+        # first, then the 2nd, etc
         query = cls._filtered_query(**filters)\
             .join(Feed)\
             .limit(limit)\
-            .order_by(Feed.score.desc(), cls.remote_updated.desc())
+            .order_by(
+                sa.func.DATE(cls.remote_updated).desc(),
+                sa.func.round(sa.func.extract('hour', cls.remote_updated) / 6).desc(),
+                Feed.score.desc(),
+                cls.remote_updated.desc())
 
         return db.paginate(query, page=page)
 
