@@ -36,7 +36,7 @@ with open('kindle.creds', 'w') as fp:
 
 
 
-Then update [the config](https://github.com/facundoolano/feedi/blob/HEAD/feedi/config.py) to point to the credentials file:
+Then update [the config](https://github.com/facundoolano/feedi/blob/a7a0c6e8b13b790cc80b499bb9a9d9a55e8f975b/feedi/config.py#L13-L16) to point to the credentials file:
 
     KINDLE_CREDENTIALS_PATH = 'kindle.creds'
 
