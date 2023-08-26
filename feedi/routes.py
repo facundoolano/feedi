@@ -35,7 +35,7 @@ def entry_list(**filters):
     next_page = None
 
     page = flask.request.args.get('page')
-    ordering = flask.session.get('ordering')
+    ordering = flask.session.get('ordering', models.Entry.ORDER_RECENCY)
     (entries, next_page) = query_entries_page(ordering, page=page, **filters)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'

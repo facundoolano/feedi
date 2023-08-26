@@ -238,4 +238,4 @@ class Entry(db.Model):
                             subquery.c.rank,
                             cls.remote_updated.desc())
         else:
-            raise ValueError('unknown ordering')
+            raise ValueError('unknown ordering %s' % ordering)
