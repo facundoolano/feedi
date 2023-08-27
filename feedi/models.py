@@ -62,7 +62,7 @@ class Feed(db.Model):
         """
         two_weeks_ago = datetime.datetime.utcnow() - datetime.timedelta(days=14)
         days_since_creation = sa.func.min(14, sa.func.round(
-            sa.func.julianday('now'), sa.func.julianday(cls.created)))
+            sa.func.julianday('now') - sa.func.julianday(cls.created)))
         rank_func = sa.func.round(sa.func.log(sa.func.round(
             (sa.func.count(cls.id) / days_since_creation * 10))))
         return db.select(cls.id, rank_func.label('rank'))\
