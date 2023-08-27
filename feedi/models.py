@@ -61,7 +61,7 @@ class Feed(db.Model):
         but not long sequences of the same feed if there are several at the "same order" of frequency.
         """
         two_weeks_ago = datetime.datetime.utcnow() - datetime.timedelta(days=14)
-        days_since_creation = sa.func.min(14, sa.func.round(
+        days_since_creation = 1 + sa.func.min(14, sa.func.round(
             sa.func.julianday('now') - sa.func.julianday(cls.created)))
         rank_func = sa.func.round(sa.func.log(sa.func.round(
             (sa.func.count(cls.id) / days_since_creation * 10))))
