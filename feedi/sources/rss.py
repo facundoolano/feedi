@@ -179,7 +179,7 @@ class BaseParser:
 # FIXME reduce duplication between aggregators
 class RedditParser(BaseParser):
     def is_compatible(_feed_url, feed_data):
-        return 'reddit.com' in feed_data['feed']['link']
+        return 'reddit.com' in feed_data['feed'].get('link', '')
 
     def parse_body(self, entry):
         soup = BeautifulSoup(entry['summary'], 'lxml')
@@ -209,7 +209,7 @@ class RedditParser(BaseParser):
 
 class LobstersParser(BaseParser):
     def is_compatible(_feed_url, feed_data):
-        return 'lobste.rs' in feed_data['feed']['link']
+        return 'lobste.rs' in feed_data['feed'].get('link', '')
 
     def parse_body(self, entry):
         # skip link-only posts
@@ -228,7 +228,7 @@ class LobstersParser(BaseParser):
 
 class HackerNewsParser(BaseParser):
     def is_compatible(_feed_url, feed_data):
-        return 'news.ycombinator.com' in feed_data['feed']['link']
+        return 'news.ycombinator.com' in feed_data['feed'].get('link', '')
 
     def parse_body(self, entry):
         # skip link-only posts
@@ -337,3 +337,13 @@ def pretty_print(url):
 
 def to_datetime(struct_time):
     return datetime.datetime.fromtimestamp(time.mktime(struct_time))
+
+
+def short_date_handler(date_str):
+    """
+    Handle dates like 'August 14, 2023'.
+    """
+    return datetime.datetime.strptime(date_str, '%B %d, %Y').timetuple()
+
+
+feedparser.registerDateHandler(short_date_handler)
