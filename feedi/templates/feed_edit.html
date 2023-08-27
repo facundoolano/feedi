@@ -50,11 +50,25 @@
 
         <br/>
 
-        <div class="field is-grouped is-grouped-right">
-            <p class="control"><a class="button is-light" href="/feeds"
-                                  _="on keydown[key is 'Escape'] elsewhere go back" >Cancel</a></p>
-            <p class="control"><input class="button is-primary" type="submit" value="Save"></p>
+
+        <div class="level">
+            <div class="field level-left">
+                {% if feed %}
+                <p class="control"><button class="button is-danger"
+                                           hx-delete="/feeds/{{feed.name}}"
+                                           _="on htmx:afterRequest go to url '/feeds'" >Delete</button></p>
+                {% endif  %}
+            </div>
+            <div class="field is-grouped level-right">
+
+
+
+                <p class="control"><a class="button is-light" href="/feeds"
+                                      _="on keydown[key is 'Escape'] elsewhere go back" >Cancel</a></p>
+                <p class="control"><input class="button is-primary" type="submit" value="Save"></p>
+            </div>
         </div>
+
 
         </form>
     </div>
