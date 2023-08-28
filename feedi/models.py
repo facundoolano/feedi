@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import datetime
 import math
 
@@ -163,7 +165,7 @@ class Entry(db.Model):
     @classmethod
     def _filtered_query(cls, deleted=None, favorited=None,
                         feed_name=None, username=None, folder=None,
-                        older_than=None):
+                        older_than=None, text=None):
         """
         Return a base Entry query applying any combination of filters.
         """
@@ -189,6 +191,12 @@ class Entry(db.Model):
 
         if username:
             query = query.filter(cls.username == username)
+
+        if text:
+            # Poor Text Search™
+            query = query.filter(cls.title.contains(text) |
+                                 cls.username.contains(text) |
+                                 cls.body.contains(text))
 
         return query
 
