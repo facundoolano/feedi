@@ -43,6 +43,8 @@ Then update [the config](https://github.com/facundoolano/feedi/blob/a7a0c6e8b13b
 
 ### Keyboard shortcuts
 
+note on keyboard accessibility con Firefox + MacOS: https://stackoverflow.com/a/11713537/993769
+
 TODO
 
 ## Design notes

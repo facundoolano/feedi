@@ -67,22 +67,46 @@
             <div class="column">
                <aside class="menu feeds-sidebar is-hidden-mobile sidebar-right">
                    <ul class="menu-list">
-                       <div class="field">
-                           <p class="control has-icons-left">
-                               <input class="input  is-small" type="search" placeholder="Type '/'"
-                                      _="on keydown[key is '/'] elsewhere focus() me then halt
-                                             then on drop set the value of me to event.dataTransfer.getData('Text')
-                                             then add .is-hidden to the next .fa-search
-                                             then remove .is-hidden from the next .fa-spinner
-                                             then go to url `/entries/preview?url=${event.dataTransfer.getData('Text')}`">
+                       <div class="dropdown is-active">
+                           <div class="dropdown-trigger">
+                           <div class="field">
+                               <p class="control has-icons-left">
+                                   <input class="input  is-small" type="search" placeholder="Type '/'"
+                                          _="on keydown[key is '/'] elsewhere focus() me then halt
+                                                 then on drop set the value of me to event.dataTransfer.getData('Text')
+                                                 then add .is-hidden to the next .fa-search
+                                                 then remove .is-hidden from the next .fa-spinner
+                                                 ">
                                <span class="icon is-small is-left">
                                    <i class="fas fa-search"></i>
                                    <i class="fas fa-spinner fa-spin is-hidden"></i>
                                </span>
-                           </p>
+
+
+                               </p>
+                               <div class="navbar-item has-dropdown is-active" id="autocomplete-items" role="menu"
+                                >
+                                   <div class="navbar-dropdown is-right" >
+                                       <a href="/feeds" class="navbar-item" tabindex="0">
+                                           Dropdown item
+                                       </a>
+                                       <a href="/feeds" class="navbar-item" tabindex="0">
+                                           Other dropdown item
+                                       </a>
+                                       <a href="/feeds" class="navbar-item" tabindex="0">
+                                           Other dropdown item
+                                       </a>
+                                       <hr class="navbar-divider">
+                                       <a href="/feeds" class="navbar-item" tabindex="0">
+                                           With a divider
+                                       </a>
+                                   </div>
+                               </div>
+                           </div>
+                           </div>
                        </div>
                        <hr class="dropdown-divider"/>
-               {% block sidebar_right %}
+                       {% block sidebar_right %}
                        <li>
                            <div class="level-left">
                                <div class="level-item">
