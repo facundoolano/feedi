@@ -39,6 +39,25 @@
     padding-right: .25
 }
 
+/* alt fallback style for when feed.icon is broken or missing  */
+.feed-avatar::before {
+    border-radius: 9999px;
+    content: attr(alt);
+    display: flex;
+    align-items: center;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    color: white;
+    background-color: black;
+    white-space: pre;
+    padding-left: calc(50% - 0.4ch);
+    font-family: monospace;
+    letter-spacing: 2rem;
+}
+
 /* entry effects on hover  */
 
 .feed-entry .hover-icon:not(.toggled) {

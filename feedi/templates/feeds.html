@@ -12,7 +12,7 @@
                 <td class="is-narrow">
                     <a href="/feeds/{{feed.name}}/entries">
                         <figure class="image is-24x24 ">
-                            <img class="is-rounded" src="{{ feed.icon_url }}">
+                            <img class="feed-avatar is-rounded" {%if feed.icon_url%}src="{{ feed.icon_url }}"{%endif%} alt="{{ feed.name.0 }}">
                         </figure>
                     </a>
                 </td>
