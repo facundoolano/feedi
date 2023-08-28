@@ -80,6 +80,36 @@ def query_entries_page(ordering, page=None, **kwargs):
     return entries, next_page
 
 
+@app.get("/search")
+def search():
+    # TODO look into using sqlite full text search
+    # https://sqlite.org/fts5.html
+    term = flask.request.args['q']
+    page = int(flask.request.args.get('page', '1'))
+    next_page = page + 1
+
+    query = db.select(models.Entry).filter(
+        models.Entry.title.contains(term) |
+        models.Entry.username.contains(term) |
+        models.Entry.body.contains(term)
+    ).join(models.Feed)
+
+    entries = db.paginate(query, page=page)
+
+    is_htmx = flask.request.headers.get('HX-Request') == 'true'
+
+    if is_htmx:
+        # render a single page of the entry list
+        return flask.render_template('entry_list_page.html',
+                                     entries=entries,
+                                     next_page=next_page)
+
+    return flask.render_template('entry_list.html',
+                                 filters={},
+                                 entries=entries,
+                                 next_page=next_page)
+
+
 @app.put("/pinned/<int:id>")
 @app.put("/folder/<folder>/pinned/<int:id>")
 @app.put("/feeds/<feed_name>/entries/pinned/<int:id>")
