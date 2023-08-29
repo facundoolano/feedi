@@ -4,6 +4,17 @@ TODO
 
 ## Local setup
 
+Install:
+
+    make venv deps
+
+Run:
+
+    make serve
+
+TODO elaborate
+TODO document python and OS lib requirements
+
 ## Advanced usage
 ### Bulk load feeds from csv
 
