@@ -2,7 +2,9 @@ import datetime
 import json
 import logging
 import pprint
+import re
 import time
+import urllib
 
 import favicon
 import feedparser
@@ -307,6 +309,48 @@ class EconomistParser(BaseParser):
     def parse_body(self, entry):
         url = self.parse_content_url(entry)
         return (self.fetch_meta(url, 'og:description') or self.fetch_meta(url, 'description'))
+
+
+# TODO unit test
+def detect_feed_url(url):
+    "Given a website URL, try to discover the first rss/atom feed url in it."
+    res = requests.get(url)
+    soup = BeautifulSoup(res.content, 'lxml')
+
+    link_types = ["application/rss+xml",
+                  "application/atom+xml",
+                  "application/x.atom+xml",
+                  "application/x-atom+xml"]
+
+    # first try with the common link tags for feeds
+    for type in link_types:
+        link = soup.find('link', type=type, href=True)
+        if link:
+            return make_absolute(url, link['href'])
+
+    # if link rel found, see if there are anchors that look like feeds
+    href_patterns = [re.compile(".*feed.*"), re.compile(".*rss.*")]
+    for pattern in href_patterns:
+        anchor = soup.find('a', href=pattern)
+        if anchor:
+            return make_absolute(url, anchor['href'])
+
+    # if none found in the html, try with common urls, provided that they exist
+    # and are xml content
+    common_paths = ['/feed', '/rss', '/feed.xml', 'rss.xml']
+    for path in common_paths:
+        rss_url = make_absolute(url, path)
+        res = requests.head(rss_url)
+        if res.ok and res.headers['Content-Type'].endswith('xml'):
+            return rss_url
+
+
+def make_absolute(url, path):
+    "If `path` is a relative url, join it with the given absolute url."
+    if not urllib.parse.urlparse(path).netloc:
+
+        path = urllib.parse.urljoin(url, path)
+    return path
 
 
 def detect_feed_icon(url):
