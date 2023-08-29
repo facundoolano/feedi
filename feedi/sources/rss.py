@@ -345,6 +345,11 @@ def detect_feed_url(url):
             return rss_url
 
 
+def get_title(url):
+    # kind of overkill but well
+    return feedparser.parse(url)['feed'].get('title')
+
+
 def make_absolute(url, path):
     "If `path` is a relative url, join it with the given absolute url."
     if not urllib.parse.urlparse(path).netloc:

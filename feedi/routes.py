@@ -102,7 +102,7 @@ def autocomplete():
             # FIXME add support for these to feed_add
             ('Add feed', flask.url_for('feed_add', url=term)),
             ('Preview article', flask.url_for('preview_content', url=term)),
-            ('Crawl feed', flask.url_for('feed_add', crawl=term)),
+            ('Discover feed', flask.url_for('feed_add', discover=term)),
         ]
     else:
         options.append(('Search: ' + term, flask.url_for('entry_list', q=term)))
@@ -225,7 +225,19 @@ def feed_list():
 
 @app.get("/feeds/add")
 def feed_add():
-    return flask.render_template('feed_edit.html')
+    url = flask.request.args.get('url')
+    discover = flask.request.args.get('discover')
+
+    if discover:
+        url = rss.detect_feed_url(discover)
+
+    name = None
+    if url:
+        name = rss.get_title(url)
+
+    return flask.render_template('feed_edit.html',
+                                 url=url,
+                                 name=name)
 
 
 @app.post("/feeds/add")
