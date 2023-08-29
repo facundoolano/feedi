@@ -22,7 +22,7 @@ def fetch(url, previous_fetch, skip_older_than, etag=None, modified=None):
         return [], None, None, None
 
     # also checking with the internal updated field in case feed doesn't support the standard headers
-    if previous_fetch and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) < previous_fetch:
+    if previous_fetch and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) <= previous_fetch:
         logger.info('skipping up to date feed %s', url)
         return [], None, None, None
 
@@ -77,7 +77,8 @@ class BaseParser:
                 continue
 
             # or that is too old
-            if 'published_parsed' in entry and datetime.datetime.utcnow() - to_datetime(entry['published_parsed']) > datetime.timedelta(days=skip_older_than):
+            published = entry.get('published_parsed', entry.get('updated_parsed'))
+            if published and datetime.datetime.utcnow() - to_datetime(published) > datetime.timedelta(days=skip_older_than):
                 logger.debug('skipping old entry %s', entry['link'])
                 continue
 
@@ -143,7 +144,7 @@ class BaseParser:
         return entry.get('id', entry['link'])
 
     def parse_remote_created(self, entry):
-        dt = to_datetime(entry['published_parsed'])
+        dt = to_datetime(entry.get('published_parsed', entry.get('updated_parsed')))
         if dt > datetime.datetime.utcnow():
             raise ValueError("publication date is in the future")
         return dt

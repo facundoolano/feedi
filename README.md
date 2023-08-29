@@ -4,10 +4,32 @@ TODO
 
 ## Local setup
 
+Install:
+
+    make venv deps
+
+Run:
+
+    make serve
+
+TODO elaborate
+TODO document python and OS lib requirements
+
 ## Advanced usage
 ### Bulk load feeds from csv
 
-TODO
+`make feed-load` will load feeds from a local `feeds.csv` file.
+
+Example file (the $VARS are for illustration, they should be replaced before running the command):
+
+
+    rss,"Apuntes Inchequeables","https://facundoolano.github.io/feed.xml"
+    rss,"lobste.rs","https://lobste.rs/rss"
+    rss,"hackernews","https://hnrss.org/newest?points=100"
+    rss,"Github","https://github.com/$USERNAME.private.atom?token=$TOKEN"
+    rss,"Goodreads","https://www.goodreads.com/home/index_rss/$ID?key=$TOKEN
+    mastodon,$NAME,$SERVER,$ACCES_TOKEN
+
 
 ### Mastodon account setup
 

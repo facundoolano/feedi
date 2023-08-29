@@ -253,8 +253,10 @@ def feed_delete(feed_name):
     "Remove a feed and its entries from the database."
     # FIXME this should probably do a "logic" delete and keep stuff around
     # especially considering that it will kill child entries as well
-    query = db.delete(models.Feed).where(models.Feed.name == feed_name)
-    db.session.execute(query)
+
+    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
+    # running from db.session ensures cascading effects
+    db.session.delete(feed)
     db.session.commit()
     return '', 204
 
