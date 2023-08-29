@@ -20,12 +20,12 @@ from feedi.sources import rss
 
 
 # FIXME the feed_name/entries url is inconsistent with the rest
-@app.route("/")
+@app.route("/users/<username>")
+@app.route("/entries/trash", defaults={'deleted': True}, endpoint='favorites')
+@app.route("/entries/favorites", defaults={'favorited': True}, endpoint='thrash')
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
-@app.route("/users/<username>")
-@app.route("/entries/trash", defaults={'deleted': True})
-@app.route("/entries/favorites", defaults={'favorited': True})
+@app.route("/")
 def entry_list(**filters):
     """
     Generic view to fetch a list of entries. By default renders the home timeline.
@@ -83,6 +83,52 @@ def query_entries_page(ordering, page=None, **kwargs):
     query = models.Entry.sorted_by(ordering, start_at, **kwargs)
     entries = db.paginate(query, per_page=ENTRY_PAGE_SIZE, page=page)
     return entries, next_page
+
+
+@app.get("/autocomplete")
+def autocomplete():
+    """
+    TODO
+    """
+    term = flask.request.args['q'].strip()
+
+    # TODO add icons for everything
+    options = []
+
+    if term.startswith('http://') or term.startswith('https://'):
+        # we can reasonably assume this is a url
+
+        options += [
+            # FIXME add support for these to feed_add
+            ('Add feed', flask.url_for('feed_add', url=term)),
+            ('Preview article', flask.url_for('preview_content', url=term)),
+            ('Crawl feed', flask.url_for('feed_add', crawl=term)),
+        ]
+    else:
+        options.append(('Search: ' + term, flask.url_for('entry_list', q=term)))
+
+        folders = db.session.scalars(
+            db.select(models.Feed.folder).filter(models.Feed.folder.icontains(term)).distinct()
+        ).all()
+        options += [(f, flask.url_for('entry_list', folder=f)) for f in folders]
+
+        feed_names = db.session.scalars(
+            db.select(models.Feed.name).filter(models.Feed.name.icontains(term)).distinct()
+        ).all()
+        options += [('View ' + f, flask.url_for('entry_list', feed_name=f)) for f in feed_names]
+        options += [('Edit ' + f, flask.url_for('feed_edit', feed_name=f)) for f in feed_names]
+
+    static_options = [
+        ('Home', flask.url_for('entry_list')),
+        ('Favorites', flask.url_for('favorites', favorited=True)),
+        ('Thrash', flask.url_for('thrash', deleted=True)),
+        ('Manage Feeds', flask.url_for('feed_list'))
+    ]
+    for so in static_options:
+        if term.lower() in so[0].lower():
+            options.append(so)
+
+    return flask.render_template("autocomplete.html", options=options)
 
 
 @app.put("/pinned/<int:id>")

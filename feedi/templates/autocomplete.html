@@ -1,0 +1,7 @@
+<div class="navbar-dropdown" >
+    {% for option in options %}
+    <a href="{{ option.1 }}" class="navbar-item" tabindex="0">
+        {{ option.0 }}
+    </a>
+    {% endfor %}
+</div>

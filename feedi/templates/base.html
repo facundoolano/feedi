@@ -72,10 +72,13 @@
                            <div class="dropdown-trigger">
                            <div class="field">
                                <p class="control has-icons-left">
-                                   <input class="input  is-small" type="search" placeholder="Type '/'"
+                                   <input class="input is-small" type="search" placeholder="Type '/'"
+                                          autocomplete="off"
                                           name="q"
+                                          hx-get="/autocomplete"
+                                          hx-trigger="keyup[target.value.length > 3] changed delay:500ms, search, drop delay:50ms"
+                                          hx-target="#autocomplete-items"
                                           _="on keydown[key is '/'] elsewhere focus() me then halt
-                                                 then on drop set the value of me to event.dataTransfer.getData('Text')
                                                  then add .is-hidden to the next .fa-search
                                                  then remove .is-hidden from the next .fa-spinner
                                                  "/>
@@ -83,26 +86,8 @@
                                    <i class="fas fa-search"></i>
                                    <i class="fas fa-spinner fa-spin is-hidden"></i>
                                </span>
-
-
                                </p>
-                               <div class="navbar-item has-dropdown is-active" id="autocomplete-items" role="menu"
-                                >
-                                   <div class="navbar-dropdown is-right" >
-                                       <a href="/feeds" class="navbar-item" tabindex="0">
-                                           Dropdown item
-                                       </a>
-                                       <a href="/feeds" class="navbar-item" tabindex="0">
-                                           Other dropdown item
-                                       </a>
-                                       <a href="/feeds" class="navbar-item" tabindex="0">
-                                           Other dropdown item
-                                       </a>
-                                       <hr class="navbar-divider">
-                                       <a href="/feeds" class="navbar-item" tabindex="0">
-                                           With a divider
-                                       </a>
-                                   </div>
+                               <div class="navbar-item has-dropdown is-active" id="autocomplete-items" role="menu">
                                </div>
                            </div>
                            </div>
@@ -113,14 +98,14 @@
                        <li>
                            <div class="level-left">
                                <div class="level-item">
-                                   <a href="/feeds/add"><icon class="icon"><i class="fas fa-plus"></i></icon> Add Feed</a>
+                                   <a href="/feeds/add"><icon class="icon"><i class="fas fa-plus"></i></icon> Add feed</a>
                                </div>
                            </div>
                        </li>
                        <li>
                            <div class="level-left">
                                <div class="level-item">
-                                   <a href="/feeds"><icon class="icon"><i class="fas fa-edit"></i></icon> Manage Feeds</a>
+                                   <a href="/feeds"><icon class="icon"><i class="fas fa-edit"></i></icon> Manage feeds</a>
                                </div>
                            </div>
                        </li>
