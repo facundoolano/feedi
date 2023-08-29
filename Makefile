@@ -1,4 +1,4 @@
-.PHONY: venv deps dev-deps shell serve dbreset dbshell feed-load feed-sync feed-debug
+.PHONY: deps dev-deps shell serve dbreset dbshell feed-load feed-sync feed-debug
 
 venv=source venv/bin/activate &&
 flask=$(venv) flask --app feedi/app.py
@@ -6,7 +6,7 @@ flask=$(venv) flask --app feedi/app.py
 venv:
 	python -m venv venv
 
-deps:
+deps: venv
 	$(venv) pip install -r requirements.txt && npm install
 
 deps-dev: deps
