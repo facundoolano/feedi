@@ -232,11 +232,7 @@ def feed_add():
     discover = flask.request.args.get('discover')
 
     if discover:
-        url = rss.detect_feed_url(discover)
-
-    name = None
-    if url:
-        name = rss.get_title(url)
+        (url, name) = rss.discover_feed(discover)
 
     return flask.render_template('feed_edit.html',
                                  url=url,
