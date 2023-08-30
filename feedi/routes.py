@@ -100,29 +100,32 @@ def autocomplete():
 
         options += [
             # FIXME add support for these to feed_add
-            ('Add feed', flask.url_for('feed_add', url=term)),
-            ('Preview article', flask.url_for('preview_content', url=term)),
-            ('Discover feed', flask.url_for('feed_add', discover=term)),
+            ('Add feed', flask.url_for('feed_add', url=term), 'fas fa-plus'),
+            ('Preview article', flask.url_for('preview_content', url=term), 'far fa-eye'),
+            ('Discover feed', flask.url_for('feed_add', discover=term), 'fas fa-rss'),
         ]
     else:
-        options.append(('Search: ' + term, flask.url_for('entry_list', q=term)))
+        options.append(('Search: ' + term, flask.url_for('entry_list', q=term), 'fas fa-search'))
 
         folders = db.session.scalars(
             db.select(models.Feed.folder).filter(models.Feed.folder.icontains(term)).distinct()
         ).all()
-        options += [(f, flask.url_for('entry_list', folder=f)) for f in folders]
+        options += [(f, flask.url_for('entry_list', folder=f), 'far fa-folder-open')
+                    for f in folders]
 
         feed_names = db.session.scalars(
             db.select(models.Feed.name).filter(models.Feed.name.icontains(term)).distinct()
         ).all()
-        options += [('View ' + f, flask.url_for('entry_list', feed_name=f)) for f in feed_names]
-        options += [('Edit ' + f, flask.url_for('feed_edit', feed_name=f)) for f in feed_names]
+        options += [('View ' + f, flask.url_for('entry_list', feed_name=f), 'far fa-list-alt')
+                    for f in feed_names]
+        options += [('Edit ' + f, flask.url_for('feed_edit', feed_name=f), 'fas fa-edit')
+                    for f in feed_names]
 
     static_options = [
-        ('Home', flask.url_for('entry_list')),
-        ('Favorites', flask.url_for('favorites', favorited=True)),
-        ('Thrash', flask.url_for('thrash', deleted=True)),
-        ('Manage Feeds', flask.url_for('feed_list'))
+        ('Home', flask.url_for('entry_list'), 'fas fa-home'),
+        ('Favorites', flask.url_for('favorites', favorited=True), 'far fa-star'),
+        ('Thrash', flask.url_for('thrash', deleted=True), 'far fa-trash-alt'),
+        ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit')
     ]
     for so in static_options:
         if term.lower() in so[0].lower():
