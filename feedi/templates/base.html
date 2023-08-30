@@ -80,8 +80,7 @@
                                           hx-trigger="keyup[target.value.length > 3] changed delay:500ms, search, drop delay:50ms"
                                           hx-target="#autocomplete-items"
                                           _="on keydown[key is '/'] elsewhere focus() me then halt
-                                                 then add .is-hidden to the next .fa-search
-                                                 then remove .is-hidden from the next .fa-spinner
+                                                 then on keydown[key is 'ArrowDown' or (key is 'n' and ctrlKey)] focus() on the next .autocomplete-item halt
                                                  "/>
                                    <span class="icon is-small is-left">
                                    <i class="fas fa-search"></i>

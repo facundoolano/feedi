@@ -1,6 +1,10 @@
 <div class="navbar-dropdown" >
     {% for option in options %}
-    <a href="{{ option.1 }}" class="navbar-item" tabindex="0">
+    <a href="{{ option.1 }}" class="navbar-item autocomplete-item" tabindex="0"
+       _="on keydown[key is 'ArrowDown' or (key is 'n' and ctrlKey)] focus() on the next .autocomplete-item with wrapping halt
+             then on keydown[key is 'ArrowUp' or (key is 'p' and ctrlKey)] focus() on the previous .autocomplete-item with wrapping halt
+             then on keydown[not ['Enter', 'ArrowUp', 'ArrowDown'].includes(key) and not ctrlKey ] focus() on #search"
+    >
         {{ option.0 }}
     </a>
     {% endfor %}
