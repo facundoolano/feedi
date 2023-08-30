@@ -73,6 +73,7 @@
                            <div class="field">
                                <p class="control has-icons-left">
                                    <input class="input is-small" type="search" placeholder="Type '/'"
+                                          id="search"
                                           autocomplete="off"
                                           name="q"
                                           hx-get="/autocomplete"
@@ -87,7 +88,13 @@
                                    <i class="fas fa-spinner fa-spin is-hidden"></i>
                                </span>
                                </p>
-                               <div class="navbar-item has-dropdown is-active" id="autocomplete-items" role="menu">
+                               <div class="navbar-item has-dropdown" id="autocomplete-items" role="menu"
+                                    _="on keyup[target.value.length <= 3] from #search remove .is-active
+                                           then on keyup[target.value.length > 3] from #search add .is-active
+                                           then on drop from #search add .is-active
+                                           then on click elsewhere remove .is-active
+                                           then on keyup[key is 'Escape'] elsewhere remove .is-active"
+                               >
                                </div>
                            </div>
                            </div>
