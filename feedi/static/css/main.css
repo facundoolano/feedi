@@ -116,7 +116,7 @@
     height: 0;
 }
 
-.feeds-sidebar .is-active {
+.feeds-sidebar .level-left.is-active {
     font-weight: bold;
 }
 
@@ -197,4 +197,24 @@ img[src=""] {
     margin-top:0!important;
     margin-bottom:0!important;
     visibility: hidden;
+}
+
+#autocomplete-items .navbar-dropdown {
+    border-radius: 0;
+    box-shadow: 0 0 0 0;
+    border: 1px solid #dbdbdb;
+    border-top: 0;
+    padding: 0;
+}
+
+#autocomplete-items .navbar-item {
+    padding: .375rem;
+}
+
+#autocomplete-items .navbar-item .icon {
+    margin-right: .1rem;
+}
+
+#search:focus {
+    box-shadow:0 0 0 0;
 }
