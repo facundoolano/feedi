@@ -316,6 +316,10 @@ def discover_feed(url):
     and return it along the feed title.
     """
     res = requests.get(url)
+    if not res.ok:
+        logger.warn("Failed to discover feed from url %s %s", url, res)
+        return
+
     soup = BeautifulSoup(res.content, 'lxml')
 
     # resolve title
@@ -337,22 +341,17 @@ def discover_feed(url):
         link = soup.find('link', type=type, href=True)
         if link:
             feed_url = make_absolute(url, link['href'])
-
-    # if link rel found, see if there are anchors that look like feeds
-    href_patterns = [re.compile(".*feed.*"), re.compile(".*rss.*")]
-    for pattern in href_patterns:
-        anchor = soup.find('a', href=pattern)
-        if anchor:
-            feed_url = make_absolute(url, anchor['href'])
+            break
 
     # if none found in the html, try with common urls, provided that they exist
     # and are xml content
-    common_paths = ['/feed', '/rss', '/feed.xml', 'rss.xml']
+    common_paths = ['/feed', '/rss', '/feed.xml', '/rss.xml']
     for path in common_paths:
         rss_url = make_absolute(url, path)
         res = requests.head(rss_url)
-        if res.ok and res.headers['Content-Type'].endswith('xml'):
+        if res.ok and res.headers.get('Content-Type', '').endswith('xml'):
             feed_url = rss_url
+            break
 
     return feed_url, title
 
