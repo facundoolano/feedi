@@ -10,7 +10,7 @@ deps: venv
 	$(venv) pip install -r requirements.txt && npm install
 
 deps-dev: deps
-	$(venv) pip install ipython
+	$(venv) pip install ipython ipdb
 
 serve:
 	$(flask) run --debug --reload
