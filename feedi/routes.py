@@ -21,8 +21,8 @@ from feedi.sources import rss
 
 # FIXME the feed_name/entries url is inconsistent with the rest
 @app.route("/users/<username>")
-@app.route("/entries/trash", defaults={'deleted': True}, endpoint='favorites')
-@app.route("/entries/favorites", defaults={'favorited': True}, endpoint='thrash')
+@app.route("/entries/archived", defaults={'archived': True}, endpoint='archived')
+@app.route("/entries/favorites", defaults={'favorited': True}, endpoint='favorites')
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
 @app.route("/")
@@ -128,7 +128,7 @@ def autocomplete():
     static_options = [
         ('Home', flask.url_for('entry_list'), 'fas fa-home'),
         ('Favorites', flask.url_for('favorites', favorited=True), 'far fa-star'),
-        ('Thrash', flask.url_for('thrash', deleted=True), 'far fa-trash-alt'),
+        ('Archived', flask.url_for('archived', archived=True), 'fas fa-file-download'),
         ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit')
     ]
     for so in static_options:
@@ -142,7 +142,7 @@ def autocomplete():
 @app.put("/folder/<folder>/pinned/<int:id>")
 @app.put("/feeds/<feed_name>/entries/pinned/<int:id>")
 @app.put("/users/<username>/pinned/<int:id>")
-@app.put("/entries/trash/pinned/<int:id>", defaults={'deleted': True})
+@app.put("/entries/archived/pinned/<int:id>", defaults={'archived': True})
 @app.put("/entries/favorites/pinned/<int:id>", defaults={'favorited': True})
 def entry_pin(id, **filters):
     """
@@ -186,15 +186,15 @@ def entry_favorite(id):
     return '', 204
 
 
-@app.put("/entries/thrash/<int:id>/")
+@app.put("/entries/archived/<int:id>/")
 def entry_delete(id):
-    "Toggle the deleted status of the given entry."
+    "Toggle the archived status of the given entry."
     entry = db.get_or_404(models.Entry, id)
 
-    if entry.deleted:
-        entry.deleted = None
+    if entry.archived:
+        entry.archived = None
     else:
-        entry.deleted = datetime.datetime.utcnow()
+        entry.archived = datetime.datetime.utcnow()
         entry.feed.score -= 1
 
     db.session.commit()

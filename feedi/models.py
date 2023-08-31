@@ -163,7 +163,7 @@ class Entry(db.Model):
         return f'<Entry {self.feed_id}/{self.remote_id}>'
 
     @classmethod
-    def _filtered_query(cls, deleted=None, favorited=None,
+    def _filtered_query(cls, archived=None, favorited=None,
                         feed_name=None, username=None, folder=None,
                         older_than=None, text=None):
         """
@@ -175,10 +175,10 @@ class Entry(db.Model):
         if older_than:
             query = query.filter(cls.updated < older_than)
 
-        if deleted:
-            query = query.filter(cls.deleted.is_not(None))
+        if archived:
+            query = query.filter(cls.archived.is_not(None))
         else:
-            query = query.filter(cls.deleted.is_(None))
+            query = query.filter(cls.archived.is_(None))
 
         if favorited:
             query = query.filter(cls.favorited.is_not(None))
