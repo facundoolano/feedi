@@ -73,7 +73,10 @@ def parse_values(server_url, toot):
     result['body'] = toot['content']
     result['remote_id'] = toot['id']
     result['remote_created'] = toot['created_at']
-    result['content_url'] = toot['url']
+
+    # we don't want toots to be expanded on the local reader, so we exclude content_url
+    # this could change if we started to add stuff like displaying (or adding) comments
+    # result['content_url'] = toot['url']
 
     # we typically want to open the logged in user account's instance, not the original mastodon instance,
     # so we build the local url (which doesn't seem to come in the api response)

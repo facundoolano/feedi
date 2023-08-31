@@ -2,6 +2,7 @@
     <div class="level-left">
         <p>
             <b>
+                {% if entry.content_url %}
                 <a _="
                       on keydown[key is 'Enter' and metaKey and shiftKey ] from the closest .feed-entry go to url '{{ entry.content_url}}' in new window then halt
                       on keydown[key is 'Enter' and metaKey and not shiftKey] from the closest .feed-entry go to url '/entries/{{ entry.id }}' in new window then halt
@@ -9,6 +10,11 @@
                       then on click[metaKey and shiftKey] go to url '{{ entry.content_url}}' in new window then halt"
 
                    href="/entries/{{ entry.id }}">{{ entry.title }}</a>
+                {% elif entry.entry_url %}
+                <a href="{{ entry.entry_url }}" target="_blank">{{ entry.title }}</a>
+                {% else %}
+                <span>{{ entry.title }}</span>
+                {% endif %}
             </b>
             <br/>
         </p>

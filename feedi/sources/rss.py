@@ -277,6 +277,7 @@ class GithubFeedParser(BaseParser):
         return None
 
     def parse_content_url(self, _entry):
+        # don't open this in the local reader
         return None
 
 
@@ -292,6 +293,10 @@ class GoodreadsFeedParser(BaseParser):
         return None
 
     def parse_media_url(self, _entry):
+        return None
+
+    def parse_content_url(self, _entry):
+        # don't open this in the local reader
         return None
 
 
