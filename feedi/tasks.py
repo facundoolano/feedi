@@ -114,7 +114,7 @@ def sync_rss_feed(feed_name):
     entries, feed_data, etag, modified, = sources.rss.fetch(db_feed.url,
                                                             db_feed.last_fetch,
                                                             app.config['RSS_SKIP_OLDER_THAN_DAYS'],
-                                                            app.config['RSS_FIRST_LOAD_AMOUNT'],
+                                                            app.config['RSS_MINIMUM_ENTRY_AMOUNT'],
                                                             etag=db_feed.etag, modified=db_feed.modified_header)
 
     db_feed.last_fetch = utcnow
@@ -149,14 +149,65 @@ def upsert_entries(feed_id, entries_values):
         db.session.commit()
 
 
-@feed_cli.command('debug')
-@click.argument('url')
+@feed_cli.command('purge')
+@huey_task(crontab(minute=app.config['DELETE_OLD_CRON_HOURS']))
+def delete_old_entries():
+    """
+    Delete entries that are older than RSS_SKIP_OLDER_THAN_DAYS but
+    making sure we always keep RSS_MINIMUM_ENTRY_AMOUNT for each feed.
+    Favorite and pinned entries aren't deleted.
+    """
+    older_than_date = (datetime.datetime.utcnow() -
+                       datetime.timedelta(days=app.config['RSS_SKIP_OLDER_THAN_DAYS']))
+    minimum = app.config['RSS_MINIMUM_ENTRY_AMOUNT']
+    # there must be more clever sql ways to do this, but it doesn't have to be efficient
+
+    # filter feeds that have old entries
+    feeds_q = db.select(models.Feed.id, models.Feed.name)\
+        .join(models.Feed.entries)\
+        .filter(models.Entry.remote_updated < older_than_date,
+                models.Entry.favorited.is_(None),
+                models.Entry.pinned.is_(None)
+                )\
+        .group_by(models.Feed.id)\
+        .having(sa.func.count(models.Feed.entries) > 0)
+
+    for (feed_id, feed_name) in db.session.execute(feeds_q).all():
+        # of the ones that have old entries, get the date of the nth entry (overall, not just within the old ones)
+        min_remote_updated = db.session.scalar(
+            db.select(models.Entry.remote_updated)
+            .filter_by(feed_id=feed_id)
+            .order_by(models.Entry.remote_updated.desc())
+            .limit(1)
+            .offset(minimum - 1))
+
+        if not min_remote_updated:
+            continue
+
+        # delete all entries from that feed that are older than RSS_SKIP_OLDER_THAN_DAYS
+        # AND ALSO older than the nth entry, so we guarantee to always keep at least the minimum
+        q = db.delete(models.Entry)\
+              .where(
+                  models.Entry.favorited.is_(None),
+                  models.Entry.pinned.is_(None),
+                  models.Entry.feed_id == feed_id,
+                  models.Entry.remote_updated < min_remote_updated,
+                  models.Entry.remote_updated < older_than_date)
+
+        res = db.session.execute(q)
+        db.session.commit()
+        if res.rowcount:
+            app.logger.info("Deleted %s old entries from %s/%s", res.rowcount, feed_id, feed_name)
+
+
+@ feed_cli.command('debug')
+@ click.argument('url')
 def debug_feed(url):
     sources.rss.pretty_print(url)
 
 
-@feed_cli.command('load')
-@click.argument("file")
+@ feed_cli.command('load')
+@ click.argument("file")
 def create_test_feeds(file):
     "Load feeds from a local csv file."
 
