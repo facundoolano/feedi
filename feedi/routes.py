@@ -88,18 +88,19 @@ def query_entries_page(ordering, page=None, **kwargs):
 @app.get("/autocomplete")
 def autocomplete():
     """
-    TODO
+    Given a partial text input in the `q` query arg, render a list of commands matching
+    that input, including text search, viewing folders and managing feeds.
+
+    This endpoint is intended to drive the keyboard navigation of the app from the search input.
     """
     term = flask.request.args['q'].strip()
 
-    # TODO add icons for everything
     options = []
 
     if term.startswith('http://') or term.startswith('https://'):
         # we can reasonably assume this is a url
 
         options += [
-            # FIXME add support for these to feed_add
             ('Add feed', flask.url_for('feed_add', url=term), 'fas fa-plus'),
             ('Preview article', flask.url_for('preview_content', url=term), 'far fa-eye'),
             ('Discover feed', flask.url_for('feed_add', discover=term), 'fas fa-rss'),
