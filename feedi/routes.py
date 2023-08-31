@@ -106,8 +106,6 @@ def autocomplete():
             ('Discover feed', flask.url_for('feed_add', discover=term), 'fas fa-rss'),
         ]
     else:
-        options.append(('Search: ' + term, flask.url_for('entry_list', q=term), 'fas fa-search'))
-
         folders = db.session.scalars(
             db.select(models.Feed.folder).filter(models.Feed.folder.icontains(term)).distinct()
         ).all()
@@ -117,8 +115,12 @@ def autocomplete():
         feed_names = db.session.scalars(
             db.select(models.Feed.name).filter(models.Feed.name.icontains(term)).distinct()
         ).all()
-        options += [('View ' + f, flask.url_for('entry_list', feed_name=f), 'far fa-list-alt')
+        options += [(f, flask.url_for('entry_list', feed_name=f), 'far fa-list-alt')
                     for f in feed_names]
+
+        # search is less important than quick access but more than edit
+        options.append(('Search: ' + term, flask.url_for('entry_list', q=term), 'fas fa-search'))
+
         options += [('Edit ' + f, flask.url_for('feed_edit', feed_name=f), 'fas fa-edit')
                     for f in feed_names]
 

@@ -67,37 +67,36 @@
             <div class="column">
                <aside class="menu feeds-sidebar is-hidden-mobile sidebar-right">
                    <ul class="menu-list">
-                       <form >
                        <div class="dropdown is-active">
                            <div class="dropdown-trigger">
-                           <div class="field">
-                               <p class="control has-icons-left">
-                                   <input class="input is-small" type="search" placeholder="Type '/'"
-                                          id="search"
-                                          autocomplete="off"
-                                          name="q"
-                                          hx-get="/autocomplete"
-                                          hx-trigger="keyup[target.value.length > 3] changed delay:100ms, search, drop delay:50ms"
-                                          hx-target="#autocomplete-items"
-                                          _="on keydown[key is '/'] elsewhere focus() me then halt
-                                                 then on keydown[key is 'ArrowDown' or (key is 'n' and ctrlKey)] focus() on the next .autocomplete-item halt
-                                                 "/>
-                                   <span class="icon is-small is-left">
-                                   <i class="fas fa-search"></i>
-                               </span>
-                               </p>
-                               <div class="navbar-item has-dropdown" id="autocomplete-items" role="menu"
-                                    _="on keyup[target.value.length <= 3] from #search remove .is-active
-                                           then on keyup[target.value.length > 3] from #search add .is-active
-                                           then on drop from #search add .is-active
-                                           then on click elsewhere remove .is-active
-                                           then on keyup[key is 'Escape'] elsewhere remove .is-active"
-                               >
+                               <div class="field">
+                                   <p class="control has-icons-left">
+                                       <input class="input is-small" type="search" placeholder="Type '/'"
+                                              id="search"
+                                              autocomplete="off"
+                                              name="q"
+                                              hx-get="/autocomplete"
+                                              hx-trigger="keyup[target.value.length > 3] changed delay:100ms, search, drop delay:50ms"
+                                              hx-target="#autocomplete-items"
+                                              _="on keydown[key is '/'] elsewhere focus() me then halt
+                                                     then on keydown[key is 'ArrowDown' or (key is 'n' and ctrlKey)] focus() on the next .autocomplete-item halt
+                                                     then on keyup[key is 'Enter'] click() on the next .autocomplete-item
+                                                     "/>
+                                       <span class="icon is-small is-left">
+                                           <i class="fas fa-search"></i>
+                                       </span>
+                                   </p>
+                                   <div class="navbar-item has-dropdown" id="autocomplete-items" role="menu"
+                                        _="on keyup[target.value.length <= 3] from #search remove .is-active
+                                               then on keyup[target.value.length > 3] from #search add .is-active
+                                               then on drop from #search add .is-active
+                                               then on click elsewhere remove .is-active
+                                               then on keyup[key is 'Escape'] elsewhere remove .is-active"
+                                   >
+                                   </div>
                                </div>
                            </div>
-                           </div>
                        </div>
-                       </form>
                        <hr class="dropdown-divider"/>
                        {% block sidebar_right %}
                        <li>
