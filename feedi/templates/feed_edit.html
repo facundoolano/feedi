@@ -76,3 +76,15 @@
 
 </div>
 {% endblock content %}
+
+{% block sidebar_right %}
+{% if feed %}
+<li>
+    <div class="level-left">
+        <div class="level-item">
+            <a hx-post="/feeds/sync/{{feed.name}}" role="button"><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{feed.name}}</a>
+        </div>
+    </div>
+</li>
+{% endif %}
+{% endblock %}

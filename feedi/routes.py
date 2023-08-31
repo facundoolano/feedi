@@ -124,6 +124,7 @@ def autocomplete():
         options += [('Edit ' + f, flask.url_for('feed_edit', feed_name=f), 'fas fa-edit')
                     for f in feed_names]
 
+    # TODO home and favorites should have more priority than search
     static_options = [
         ('Home', flask.url_for('entry_list'), 'fas fa-home'),
         ('Favorites', flask.url_for('favorites', favorited=True), 'far fa-star'),
@@ -299,6 +300,24 @@ def feed_edit_submit(feed_name):
     db.session.commit()
 
     return flask.redirect(flask.url_for('feed_list'))
+
+
+@app.post("/feeds/sync/<feed_name>")
+def feed_sync(feed_name):
+    "Force sync the given feed and redirect to the entry list for it."
+    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
+    if not feed:
+        flask.abort(404, "Feed not found")
+
+    if feed.type == models.Feed.TYPE_RSS:
+        task = tasks.sync_rss_feed(feed.name)
+    elif feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
+        task = tasks.sync_mastodon_feed(feed.name)
+    task.get()
+
+    response = flask.make_response()
+    response.headers['HX-Redirect'] = flask.url_for('entry_list', feed_name=feed.name)
+    return response
 
 
 @app.get("/entries/<int:id>/")
