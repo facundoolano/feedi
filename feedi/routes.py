@@ -20,12 +20,12 @@ from feedi.sources import rss
 
 
 # FIXME the feed_name/entries url is inconsistent with the rest
-@app.route("/")
+@app.route("/users/<username>")
+@app.route("/entries/trash", defaults={'deleted': True}, endpoint='favorites')
+@app.route("/entries/favorites", defaults={'favorited': True}, endpoint='thrash')
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
-@app.route("/users/<username>")
-@app.route("/entries/trash", defaults={'deleted': True})
-@app.route("/entries/favorites", defaults={'favorited': True})
+@app.route("/")
 def entry_list(**filters):
     """
     Generic view to fetch a list of entries. By default renders the home timeline.
@@ -36,6 +36,11 @@ def entry_list(**filters):
 
     page = flask.request.args.get('page')
     ordering = flask.session.get('ordering', models.Entry.ORDER_RECENCY)
+
+    text = flask.request.args.get('q', '').strip()
+    if text:
+        filters = dict(text=text, **filters)
+
     (entries, next_page) = query_entries_page(ordering, page=page, **filters)
 
     is_htmx = flask.request.headers.get('HX-Request') == 'true'
@@ -78,6 +83,56 @@ def query_entries_page(ordering, page=None, **kwargs):
     query = models.Entry.sorted_by(ordering, start_at, **kwargs)
     entries = db.paginate(query, per_page=ENTRY_PAGE_SIZE, page=page)
     return entries, next_page
+
+
+@app.get("/autocomplete")
+def autocomplete():
+    """
+    Given a partial text input in the `q` query arg, render a list of commands matching
+    that input, including text search, viewing folders and managing feeds.
+
+    This endpoint is intended to drive the keyboard navigation of the app from the search input.
+    """
+    term = flask.request.args['q'].strip()
+
+    options = []
+
+    if term.startswith('http://') or term.startswith('https://'):
+        # we can reasonably assume this is a url
+
+        options += [
+            ('Add feed', flask.url_for('feed_add', url=term), 'fas fa-plus'),
+            ('Preview article', flask.url_for('preview_content', url=term), 'far fa-eye'),
+            ('Discover feed', flask.url_for('feed_add', discover=term), 'fas fa-rss'),
+        ]
+    else:
+        options.append(('Search: ' + term, flask.url_for('entry_list', q=term), 'fas fa-search'))
+
+        folders = db.session.scalars(
+            db.select(models.Feed.folder).filter(models.Feed.folder.icontains(term)).distinct()
+        ).all()
+        options += [(f, flask.url_for('entry_list', folder=f), 'far fa-folder-open')
+                    for f in folders]
+
+        feed_names = db.session.scalars(
+            db.select(models.Feed.name).filter(models.Feed.name.icontains(term)).distinct()
+        ).all()
+        options += [('View ' + f, flask.url_for('entry_list', feed_name=f), 'far fa-list-alt')
+                    for f in feed_names]
+        options += [('Edit ' + f, flask.url_for('feed_edit', feed_name=f), 'fas fa-edit')
+                    for f in feed_names]
+
+    static_options = [
+        ('Home', flask.url_for('entry_list'), 'fas fa-home'),
+        ('Favorites', flask.url_for('favorites', favorited=True), 'far fa-star'),
+        ('Thrash', flask.url_for('thrash', deleted=True), 'far fa-trash-alt'),
+        ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit')
+    ]
+    for so in static_options:
+        if term.lower() in so[0].lower():
+            options.append(so)
+
+    return flask.render_template("autocomplete.html", options=options)
 
 
 @app.put("/pinned/<int:id>")
@@ -174,7 +229,15 @@ def feed_list():
 
 @app.get("/feeds/add")
 def feed_add():
-    return flask.render_template('feed_edit.html')
+    url = flask.request.args.get('url')
+    discover = flask.request.args.get('discover')
+
+    if discover:
+        (url, name) = rss.discover_feed(discover)
+
+    return flask.render_template('feed_edit.html',
+                                 url=url,
+                                 name=name)
 
 
 @app.post("/feeds/add")
