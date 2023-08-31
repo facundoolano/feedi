@@ -81,6 +81,7 @@
                                               _="on keydown[key is '/'] elsewhere focus() me then halt
                                                      then on keydown[key is 'ArrowDown' or (key is 'n' and ctrlKey)] focus() on the next .autocomplete-item halt
                                                      then on keyup[key is 'Enter'] click() on the next .autocomplete-item
+                                                     then on keyup[key is 'Escape'] if #autocomplete-items does not match .is-active then blur() me
                                                      "/>
                                        <span class="icon is-small is-left">
                                            <i class="fas fa-search"></i>
