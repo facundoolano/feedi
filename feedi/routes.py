@@ -21,8 +21,8 @@ from feedi.sources import rss
 
 # FIXME the feed_name/entries url is inconsistent with the rest
 @app.route("/users/<username>")
-@app.route("/entries/trash", defaults={'deleted': True}, endpoint='favorites')
-@app.route("/entries/favorites", defaults={'favorited': True}, endpoint='thrash')
+@app.route("/entries/trash", defaults={'deleted': True}, endpoint='trash')
+@app.route("/entries/favorites", defaults={'favorited': True}, endpoint='favorites')
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
 @app.route("/")
@@ -128,7 +128,7 @@ def autocomplete():
     static_options = [
         ('Home', flask.url_for('entry_list'), 'fas fa-home'),
         ('Favorites', flask.url_for('favorites', favorited=True), 'far fa-star'),
-        ('Thrash', flask.url_for('thrash', deleted=True), 'far fa-trash-alt'),
+        ('Trash', flask.url_for('trash', deleted=True), 'far fa-trash-alt'),
         ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit')
     ]
     for so in static_options:
@@ -186,7 +186,7 @@ def entry_favorite(id):
     return '', 204
 
 
-@app.put("/entries/thrash/<int:id>/")
+@app.put("/entries/trash/<int:id>/")
 def entry_delete(id):
     "Toggle the deleted status of the given entry."
     entry = db.get_or_404(models.Entry, id)
