@@ -102,11 +102,11 @@ def sync_mastodon_feed(feed_name):
 
 
 @huey_task()
-def sync_rss_feed(feed_name):
+def sync_rss_feed(feed_name, force=False):
     db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     utcnow = datetime.datetime.utcnow()
 
-    if db_feed.last_fetch and utcnow - db_feed.last_fetch < datetime.timedelta(minutes=app.config['RSS_SKIP_RECENTLY_UPDATED_MINUTES']):
+    if not force and db_feed.last_fetch and utcnow - db_feed.last_fetch < datetime.timedelta(minutes=app.config['RSS_SKIP_RECENTLY_UPDATED_MINUTES']):
         app.logger.info('skipping recently synced feed %s', db_feed.name)
         return
 
