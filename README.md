@@ -37,6 +37,11 @@ TODO
 
 see https://mastodonpy.readthedocs.io/en/stable/#usage
 
+### Custom feed parsing
+
+TODO
+
+
 ### Kindle device setup
 
 The app allows to register a kindle device (statically in the configuration, for now) to send the cleaned up article HTML to it. This uses the [stkclient](https://github.com/maxdjohnson/stkclient) library.
@@ -55,8 +60,6 @@ client = a.create_client(redirect_url)
 with open('kindle.creds', 'w') as fp:
     client.dump(fp)
 ```
-
-
 
 Then update [the config](https://github.com/facundoolano/feedi/blob/a7a0c6e8b13b790cc80b499bb9a9d9a55e8f975b/feedi/config.py#L13-L16) to point to the credentials file:
 
