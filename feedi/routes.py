@@ -254,13 +254,14 @@ def feed_add_submit():
     db.session.add(feed)
     db.session.commit()
 
-    # trigger a sync of this feed to fetch its entries on the background
-    tasks.sync_rss_feed(feed.name)
+    # trigger a sync of this feed to fetch its entries.
+    # making it blocking with .get() so we have entries to show on the redirect
+    tasks.sync_rss_feed(feed.name).get()
 
     # NOTE it would be better to redirect to the feed itself, but since we load it async
     # we'd have to show a spinner or something and poll until it finishes loading
     # or alternatively hang the response until the feed is processed, neither of which is ideal
-    return flask.redirect(flask.url_for('feed_list'))
+    return flask.redirect(flask.url_for('entry_list', feed_name=feed.name))
 
 
 @app.delete("/feeds/<feed_name>")
