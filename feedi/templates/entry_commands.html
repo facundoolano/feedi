@@ -10,6 +10,9 @@
 ><span class="icon">
     <i class="fas fa-spinner fa-spin is-hidden"></i>
     <i class="fas fa-tablet-alt "></i></span> Send to Kindle</a>
+{% if not entry.entry_url or entry.content_url != entry.entry_url %}
+<a href="{{ url_for('feed_add', discover=entry.content_url) }}" class="dropdown-item"><span class="icon"><i class="fas fa-rss"></i></span> Discover feed</a>
+{% endif %}
 <hr class="dropdown-divider">
 {% if entry.username %}
 <a class="dropdown-item" href="/users/{{ entry.username }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.username }}</a>
