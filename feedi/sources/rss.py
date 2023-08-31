@@ -2,7 +2,6 @@ import datetime
 import json
 import logging
 import pprint
-import re
 import time
 import urllib
 
@@ -14,7 +13,7 @@ from bs4 import BeautifulSoup
 logger = logging.getLogger(__name__)
 
 
-def fetch(url, previous_fetch, skip_older_than, etag=None, modified=None):
+def fetch(url, previous_fetch, skip_older_than, first_load_amount, etag=None, modified=None):
     # using standard feed headers to prevent re-fetching unchanged feeds
     # https://feedparser.readthedocs.io/en/latest/http-etag.html
     feed = feedparser.parse(url, etag=etag, modified=modified)
@@ -39,7 +38,7 @@ def fetch(url, previous_fetch, skip_older_than, etag=None, modified=None):
     parser = parser_cls(feed)
 
     logger.debug('parsing %s with %s', url, parser_cls)
-    return parser.parse(previous_fetch, skip_older_than), feed['feed'], getattr(feed, 'etag', None), getattr(feed, 'modified', None)
+    return parser.parse(previous_fetch, skip_older_than, first_load_amount), feed['feed'], getattr(feed, 'etag', None), getattr(feed, 'modified', None)
 
 
 class BaseParser:
@@ -63,11 +62,14 @@ class BaseParser:
         self.feed = feed
         self.response_cache = {}
 
-    def parse(self, previous_fetch, skip_older_than):
+    def parse(self, previous_fetch, skip_older_than, first_load_amount):
         """
         Returns a generator of feed entry values, one for each entry found in the feed.
         previous_fetch (datetime) and skip_older_than (minutes) are used to potentially skip some of the entries.
         """
+        is_first_load = previous_fetch is None
+        load_count = 0
+
         for entry in self.feed['entries']:
             if 'link' not in entry or 'summary' not in entry:
                 logger.warn(f"entry seems malformed {entry}")
@@ -79,8 +81,11 @@ class BaseParser:
                 continue
 
             # or that is too old
+            # but allow old ones on the first load, so we show stuff even if there aren't recent updates
             published = entry.get('published_parsed', entry.get('updated_parsed'))
-            if published and datetime.datetime.utcnow() - to_datetime(published) > datetime.timedelta(days=skip_older_than):
+            is_old_entry = (published and
+                            datetime.datetime.utcnow() - to_datetime(published) > datetime.timedelta(days=skip_older_than))
+            if is_old_entry and (not is_first_load or load_count >= first_load_amount):
                 logger.debug('skipping old entry %s', entry['link'])
                 continue
 
@@ -96,6 +101,7 @@ class BaseParser:
                 logger.exception("skipping errored entry %s", entry['link'])
                 continue
 
+            load_count += 1
             yield result
 
     def parse_title(self, entry):

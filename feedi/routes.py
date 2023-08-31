@@ -233,6 +233,7 @@ def feed_list():
 def feed_add():
     url = flask.request.args.get('url')
     discover = flask.request.args.get('discover')
+    name = None
 
     if discover:
         (url, name) = rss.discover_feed(discover)

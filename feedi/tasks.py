@@ -114,6 +114,7 @@ def sync_rss_feed(feed_name):
     entries, feed_data, etag, modified, = sources.rss.fetch(db_feed.url,
                                                             db_feed.last_fetch,
                                                             app.config['RSS_SKIP_OLDER_THAN_DAYS'],
+                                                            app.config['RSS_FIRST_LOAD_AMOUNT'],
                                                             etag=db_feed.etag, modified=db_feed.modified_header)
 
     db_feed.last_fetch = utcnow
