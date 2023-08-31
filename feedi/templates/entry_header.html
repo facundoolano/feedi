@@ -20,10 +20,10 @@
         </p>
     </div>
     <div class="level-right">
-        <a tabindex="-1" hx-put="/entries/thrash/{{entry.id}}/"
+        <a tabindex="-1" hx-put="/entries/archived/{{entry.id}}/"
            _="on click remove the closest .feed-entry
                      then on keyup[key is 'Delete' or key is 'Backspace'] from the closest .feed-entry focus() the next .feed-entry then trigger click on me"
-           class="level-item icon hover-icon is-white is-rounded trash-entry" title="Remove entry"><i class="fas {% if entry.deleted %}fa-trash-restore-alt{% else %}fa-trash-alt{% endif %}"></i></a>
+           class="level-item icon hover-icon is-white is-rounded" title="Archive entry"><i class="fas {% if entry.archived %}fa-file-upload{% else %}fa-file-download{% endif %}"></i></a>
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
            hx-put="{{pin_base_path|default(request.path.rstrip('/'))}}/pinned/{{entry.id}}"
            hx-target="#pinned-entry-list"
