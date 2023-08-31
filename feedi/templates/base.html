@@ -121,6 +121,14 @@
                                </div>
                            </div>
                        </li>
+                       <li>
+                           <div class="level-left">
+                               <div class="level-item">
+                                   <a hx-post="/feeds/sync/{{filters.feed_name}}"
+                                      _="on htmx:beforeRequest add .fa-spin to <i/> in me"><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{filters.feed_name}}</a>
+                               </div>
+                           </div>
+                       </li>
                        {% endif %}
                        <hr class="dropdown-divider"/>
                        <li>
