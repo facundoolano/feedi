@@ -78,10 +78,10 @@ def query_entries_page(ordering, page=None, **kwargs):
         start_at = datetime.datetime.utcnow()
         page = 1
 
-    next_page = f'{start_at.timestamp()}:{page + 1}'
-
     query = models.Entry.sorted_by(ordering, start_at, **kwargs)
     entries = db.paginate(query, per_page=ENTRY_PAGE_SIZE, page=page)
+
+    next_page = f'{start_at.timestamp()}:{page + 1}' if entries.has_next else None
     return entries, next_page
 
 
