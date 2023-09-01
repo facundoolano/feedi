@@ -24,10 +24,10 @@ def humanize_date(dt):
     return dt.strftime("%b %d, %Y")
 
 
-@app.template_filter('feed_domain')
-def feed_domain(feed):
-    parts = urllib.parse.urlparse(feed.url or feed.server_url)
-    return f'{parts.scheme}://{parts.netloc}'
+@app.template_filter('url_domain')
+def feed_domain(url):
+    parts = urllib.parse.urlparse(url)
+    return parts.netloc.strip('www.')
 
 
 @app.template_filter('sanitize')

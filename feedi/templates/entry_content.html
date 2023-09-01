@@ -38,7 +38,7 @@
   <div class="media-content">
       <a href="{{ entry.content_url }}" target="_blank"><strong>{{ entry.title }}</strong></a>
       <div class="feed-header-details">
-          <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> · {{ entry.username or entry.feed.name}}</small>
+          <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.content_url %}· {{ entry.content_url | url_domain}}{% endif %}</small>
       </div>
   </div>
   <div class="media-right">
