@@ -8,9 +8,11 @@ import urllib
 import favicon
 import feedparser
 from bs4 import BeautifulSoup
-from feedi.requests import requests
+from feedi.requests import USER_AGENT, requests
 
 logger = logging.getLogger(__name__)
+
+feedparser.USER_AGENT = USER_AGENT
 
 
 def fetch(url, previous_fetch, skip_older_than, first_load_amount, etag=None, modified=None):
@@ -71,10 +73,6 @@ class BaseParser:
         load_count = 0
 
         for entry in self.feed['entries']:
-            if 'link' not in entry or 'summary' not in entry:
-                logger.warn(f"entry seems malformed {entry}")
-                continue
-
             # again, don't try to process stuff that hasn't changed recently
             if previous_fetch and 'updated_parsed' in entry and to_datetime(entry['updated_parsed']) < previous_fetch:
                 logger.debug('skipping up to date entry %s', entry['link'])
@@ -123,6 +121,10 @@ class BaseParser:
             return url
 
     def parse_body(self, entry):
+        if not 'summary' in entry:
+            # TODO could alternatively fetch and get summary from meta or the first paragraph
+            return None
+
         soup = BeautifulSoup(entry['summary'], 'lxml')
 
         # remove images in case there are any inside a paragraph
@@ -141,9 +143,10 @@ class BaseParser:
             return entry['media_content'][0]['url']
 
         # else try to extract it from the summary html
-        soup = BeautifulSoup(entry['summary'], 'lxml')
-        if soup.img:
-            return soup.img['src']
+        if 'summary' in entry:
+            soup = BeautifulSoup(entry['summary'], 'lxml')
+            if soup.img:
+                return soup.img['src']
 
         parsed_dest_url = self.parse_content_url(entry)
         return self.fetch_meta(parsed_dest_url, "og:image") or self.fetch_meta(parsed_dest_url, "twitter:image")
