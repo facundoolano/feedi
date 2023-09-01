@@ -232,6 +232,10 @@ class LobstersParser(BaseParser):
             return soup.find("a", string="Comments")['href']
         return entry['link']
 
+    def parse_username(self, entry):
+        username = super().parse_username(entry)
+        return username.split('@')[0]
+
 
 class HackerNewsParser(BaseParser):
     def is_compatible(_feed_url, feed_data):
