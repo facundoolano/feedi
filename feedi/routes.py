@@ -8,14 +8,14 @@ import zipfile
 from collections import defaultdict
 
 import flask
-import requests
 import stkclient
-from favicon.favicon import BeautifulSoup
+from bs4 import BeautifulSoup
 from flask import current_app as app
 
 import feedi.models as models
 import feedi.tasks as tasks
 from feedi.models import db
+from feedi.requests import requests
 from feedi.sources import rss
 
 
@@ -237,7 +237,9 @@ def feed_add():
     name = None
 
     if discover:
-        (url, name) = rss.discover_feed(discover)
+        result = rss.discover_feed(discover)
+        if result:
+            (url, name) = result
 
     return flask.render_template('feed_edit.html',
                                  url=url,

@@ -7,8 +7,8 @@ import urllib
 
 import favicon
 import feedparser
-import requests
 from bs4 import BeautifulSoup
+from feedi.requests import requests
 
 logger = logging.getLogger(__name__)
 
