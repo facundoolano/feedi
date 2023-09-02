@@ -1,6 +1,6 @@
 .PHONY: deps dev-deps shell serve dbreset dbshell feed-load feed-sync feed-debug
 
-venv=source venv/bin/activate &&
+venv=. venv/bin/activate &&
 flask=$(venv) flask --app feedi/app.py
 
 venv:
@@ -35,3 +35,6 @@ feed-debug:
 
 prod:
 	$(venv) gunicorn -b 127.0.0.1:5000 -k gevent 'feedi.app:create_app()'
+
+rpi-push:
+	scp instance/feedi.db pi@raspberrypi.local:feedi/instance/feedi.db
