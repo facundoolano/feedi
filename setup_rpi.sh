@@ -13,17 +13,22 @@ echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.co
 sudo apt-get update
 sudo apt-get install nodejs -y
 
+# setup the firewall
 sudo ufw allow ssh
 sudo ufw allow 'Nginx HTTP'
 sudo ufw enabled
 
 # install the app
 git clone git@github.com:facundoolano/feedi.git
+cd feedi
 make venv deps secret-key
+mkdir instance
 
 # setup the app as a service
 sudo groupadd feedi
 sudo useradd feedi -g feedi
+sudo chown feedi instance/
+sudo chown feedi instance/*
 
 sudo tee -a /etc/systemd/system/gunicorn.service > /dev/null <<EOF
 [Unit]
@@ -86,4 +91,6 @@ EOF
 
 sud rm /etc/nginx/sites-enabled/default
 sudo ln -s /etc/nginx/sites-available/feedi /etc/nginx/sites-enabled/feedi
+
+sudo systemctl enable nginx
 sudo systemctl start nginx
