@@ -33,8 +33,12 @@ feed-sync:
 feed-debug:
 	$(flask) feed debug $(URL)
 
+prod: FEEDI_CONFIG='feedi/config/prod.py'
 prod:
 	$(venv) gunicorn -b 127.0.0.1:5000 -k gevent 'feedi.app:create_app()'
+
+secret-key:
+	echo "SECRET_KEY = $(python -c 'import secrets; print(secrets.token_hex())')" >> feedi/config/prod.py
 
 rpi-push:
 	scp instance/feedi.db pi@raspberrypi.local:feedi/instance/feedi.db

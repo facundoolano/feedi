@@ -2,15 +2,29 @@
 
 sudo apt update -y
 sudo apt upgrade -y
-sudo apt install nginx ufw git vim python3-venv nodejs npm -y
+sudo apt install nginx ufw git vim python3-venv -y
+
+# install node 20 sigh
+sudo apt-get install -y ca-certificates curl gnupg
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+NODE_MAJOR=20
+echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+sudo apt-get update
+sudo apt-get install nodejs -y
 
 sudo ufw allow ssh
 sudo ufw allow 'Nginx HTTP'
 sudo ufw enabled
 
+# install the app
 git clone git@github.com:facundoolano/feedi.git
-make venv deps
+make venv deps secret-key
 
+# setup the app as a service
+# TODO
+
+# setup nginx as the proxy
 sudo tee -a /etc/nginx/sites-available/feedi > /dev/null <<EOF
 server {
     listen 80;
@@ -31,5 +45,6 @@ server {
 }
 EOF
 
+sud rm /etc/nginx/sites-enabled/default
 sudo ln -s /etc/nginx/sites-available/feedi /etc/nginx/sites-enabled/feedi
 sudo systemctl start nginx
