@@ -32,3 +32,6 @@ feed-sync:
 
 feed-debug:
 	$(flask) feed debug $(URL)
+
+prod:
+	$(venv) gunicorn -b 127.0.0.1:5000 -k gevent 'feedi.app:create_app()'
