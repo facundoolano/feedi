@@ -22,7 +22,46 @@ git clone git@github.com:facundoolano/feedi.git
 make venv deps secret-key
 
 # setup the app as a service
-# TODO
+sudo groupadd feedi
+sudo useradd feedi -g feedi
+
+sudo tee -a /etc/systemd/system/gunicorn.service > /dev/null <<EOF
+[Unit]
+Description=gunicorn daemon
+Requires=gunicorn.socket
+After=network.target
+
+[Service]
+Type=notify
+User=feedi
+Group=feedi
+RuntimeDirectory=gunicorn
+WorkingDirectory=/home/pi/feedi
+Environment="FEEDI_CONFIG=feedi/config/prod.py"
+ExecStart=/home/pi/feedi/venv/bin/gunicorn -b 127.0.0.1:5000 -k gevent 'feedi.app:create_app()'
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo tee -a /etc/systemd/system/gunicorn.socket > /dev/null <<EOF
+[Unit]
+Description=gunicorn socket
+
+[Socket]
+ListenStream=/run/gunicorn.sock
+SocketUser=www-data
+
+[Install]
+WantedBy=sockets.target
+EOF
+
+sudo systemctl enable gunicorn
+sudo systemctl start gunicorn
 
 # setup nginx as the proxy
 sudo tee -a /etc/nginx/sites-available/feedi > /dev/null <<EOF
@@ -36,7 +75,7 @@ server {
     }
 
     location / {
-        proxy_pass http://127.0.0.1:5000/;
+        proxy_pass http://unix:/run/gunicorn.sock;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_set_header X-Forwarded-Host $host;

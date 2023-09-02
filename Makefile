@@ -33,6 +33,7 @@ feed-sync:
 feed-debug:
 	$(flask) feed debug $(URL)
 
+# TODO move the details to a gunicorn config file
 prod: FEEDI_CONFIG='feedi/config/prod.py'
 prod:
 	$(venv) gunicorn -b 127.0.0.1:5000 -k gevent 'feedi.app:create_app()'
