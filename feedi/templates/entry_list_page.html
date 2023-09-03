@@ -2,7 +2,7 @@
 <div class="card feed-entry is-radiusless {% if entry.pinned and not is_pinned_list %}is-hidden{% endif %}" tabindex="0"
      _="on keydown[key is 'ArrowDown'] focus() the next <.feed-entry:not(.is-hidden)/> then halt
             then on keydown[key is 'ArrowUp'] focus() the previous <.feed-entry:not(.is-hidden)/> then halt
-            then on focus go to top of me"
+            then on focus call window.getSelection().removeAllRanges() then go to top of me"
      data-id="{{entry.id}}"
 >
      <div class="card-content">
@@ -35,7 +35,7 @@
                  <div class="columns body-container">
                      {% if entry.media_url %}
                      <div class="column is-one-quarter media-url-container {% if session.hide_media %}is-hidden{% endif %}">
-                         <figure class="image media-url is-5by3" tabindex="-1"
+                         <figure class="image media-url is-5by3 is-clickable" tabindex="-1"
                                  _="on click add .is-active to the next .modal then halt">
                              <img src="{{ entry.media_url }}" alt="article preview" onerror='this.parentNode.parentNode.style.display = "none"'>
                          </figure>
@@ -51,16 +51,14 @@
                      </div>
                      {% endif %}
                      {% if entry.body %}
-                     <div class="column content" tabindex="-1">
-                         {% if entry.content_url and not entry.body %}
-                         <small>click to expand</small>
-                         {% endif %}
-
+                     <div class="column">
+                         <div class="content" tabindex="-1">
                          {% if entry.feed.type == 'mastodon' %}
                          {{ entry.body | safe }}
                          {% else %}
                          {{ entry.body | sanitize | safe }}
-                         {% endif %}
+                             {% endif %}
+                         </div>
 
                      </div>
                      {% endif %}
