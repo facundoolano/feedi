@@ -33,7 +33,11 @@ mkdir instance
 groupadd feedi
 useradd feedi -g feedi
 chown feedi instance/
-chown feedi instance/*
+touch instance/feedi.db
+chown feedi instance/feedi.db
+
+# let others write so we can overwrite with scp
+chmod 666 instance/feedi.db
 
 cat <<EOF > /etc/systemd/system/gunicorn.service
 [Unit]
