@@ -52,7 +52,7 @@ Group=feedi
 RuntimeDirectory=gunicorn
 WorkingDirectory=$HOME/feedi
 Environment="FEEDI_CONFIG=feedi/config/prod.py"
-ExecStart=$HOME/feedi/venv/bin/gunicorn -b 127.0.0.1:5000 -k gevent 'feedi.app:create_app()'
+ExecStart=$HOME/feedi/venv/bin/gunicorn
 ExecReload=/bin/kill -s HUP \$MAINPID
 KillMode=mixed
 TimeoutStopSec=5
