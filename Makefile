@@ -12,7 +12,7 @@ deps: venv
 deps-dev: deps
 	$(venv) pip install ipython ipdb
 
-serve:
+dev:
 	$(flask) run --debug --reload
 
 shell:

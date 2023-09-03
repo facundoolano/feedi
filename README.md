@@ -4,16 +4,22 @@ TODO
 
 ## Local setup
 
+Requires Python 3 and nodejs (for the reader functionality).
+TODO document python and OS lib requirements
+(TODO what versions?)
+
 Install:
 
     make venv deps
 
-Run:
+Run the development server:
 
-    make serve
+    make dev
 
-TODO elaborate
-TODO document python and OS lib requirements
+Run a production like server:
+
+    make prod
+
 
 ## Advanced usage
 ### Bulk load feeds from csv
