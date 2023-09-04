@@ -92,10 +92,7 @@ server {
 
     location / {
         proxy_pass http://unix:/run/gunicorn.sock;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-        proxy_set_header X-Forwarded-Host \$host;
-        proxy_set_header X-Forwarded-Prefix /;
+        include proxy_params;
     }
 }
 EOF
@@ -104,4 +101,4 @@ rm -f /etc/nginx/sites-enabled/default
 ln -sf /etc/nginx/sites-available/feedi /etc/nginx/sites-enabled/feedi
 
 systemctl enable nginx
-systemctl start nginx
+systemctl restart nginx
