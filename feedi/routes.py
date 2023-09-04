@@ -172,7 +172,7 @@ def entry_pin(id, **filters):
                                  entries=pinned)
 
 
-@app.put("/entries/favorites/<int:id>/")
+@app.put("/entries/favorites/<int:id>")
 def entry_favorite(id):
     "Toggle the favorite status of the given entry."
     entry = db.get_or_404(models.Entry, id)
@@ -186,7 +186,7 @@ def entry_favorite(id):
     return '', 204
 
 
-@app.put("/entries/trash/<int:id>/")
+@app.put("/entries/trash/<int:id>")
 def entry_delete(id):
     "Toggle the deleted status of the given entry."
     entry = db.get_or_404(models.Entry, id)
@@ -322,7 +322,7 @@ def feed_sync(feed_name):
     return response
 
 
-@app.get("/entries/<int:id>/")
+@app.get("/entries/<int:id>")
 def fetch_entry_content(id):
     """
     Fetch the entry content from the source and display it for reading locally.
@@ -464,14 +464,14 @@ def raw_entry(id):
 
 
 # TODO improve this views to accept only valid values
-@app.post("/session/<setting>/")
+@app.post("/session/<setting>")
 def toggle_setting(setting):
     flask.session[setting] = not flask.session.get(setting, False)
     return '', 204
 
 
 # TODO improve this views to accept only valid values
-@app.put("/session/")
+@app.put("/session")
 def update_setting():
     for (key, value) in flask.request.form.items():
         flask.session[key] = value
