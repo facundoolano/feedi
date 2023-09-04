@@ -44,10 +44,10 @@ prod-update:
 	sudo systemctl restart gunicorn
 
 secret-key:
-	echo "SECRET_KEY = $(python -c 'import secrets; print(secrets.token_hex())')" >> feedi/config/prod.py
+	echo "SECRET_KEY = ${python -c 'import secrets; print(secrets.token_hex())'}" >> feedi/config/prod.py
 
-rpi-db-push:
-	scp instance/feedi.db pi@raspberrypi.local:feedi/instance/feedi.db
+prod-db-push:
+	scp instance/feedi.db pi@feedi.local:feedi/instance/feedi.db
 
-rpi-db-pull:
-	scp pi@raspberrypi.local:feedi/instance/feedi.db  instance/feedi.db
+prod-db-pull:
+	scp pi@feedi.local:feedi/instance/feedi.db  instance/feedi.db
