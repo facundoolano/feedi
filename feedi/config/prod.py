@@ -1,0 +1,3 @@
+# TODO add a SECRET_KEY
+DEBUG = False
+TEMPLATES_AUTO_RELOAD = False

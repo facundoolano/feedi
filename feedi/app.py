@@ -11,7 +11,7 @@ import feedi.models as models
 
 def create_app():
     app = flask.Flask(__package__)
-    app.config.from_object('feedi.config')
+    app.config.from_object('feedi.config.default')
     app.config.from_envvar('FEEDI_CONFIG', silent=True)
 
     app.logger.setLevel(logging.INFO)
@@ -42,7 +42,7 @@ def create_huey_app():
     This is necessary to make config and db session available to the periodic tasks.
     """
     app = flask.Flask('huey_app')
-    app.config.from_object('feedi.config')
+    app.config.from_object('feedi.config.default')
     app.config.from_envvar('FEEDI_CONFIG', silent=True)
     app.logger.setLevel(logging.INFO)
     with app.app_context():
