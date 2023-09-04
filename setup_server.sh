@@ -35,12 +35,10 @@ make venv deps secret-key
 mkdir -p instance
 
 # setup the app as a service
-groupadd feedi
-useradd feedi -g feedi
-chown feedi instance/
+groupadd feedi || true
+useradd feedi -g feedi || true
 touch instance/feedi.db
-chown feedi instance/feedi.db
-
+chown -R feedi .
 # let others write so we can overwrite with scp
 chmod 666 instance/feedi.db
 
