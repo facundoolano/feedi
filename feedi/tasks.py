@@ -200,14 +200,14 @@ def delete_old_entries():
             app.logger.info("Deleted %s old entries from %s/%s", res.rowcount, feed_id, feed_name)
 
 
-@ feed_cli.command('debug')
-@ click.argument('url')
+@feed_cli.command('debug')
+@click.argument('url')
 def debug_feed(url):
     sources.rss.pretty_print(url)
 
 
-@ feed_cli.command('load')
-@ click.argument("file")
+@feed_cli.command('load')
+@click.argument("file")
 def create_test_feeds(file):
     "Load feeds from a local csv file."
 
