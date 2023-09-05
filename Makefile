@@ -36,9 +36,12 @@ feed-debug:
 prod:
 	$(venv) gunicorn
 
+# FIXME this is hacky
 prod-update:
+	git stash # because of prod config
 	git checkout main
 	git pull origin main --ff-only
+	git stash apply
 	make deps
 	$(venv) alembic upgrade head
 	sudo systemctl restart gunicorn
