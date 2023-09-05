@@ -219,3 +219,12 @@ img[src=""] {
 #search:focus {
     box-shadow:0 0 0 0;
 }
+.columns,
+.columns:last-child {
+    margin: 0;
+}
+
+.card-content {
+    padding-left:0!important;
+    padding-right:0!important;
+}
