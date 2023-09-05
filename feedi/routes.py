@@ -471,7 +471,7 @@ def toggle_setting(setting):
 
 
 # TODO improve this views to accept only valid values
-@app.put("/session")
+@app.post("/session")
 def update_setting():
     for (key, value) in flask.request.form.items():
         flask.session[key] = value
