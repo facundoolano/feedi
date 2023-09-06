@@ -35,6 +35,10 @@
     margin-bottom: 0!important;
 }
 
+.feed-header .level-right, .feed-header.level {
+    align-items: unset!important;
+}
+
 .avatar-column {
     padding-right: .25
 }
