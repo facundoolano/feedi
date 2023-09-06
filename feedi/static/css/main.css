@@ -21,10 +21,21 @@
 .body-container .column {
     padding-left: 0;
 }
-
 .media-url-container {
     padding-bottom: 1rem!important;
 }
+/* FIXME mobile-only, do this properly with sass */
+@media screen and (max-width: 768px) {
+    .body-container .column {
+        padding-right: 0;
+    }
+
+    .media-url-container {
+        padding-bottom: 0rem!important;
+    }
+}
+
+
 
 .feed-header .level-left {
     /* wrap for title to prevent icons overflow */
