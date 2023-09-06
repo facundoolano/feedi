@@ -11,6 +11,32 @@
     <meta name="htmx-config" content='{"refreshOnHistoryMiss": true}'>
 </head>
 <body>
+    <nav class="navbar is-hidden-tablet is-fixed-top is-light" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="/">
+                <h1 class="title is-4">feedi</h1>
+            </a>
+
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
+               _="on click toggle .is-active then toggle .is-active on the next .navbar-menu"
+            >
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <div class="navbar-end">
+                <a class="navbar-item">
+                    End
+                </a>
+
+                <a class="navbar-item">
+                    End
+                </a>
+            </div>
+        </div>
+    </nav>
     <section class="container">
         <div class="columns">
             <div class="column is-hidden-touch">

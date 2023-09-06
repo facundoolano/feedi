@@ -4,6 +4,15 @@
     min-height: 100vh;
 }
 
+/* TODO similar to has-navbar-fixed-top-touch
+but we only want it for mobile*/
+@media screen and (max-width: 768px) {
+    body {
+        /* FIXME $navbar-height */
+        padding-top: 3.25rem!important;
+    }
+}
+
 /* reduce margins */
 .feed-entry .card-content {
     padding-bottom: 0;
