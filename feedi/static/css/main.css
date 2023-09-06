@@ -1,3 +1,9 @@
+#entry-list .box {
+    /* this prevents weird flicker when the content is not full height
+       remove the .box to prevent the white box extending as well */
+    min-height: 100vh;
+}
+
 /* reduce margins */
 .feed-entry .card-content {
     padding-bottom: 0;
@@ -143,7 +149,6 @@
     border-left:0!important;
     margin:.25em!important;
 }
-
 
 .level-item.icon:not(.toggled) {
     /* FIXME this should use SCSS variables */
