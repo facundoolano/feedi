@@ -3,7 +3,6 @@
         <div class="level-item is-hidden-tablet">
             {% include "entry_avatar.html" %}
         </div>
-        <div class="level-item">
         <p>
             <b>
                 {% if entry.content_url %}
@@ -23,7 +22,6 @@
             <br/>
             <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.content_url %}· {{ entry.content_url | url_domain}}{% endif %}</small>
         </p>
-        </div>
     </div>
     <div class="level-right is-hidden-touch">
         <a tabindex="-1" hx-put="/entries/trash/{{entry.id}}/"
