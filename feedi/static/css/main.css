@@ -212,8 +212,12 @@ img[src=""] {
 }
 
 /* feeds sidebar */
-.feeds-sidebar li  {
+.feeds-sidebar li, .feed-sidebar .dropdown-item  {
     font-size: 0.9rem;
+}
+
+.radio + .radio {
+    margin-left: 0!important;
 }
 
 .feeds-sidebar label {
