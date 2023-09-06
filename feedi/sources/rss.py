@@ -95,8 +95,8 @@ class BaseParser:
                 for field in self.FIELDS:
                     method = 'parse_' + field
                     result[field] = getattr(self, method)(entry)
-            except:
-                logger.exception("skipping errored entry %s", entry['link'])
+            except Exception as error:
+                logger.exception("skipping errored entry %s %s", entry['link'], error)
                 continue
 
             load_count += 1
