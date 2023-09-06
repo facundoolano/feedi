@@ -4,7 +4,7 @@
         <a href="/feeds/{{feed.name}}/entries">
             <span class="icon ">
                 <figure class="is-16x16 image">
-                <img class="is-rounded feed-avatar" src="{{ feed.icon_url }}" alt="{{ feed.name.0 }}">
+                    <img class="is-rounded feed-avatar" src="{{ feed.icon_url or ''}}" alt="{{ feed.name.0 }}">
             </figure></span> {{ feed.name | truncate(15) }}
         </a>
 
