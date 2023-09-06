@@ -16,17 +16,7 @@
          {% endif %}
          <div class="columns is-mobile">
              <div class="column is-narrow avatar-column is-hidden-mobile">
-                 <figure class="image is-32x32">
-                     {% if entry.avatar_url %}
-                     <a href="/users/{{ entry.username }}">
-                         <img class="is-rounded feed-avatar" src="{{ entry.avatar_url }}" alt="{{ entry.username }}" title="{{ entry.username }}">
-                     </a>
-                     {% else %}
-                     <a href="/feeds/{{ entry.feed.name }}/entries">
-                         <img class="is-rounded feed-avatar" src="{{ entry.feed.icon_url }}" alt="{{ entry.feed.name.0 }}" title="{{ entry.feed.name }}">
-                     </a>
-                     {% endif %}
-                 </figure>
+                 {% include "entry_avatar.html" %}
              </div>
              <div class="column">
                  {% include "entry_header.html" %}
