@@ -219,6 +219,9 @@ img[src=""] {
 #search:focus {
     box-shadow:0 0 0 0;
 }
+
+/* tweak margins and padding to display properly on mobile
+https://github.com/jgthms/bulma/issues/1561#issuecomment-535475428 */
 .columns,
 .columns:last-child {
     margin: 0;
@@ -227,4 +230,8 @@ img[src=""] {
 .card-content {
     padding-left:0!important;
     padding-right:0!important;
+}
+
+.entry-mobile-footer {
+    padding: .35rem 0;
 }
