@@ -18,6 +18,10 @@
     font-size: 0.95em;
 }
 
+.body-container .column {
+    padding-left: 0;
+}
+
 .media-url-container {
     padding-bottom: 1rem!important;
 }
