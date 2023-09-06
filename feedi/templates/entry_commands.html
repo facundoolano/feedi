@@ -21,7 +21,6 @@
 {% if entry.feed %}
 <a class="dropdown-item" href="/feeds/{{ entry.feed.name }}/entries"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.feed.name }}</a>
 <a href="/feeds/edit/{{entry.feed.name}}" class="dropdown-item"><span class="icon"><i class="far fa-edit"></i></span> Edit {{ entry.feed.name }}</a>
-<a class="dropdown-item"><span class="icon"><i class="fas fa-volume-mute"></i></span> Mute {{ entry.feed.name }}</a>
 <hr class="dropdown-divider is-hidden-mobile">
 <a class="dropdown-item is-hidden-mobile" href="/entries/{{ entry.id }}/raw" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw entry data</a>
 <a class="dropdown-item is-hidden-mobile" href="/feeds/{{ entry.feed.id }}/raw" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw feed data</a>
