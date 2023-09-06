@@ -188,6 +188,13 @@ img[src=""] {
     letter-spacing: .03em;
 }
 
+/* FIXME mobile-only, do this properly with sass */
+@media screen and (max-width: 1023px) {
+    .entry-content {
+        padding: 2rem 1rem;
+    }
+}
+
 /* feeds sidebar */
 .feeds-sidebar li  {
     font-size: 0.9rem;
