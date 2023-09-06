@@ -131,8 +131,10 @@
     top: 1rem;
     bottom: 0;
 
-    overflow-x: hidden;
-    overflow-y: auto;
+    /* commenting since it hides dropdown on short content pages */
+    /* overflow-x: hidden; */
+    /* overflow-y: auto; */
+
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none;  /* Internet Explorer 10+ */
 }
