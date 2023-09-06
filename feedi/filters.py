@@ -33,7 +33,12 @@ def feed_domain(url):
 @app.template_filter('sanitize')
 def sanitize_content(html):
     # poor man's line truncating: reduce the amount of characters and let bs4 fix the html
+    soup = BeautifulSoup(html, 'lxml')
     if len(html) > 500:
         html = html[:500] + '…'
-        html = str(BeautifulSoup(html, 'lxml'))
-    return html
+        soup = BeautifulSoup(html, 'lxml')
+
+    soup.html.body.unwrap()
+    soup.html.unwrap()
+
+    return str(soup)

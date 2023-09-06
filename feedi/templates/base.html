@@ -11,6 +11,33 @@
     <meta name="htmx-config" content='{"refreshOnHistoryMiss": true}'>
 </head>
 <body>
+    <nav class="navbar is-hidden-tablet is-fixed-top is-light" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="/">
+                <h1 class="title is-4">feedi</h1>
+            </a>
+
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
+               _="on click toggle .is-active then toggle .is-active on the next .navbar-menu"
+            >
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+        </div>
+        <div class="navbar-menu">
+            <div class="navbar-end">
+                {% if folders %}
+                  {% for (name, feeds) in folders.items() %}
+                <a class="dropdown-item" href="/folder/{{ name }}">
+                    <icon class="icon"><i class="far fa-folder-open"></i></icon> {{ name }}</a>
+                  {% endfor %}
+                  <hr class="dropdown-divider"/>
+                {% endif %}
+                {{ self.sidebar_right() }}
+            </div>
+        </div>
+    </nav>
     <section class="container">
         <div class="columns">
             <div class="column is-hidden-touch">
@@ -59,13 +86,13 @@
                 </aside>
                 {% endblock %}
             </div>
-            <div class="column is-centered is-two-thirds">
+            <div class="column is-centered is-two-thirds is-paddingless">
                 <div id="entry-list">
                     {% block content %}{% endblock %}
                 </div>
             </div>
             <div class="column">
-               <aside class="menu feeds-sidebar is-hidden-mobile sidebar-right">
+               <aside class="menu feeds-sidebar is-hidden-mobile">
                    <ul class="menu-list">
                        <div class="dropdown is-active">
                            <div class="dropdown-trigger">
@@ -100,90 +127,42 @@
                        </div>
                        <hr class="dropdown-divider"/>
                        {% block sidebar_right %}
-                       <li>
-                           <div class="level-left">
-                               <div class="level-item">
-                                   <a href="/feeds/add"><icon class="icon"><i class="fas fa-plus"></i></icon> Add feed</a>
-                               </div>
-                           </div>
-                       </li>
-                       <li>
-                           <div class="level-left">
-                               <div class="level-item">
-                                   <a href="/feeds"><icon class="icon"><i class="fas fa-edit"></i></icon> Manage feeds</a>
-                               </div>
-                           </div>
-                       </li>
+                       <a class="dropdown-item" href="/feeds/add"><icon class="icon"><i class="fas fa-plus"></i></icon> Add feed</a>
+                       <a class="dropdown-item" href="/feeds"><icon class="icon"><i class="fas fa-edit"></i></icon> Manage feeds</a>
                        {% if filters.feed_name %}
-                       <li>
-                           <div class="level-left">
-                               <div class="level-item">
-                                   <a href="/feeds/edit/{{filters.feed_name}}"><icon class="icon"><i class="fas fa-edit"></i></icon> Edit {{filters.feed_name}}</a>
-                               </div>
-                           </div>
-                       </li>
-                       <li>
-                           <div class="level-left">
-                               <div class="level-item">
-                                   <a hx-post="/feeds/sync/{{filters.feed_name}}"
-                                      _="on htmx:beforeRequest add .fa-spin to <i/> in me"><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{filters.feed_name}}</a>
-                               </div>
-                           </div>
-                       </li>
+                       <a class="dropdown-item" href="/feeds/edit/{{filters.feed_name}}"><icon class="icon"><i class="fas fa-edit"></i></icon> Edit {{filters.feed_name}}</a>
+                       <a class="dropdown-item" hx-post="/feeds/sync/{{filters.feed_name}}"
+                          _="on htmx:beforeRequest add .fa-spin to <i/> in me"><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{filters.feed_name}}</a>
                        {% endif %}
                        <hr class="dropdown-divider"/>
-                       <li>
-                           <div class="level-left">
-                               <div class="level-item">
-                                   <label class="checkbox">
-                                       <input type="checkbox" {% if not session.hide_media %} checked {% endif %}
-                                              name="hide_media"
-                                              hx-post="/session/hide_media" _="on click toggle .is-hidden on .media-url-container">
-                                       Show thumbnails
-                                   </label>
-                               </div>
-                           </div>
+                       <label class="checkbox dropdown-item">
+                           <input type="checkbox" {% if not session.hide_media %} checked {% endif %}
+                                  name="hide_media"
+                                  hx-post="/session/hide_media" _="on click toggle .is-hidden on .media-url-container">
+                           Show thumbnails
+                       </label>
 
-                       </li>
-                       <li>
-                           <div class="level-left">
-                               <div class="level-item">
-                                   <label class="radio">
-                                       <input
-                                           hx-post="/session" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
-                                           {% if not session.ordering or session.ordering == "recency" %} checked {% endif %}
-                                           type="radio" name="ordering" value="recency">
-                                       Most recent
-                                   </label>
-                               </div>
-                           </div>
-                       </li>
-                       <li>
-                           <div class="level-left">
-                               <div class="level-item">
-                                   <label class="radio">
-                                       <input hx-post="/session"
-                                           _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
-                                              {% if session.ordering == "score" %} checked {% endif %}
-                                           type="radio" name="ordering" value="score">
-                                   Best score
-                               </label>
-                               </div>
-                           </div>
-                       </li>
-                       <li>
-                           <div class="level-left">
-                               <div class="level-item">
-                                   <label class="radio">
-                                       <input
-                                           hx-post="/session" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
-                                           {% if session.ordering == "frequency" %} checked {% endif %}
-                                           type="radio" name="ordering" value="frequency">
-                                       Least frequent
-                                   </label>
-                               </div>
-                           </div>
-                       </li>
+                       <label class="radio dropdown-item">
+                           <input
+                               hx-post="/session" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
+                               {% if not session.ordering or session.ordering == "recency" %} checked {% endif %}
+                               type="radio" name="ordering" value="recency">
+                           Most recent
+                       </label>
+                       <label class="radio dropdown-item">
+                           <input hx-post="/session"
+                                  _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
+                                  {% if session.ordering == "score" %} checked {% endif %}
+                                  type="radio" name="ordering" value="score">
+                           Best score
+                       </label>
+                       <label class="radio dropdown-item">
+                           <input
+                               hx-post="/session" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
+                               {% if session.ordering == "frequency" %} checked {% endif %}
+                               type="radio" name="ordering" value="frequency">
+                           Least frequent
+                       </label>
                        {% endblock %}
                    </ul>
                </aside>

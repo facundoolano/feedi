@@ -1,3 +1,18 @@
+#entry-list .box {
+    /* this prevents weird flicker when the content is not full height
+       remove the .box to prevent the white box extending as well */
+    min-height: 100vh;
+}
+
+/* TODO similar to has-navbar-fixed-top-touch
+but we only want it for mobile*/
+@media screen and (max-width: 768px) {
+    body {
+        /* FIXME $navbar-height */
+        padding-top: 3.25rem!important;
+    }
+}
+
 /* reduce margins */
 .feed-entry .card-content {
     padding-bottom: 0;
@@ -18,9 +33,24 @@
     font-size: 0.95em;
 }
 
+.body-container .column {
+    padding-left: 0;
+}
 .media-url-container {
     padding-bottom: 1rem!important;
 }
+/* FIXME mobile-only, do this properly with sass */
+@media screen and (max-width: 768px) {
+    .body-container .column {
+        padding-right: 0;
+    }
+
+    .media-url-container {
+        padding-bottom: 0rem!important;
+    }
+}
+
+
 
 .feed-header .level-left {
     /* wrap for title to prevent icons overflow */
@@ -35,8 +65,12 @@
     margin-bottom: 0!important;
 }
 
+.feed-header .level-right, .feed-header.level {
+    align-items: unset!important;
+}
+
 .avatar-column {
-    padding-right: .25
+    padding-right: .25rem!important;
 }
 
 /* alt fallback style for when feed.icon is broken or missing  */
@@ -106,8 +140,10 @@
     top: 1rem;
     bottom: 0;
 
-    overflow-x: hidden;
-    overflow-y: auto;
+    /* commenting since it hides dropdown on short content pages */
+    /* overflow-x: hidden; */
+    /* overflow-y: auto; */
+
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none;  /* Internet Explorer 10+ */
 }
@@ -124,7 +160,6 @@
     border-left:0!important;
     margin:.25em!important;
 }
-
 
 .level-item.icon:not(.toggled) {
     /* FIXME this should use SCSS variables */
@@ -149,7 +184,7 @@ img[src=""] {
 }
 
 .entry-content img {
-    max-width: 60%;
+    /* max-width: 90%; */
     display: block;
     margin-left: auto;
     margin-right: auto;
@@ -169,9 +204,20 @@ img[src=""] {
     letter-spacing: .03em;
 }
 
+/* FIXME mobile-only, do this properly with sass */
+@media screen and (max-width: 1023px) {
+    .entry-content {
+        padding: 2rem 1rem;
+    }
+}
+
 /* feeds sidebar */
-.feeds-sidebar li  {
+.feeds-sidebar li, .feed-sidebar .dropdown-item  {
     font-size: 0.9rem;
+}
+
+.radio + .radio {
+    margin-left: 0!important;
 }
 
 .feeds-sidebar label {
@@ -218,4 +264,20 @@ img[src=""] {
 
 #search:focus {
     box-shadow:0 0 0 0;
+}
+
+/* tweak margins and padding to display properly on mobile
+https://github.com/jgthms/bulma/issues/1561#issuecomment-535475428 */
+.columns,
+.columns:last-child {
+    margin: 0;
+}
+
+.card-content {
+    padding-left:0!important;
+    padding-right:0!important;
+}
+
+.entry-mobile-footer {
+    padding: .35rem 0;
 }

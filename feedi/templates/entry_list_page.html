@@ -7,7 +7,7 @@
 >
      <div class="card-content">
          {% if entry.reblogged_by %}
-         <div class="columns reblogged">
+         <div class="reblogged">
              <div class="column">
                  <small class="has-text-grey-light"><i class="fas fa-retweet"></i> {{ entry.reblogged_by }} boosted</small>
                  <br/>
@@ -15,18 +15,8 @@
          </div>
          {% endif %}
          <div class="columns is-mobile">
-             <div class="column is-narrow avatar-column">
-                 <figure class="image is-32x32">
-                     {% if entry.avatar_url %}
-                     <a href="/users/{{ entry.username }}">
-                         <img class="is-rounded feed-avatar" src="{{ entry.avatar_url }}" alt="{{ entry.username }}" title="{{ entry.username }}">
-                     </a>
-                     {% else %}
-                     <a href="/feeds/{{ entry.feed.name }}/entries">
-                         <img class="is-rounded feed-avatar" src="{{ entry.feed.icon_url }}" alt="{{ entry.feed.name.0 }}" title="{{ entry.feed.name }}">
-                     </a>
-                     {% endif %}
-                 </figure>
+             <div class="column is-narrow avatar-column is-hidden-mobile">
+                 {% include "entry_avatar.html" %}
              </div>
              <div class="column">
                  {% include "entry_header.html" %}
@@ -67,7 +57,35 @@
              </div>
          </div>
      </div>
- </div>
+     <div class="level is-mobile is-hidden-desktop entry-mobile-footer">
+             <a tabindex="-1" hx-put="/entries/trash/{{entry.id}}/"
+                _="on click remove the closest .feed-entry"
+                class="level-item icon is-white is-rounded" title="Remove entry"><i class="fas {% if entry.deleted %}fa-trash-restore-alt{% else %}fa-trash-alt{% endif %}"></i></a>
+
+        <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
+           hx-put="{{pin_base_path|default(request.path.rstrip('/'))}}/pinned/{{entry.id}}"
+           hx-target="#pinned-entry-list"
+           _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />
+                     then toggle .is-hidden on < [data-id='{{entry.id}}'] />">
+            <i class="fas fa-thumbtack"></i></a>
+        <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite entry"
+           hx-put="/entries/favorites/{{entry.id}}"
+           _="on click toggle .toggled"
+        ><i class="fas fa-star"></i></a>
+
+        <a class="icon is-white is-rounded level-item"
+           tabindex="-1"
+           _="on click toggle .is-active on the next .dropdown then
+                  on click elsewhere remove .is-active from the next .dropdown">
+            <i class="fas fa-ellipsis-h"></i>
+        </a>
+        <div class="dropdown is-right is-up">
+            <div class="dropdown-menu" role="menu">
+                <div class="dropdown-content">{% include "entry_commands.html" %}</div>
+            </div>
+        </div>
+     </div>
+</div>
  {% if loop.last and next_page %}
  <div hx-get="{{ request.path }}?page={{ next_page }}{% if request.args.q %}&q={{request.args.q}}{% endif %}" hx-trigger="revealed" hx-swap="outerHTML"></div>
  {% endif %}
