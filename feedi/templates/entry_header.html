@@ -1,5 +1,19 @@
-<div class="level feed-header ">
+<div class="level feed-header is-mobile">
     <div class="level-left">
+        <div class="level-item is-hidden-tablet">
+        <figure class="image is-32x32">
+            {% if entry.avatar_url %}
+            <a href="/users/{{ entry.username }}">
+                <img class="is-rounded feed-avatar" src="{{ entry.avatar_url }}" alt="{{ entry.username }}" title="{{ entry.username }}">
+            </a>
+            {% else %}
+            <a href="/feeds/{{ entry.feed.name }}/entries">
+                <img class="is-rounded feed-avatar" src="{{ entry.feed.icon_url }}" alt="{{ entry.feed.name.0 }}" title="{{ entry.feed.name }}">
+            </a>
+            {% endif %}
+        </figure>
+        </div>
+        <div class="level-item">
         <p>
             <b>
                 {% if entry.content_url %}
@@ -17,7 +31,9 @@
                 {% endif %}
             </b>
             <br/>
+            <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.content_url %}· {{ entry.content_url | url_domain}}{% endif %}</small>
         </p>
+        </div>
     </div>
     <div class="level-right is-hidden-touch">
         <a tabindex="-1" hx-put="/entries/trash/{{entry.id}}/"
@@ -51,9 +67,5 @@
                 <div class="dropdown-content">{% include "entry_commands.html" %}</div>
             </div>
         </div>
-
     </div>
-</div>
-<div class="feed-header-details">
-    <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.content_url %}· {{ entry.content_url | url_domain}}{% endif %}</small>
 </div>
