@@ -27,6 +27,13 @@
         </div>
         <div class="navbar-menu">
             <div class="navbar-end">
+                {% if folders %}
+                  {% for (name, feeds) in folders.items() %}
+                <a class="dropdown-item" href="/folder/{{ name }}">
+                    <icon class="icon"><i class="far fa-folder-open"></i></icon> {{ name }}</a>
+                  {% endfor %}
+                  <hr class="dropdown-divider"/>
+                {% endif %}
                 {{ self.sidebar_right() }}
             </div>
         </div>
