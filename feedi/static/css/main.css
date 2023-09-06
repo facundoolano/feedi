@@ -70,7 +70,7 @@ but we only want it for mobile*/
 }
 
 .avatar-column {
-    padding-right: .25
+    padding-right: .25rem!important;
 }
 
 /* alt fallback style for when feed.icon is broken or missing  */
