@@ -2,7 +2,7 @@
 
 feedi is a personal web RSS reader that also works as a (read-only) Mastodon client.
 
-TODO add a screenshots
+![](feedi.png)
 
 The project is currently experimental and is missing some pieces (and it will likely remain that way for a while),
 but feel free to try and hack on it. More details on the [design notes](#design-and-implementation-notes) below.
