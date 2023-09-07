@@ -24,7 +24,7 @@
         </p>
     </div>
     <div class="level-right is-hidden-touch">
-        <a tabindex="-1" hx-put="/entries/trash/{{entry.id}}/"
+        <a tabindex="-1" hx-put="/entries/trash/{{entry.id}}"
            _="on click remove the closest .feed-entry
                      then on keyup[key is 'Delete' or key is 'Backspace'] from the closest .feed-entry focus() the next .feed-entry then trigger click on me"
            class="level-item icon hover-icon is-white is-rounded" title="Remove entry"><i class="fas {% if entry.deleted %}fa-trash-restore-alt{% else %}fa-trash-alt{% endif %}"></i></a>
