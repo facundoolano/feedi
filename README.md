@@ -36,17 +36,42 @@ Example file (the $VARS are for illustration, they should be replaced before run
     rss,"Goodreads","https://www.goodreads.com/home/index_rss/$ID?key=$TOKEN
     mastodon,$NAME,$SERVER,$ACCES_TOKEN
 
+### Feed parsing
+
+The app works by [periodically](https://github.com/facundoolano/feedi/blob/bf2df4c313e7e719a16d3c2f8216452031a38e58/feedi/config/default.py#L12) fetching RSS feed entries and Mastodon toots and adjusting them to an [Entry db model](https://github.com/facundoolano/feedi/blob/bf2df4c313e7e719a16d3c2f8216452031a38e58/feedi/models.py#L107) which more or less matches what we expect to display in the front end.
+
+Most RSS feeds should be processed correctly with the default parser, but sometimes it's desirable to add a custom parser to cleanup or extend the data for a better look and feel. This is done by subclassing [feedi.sources.rss.BaseParser](https://github.com/facundoolano/feedi/blob/bf2df4c313e7e719a16d3c2f8216452031a38e58/feedi/sources/rss.py#L46). The `is_compatible` static method determines whether a given feed should be parsed with that specific class; the `parse_*` methods overrides the default logic for each field expected in the front end.
+
+As an example, this parser for the lobste.rs link aggregator is adjusted to inline a summary of external link submissions and distinguish between the source article url and the lobste.rs discussion url:
+
+``` python
+class LobstersParser(BaseParser):
+    def is_compatible(_feed_url, feed_data):
+        return 'lobste.rs' in feed_data['feed'].get('link', '')
+
+    def parse_body(self, entry):
+        # A 'Comments' link is only present on external link submissions
+        if 'Comments' in entry['summary']:
+            url = self.parse_content_url(entry)
+            return (self.fetch_meta(url, 'og:description') or
+                    self.fetch_meta(url, 'description'))
+        return entry['summary']
+
+    def parse_entry_url(self, entry):
+        # return the discussion url, which is different from entry['link']
+        # for external links
+        if 'Comments' in entry['summary']:
+            soup = BeautifulSoup(entry['summary'], 'lxml')
+            return soup.find("a", string="Comments")['href']
+        return entry['link']
+```
+
 
 ### Mastodon account setup
 
 TODO
 
 see https://mastodonpy.readthedocs.io/en/stable/#usage
-
-### Custom feed parsing
-
-TODO
-
 
 ### Kindle device setup
 
