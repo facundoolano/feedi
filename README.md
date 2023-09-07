@@ -69,9 +69,17 @@ class LobstersParser(BaseParser):
 
 ### Mastodon account setup
 
-TODO
+One or more Mastodon accounts can be added to ingest the user home feed into the app.
+The account login flow isn't supported in the web interface yet though, so to use the feature in the time being
+one needs to:
 
-see https://mastodonpy.readthedocs.io/en/stable/#usage
+* Register a mastodon app on the server the account belongs to. The same app can be reused for multiple accounts in that server.
+* Login with the account to obtain a user access token
+* Ingesting the feed in the csv as shown in a previous section (`mastodon,$NAME,$SERVER,$ACCES_TOKEN`)
+
+See the [Mastodon.py documentation](https://mastodonpy.readthedocs.io/en/stable/#usage) for details.
+
+(Ingesting user notifications is a planned feature).
 
 ### Kindle device setup
 
