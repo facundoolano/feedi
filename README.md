@@ -73,12 +73,12 @@ class LobstersParser(BaseParser):
 ### Mastodon account setup
 
 One or more Mastodon accounts can be added to ingest the user home feed into the app.
-The account login flow isn't supported in the web interface yet though, so to use the feature in the time being
+The account login flow isn't supported in the web interface yet, so to use this feature in the meantime
 one needs to:
 
 * Register a mastodon app on the server the account belongs to. The same app can be reused for multiple accounts in that server.
-* Login with the account to obtain a user access token
-* Ingesting the feed in the csv as shown in a previous section (`mastodon,$NAME,$SERVER,$ACCES_TOKEN`)
+* Login with the account to obtain a user access token.
+* Load the feed in a csv file as shown in a [previous section](#bulk-load-feeds-from-csv) (in the format `mastodon,$NAME,$SERVER,$ACCES_TOKEN`).
 
 See the [Mastodon.py documentation](https://mastodonpy.readthedocs.io/en/stable/#usage) for details.
 
@@ -88,7 +88,7 @@ See the [Mastodon.py documentation](https://mastodonpy.readthedocs.io/en/stable/
 
 The app allows to register a kindle device (statically in the configuration, for now) to send the cleaned up article HTML to it. This uses the [stkclient](https://github.com/maxdjohnson/stkclient) library.
 
-To setup the device in the config:
+To generate a device credentials file:
 
 ``` python
 import stkclient
@@ -103,14 +103,14 @@ with open('kindle.creds', 'w') as fp:
     client.dump(fp)
 ```
 
-Then update [the config](https://github.com/facundoolano/feedi/blob/a7a0c6e8b13b790cc80b499bb9a9d9a55e8f975b/feedi/config.py#L13-L16) to point to the credentials file:
+Then update [the config](https://github.com/facundoolano/feedi/blob/a7a0c6e8b13b790cc80b499bb9a9d9a55e8f975b/feedi/config.py#L13-L16) to point to the generated file:
 
     KINDLE_CREDENTIALS_PATH = 'kindle.creds'
 
 
 ### Keyboard shortcuts
 
-| binding                               | when                         | description                         |
+| shortcut                              | when                         | action                              |
 | -----------                           | -----------                  | ---------                           |
 | /                                     |                              | focus search input                  |
 | Enter                                 | search focused               | submit first suggestion             |
@@ -128,7 +128,7 @@ Then update [the config](https://github.com/facundoolano/feedi/blob/a7a0c6e8b13b
 | Escape                                | viewing entry content        | go back                             |
 
 
-### Running in a server
+### Non-local setup
 
 Not that I claim this to be production-ready, but there's a [setup script](./setup_server.sh) to run it as a service on a Debian Linux, which has been tested on a raspberry pi with Pi OS lite.
 
