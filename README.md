@@ -2,7 +2,10 @@
 
 feedi is a personal web RSS reader that also works as a (read-only) Mastodon client.
 
-TODO add a screenshot
+TODO add a screenshots
+
+The project is currently experimental and is missing some pieces (and it will likely remain that way for a while),
+but feel free to try and hack on it. More details on the [design notes](#design-and-implementation-notes) below.
 
 ## Local setup
 
@@ -124,6 +127,10 @@ Then update [the config](https://github.com/facundoolano/feedi/blob/a7a0c6e8b13b
 | f                                     | entry focused                | favorite entry                      |
 | Escape                                | viewing entry content        | go back                             |
 
+
+### Running in a server
+
+Not that I claim this to be production-ready, but there's a [setup script](./setup_server.sh) to run it as a service on a Debian Linux, which has been tested on a raspberry pi with Pi OS lite.
 
 ## Design and implementation notes
 
