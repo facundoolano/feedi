@@ -40,7 +40,7 @@ Example file (the $VARS are for illustration, they should be replaced before run
 
 The app works by [periodically](https://github.com/facundoolano/feedi/blob/bf2df4c313e7e719a16d3c2f8216452031a38e58/feedi/config/default.py#L12) fetching RSS feed entries and Mastodon toots and adjusting them to an [Entry db model](https://github.com/facundoolano/feedi/blob/bf2df4c313e7e719a16d3c2f8216452031a38e58/feedi/models.py#L107) which more or less matches what we expect to display in the front end.
 
-Most RSS feeds should be processed correctly with the default parser, but sometimes it's desirable to add a custom parser to cleanup or extend the data for a better look and feel. This is done by subclassing [feedi.sources.rss.BaseParser](https://github.com/facundoolano/feedi/blob/bf2df4c313e7e719a16d3c2f8216452031a38e58/feedi/sources/rss.py#L46). The `is_compatible` static method determines whether a given feed should be parsed with that specific class; the `parse_*` methods overrides the default logic for each field expected in the front end.
+Most RSS feeds should be processed correctly with the default parser, but sometimes it's desirable to add a custom parser to cleanup or extend the data for a better look and feel. This can be done by subclassing [feedi.sources.rss.BaseParser](https://github.com/facundoolano/feedi/blob/bf2df4c313e7e719a16d3c2f8216452031a38e58/feedi/sources/rss.py#L46). The `is_compatible` static method determines whether a given feed should be parsed with that specific class; the `parse_*` methods overrides the default logic for each field expected in the front end.
 
 As an example, this parser for the lobste.rs link aggregator is adjusted to inline a summary of external link submissions and distinguish between the source article url and the lobste.rs discussion url:
 
@@ -99,7 +99,23 @@ Then update [the config](https://github.com/facundoolano/feedi/blob/a7a0c6e8b13b
 
 ### Keyboard shortcuts
 
-TODO
+| binding                               | when                         | description                         |
+| -----------                           | -----------                  | ---------                           |
+| /                                     |                              | focus search input                  |
+| Enter                                 | search focused               | submit first suggestion             |
+| Escape                                | search or suggestion focused | hide suggestions                    |
+| Down Arrow, Ctrl+n                    | search or suggestion focused | next suggestion                     |
+| Up Arrow, Ctrl+n                      | suggestion focused           | previous suggestion                 |
+| Enter                                 | entry focused                | open entry content                  |
+| Cmd+Enter, Cmd+Left Click             | entry focused                | open entry content on new tab       |
+| Cmd+Shift+Enter, Cmd+Shift+Left Click | entry focused                | open entry discussion on new window |
+| Down Arrow, Tab                       | entry focused                | focus next entry                    |
+| Up Arrow, Shift+Tab                   | entry focused                | focus previous entry                |
+| Delete, Backspace                     | entry focused                | delete entry                        |
+| p                                     | entry focused                | pin entry                           |
+| f                                     | entry focused                | favorite entry                      |
+| Escape                                | viewing entry content        | go back                             |
+
 
 ## Design and implementation notes
 
