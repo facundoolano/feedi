@@ -9,7 +9,7 @@ but feel free to try and hack on it. More details on the [design notes](#design-
 
 ## Local setup
 
-Requires Python 3 (tested with 3.9 and 3.11) and nodejs (for the reader functionality; tested with node 20).
+Requires Python 3 (tested with 3.11) and nodejs (for the reader functionality; tested with node 20).
 
 To install on a local virtual env run:
 
