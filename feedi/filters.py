@@ -38,7 +38,9 @@ def sanitize_content(html):
         html = html[:500] + '…'
         soup = BeautifulSoup(html, 'lxml')
 
-    soup.html.body.unwrap()
-    soup.html.unwrap()
+    if soup.html:
+        if soup.html.body:
+            soup.html.body.unwrap()
+        soup.html.unwrap()
 
     return str(soup)
