@@ -4,7 +4,7 @@
             then on keydown[key is 'ArrowUp'] focus() the previous <.feed-entry:not(.is-hidden)/> then go to middle of me then halt
             then on focus call window.getSelection().removeAllRanges()"
      data-id="{{entry.id}}"
-     data-view="{% if is_pinned_list %}compact{%else %}{{ session.view_style | default('full')}}{% endif %}"
+     data-view="{{ session.view | default('full')}}"
 >
      <div class="card-content">
          {% if entry.reblogged_by %}
@@ -25,7 +25,7 @@
                  {% if (entry.body or entry.media_url) %}
                  <div class="columns body-container">
                      {% if entry.media_url %}
-                     <div class="column is-one-quarter media-url-container {% if session.hide_media %}is-hidden{% endif %}">
+                     <div class="column is-one-quarter media-url-container">
                          <figure class="image media-url is-5by3 is-clickable" tabindex="-1"
                                  _="on click add .is-active to the next .modal then halt">
                              <img src="{{ entry.media_url }}" alt="article preview" onerror='this.parentNode.parentNode.style.display = "none"'>

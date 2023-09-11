@@ -311,6 +311,10 @@ https://github.com/jgthms/bulma/issues/1561#issuecomment-535475428 */
     border-top:0;
 }
 
-.feed-entry[data-view=compact] .body-container {
+.feed-entry[data-view=compact] .body-container, #pinned-entry-list .body-container {
+    display: none;
+}
+
+.feed-entry[data-view=text] .media-url-container {
     display: none;
 }
