@@ -245,9 +245,6 @@ img[src=""] {
     visibility: hidden;
 }
 
-.autocomplete-items {
-    display: inherit;
-}
 .autocomplete-items .navbar-dropdown {
     border-radius: 0;
     box-shadow: 0 0 0 0;
@@ -281,9 +278,13 @@ img[src=""] {
     width:100%!important;
 }
 
-.autocomplete-items .navbar-dropdown {
+.autocomplete-items.is-active .navbar-dropdown {
     position: absolute!important;
     display: block;
+}
+
+.autocomplete-items:not(.is-active) .navbar-dropdown {
+    display: none;
 }
 
 /* tweak margins and padding to display properly on mobile
