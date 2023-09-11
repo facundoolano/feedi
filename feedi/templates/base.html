@@ -114,6 +114,7 @@
                           _="on htmx:beforeRequest add .fa-spin to <i/> in me"><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{filters.feed_name}}</a>
                        {% endif %}
                        <hr class="dropdown-divider is-hidden-mobile"/>
+                       <form>
                        <label class="checkbox dropdown-item">
                            <input type="checkbox" {% if not session.hide_media %} checked {% endif %}
                                   name="hide_media"
@@ -142,6 +143,7 @@
                                type="radio" name="ordering" value="frequency">
                            Least frequent
                        </label>
+                       </form>
                        {% endblock %}
                    </ul>
                </aside>
