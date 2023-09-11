@@ -304,3 +304,9 @@ https://github.com/jgthms/bulma/issues/1561#issuecomment-535475428 */
 .entry-mobile-footer {
     padding: .35rem 0;
 }
+
+#pinned-entry-list .feed-entry {
+    background-color: #feefc3;
+    border: solid 1px #ddcea2;
+    border-top:0;
+}
