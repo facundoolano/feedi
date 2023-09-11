@@ -15,7 +15,7 @@
         </a>
     </div>
   </div>
-    <ul class="folder-feed-list folder-collapsed">
+  <ul class="folder-feed-list {% if not filters|should_unfold_folder(name, feeds)%}folder-collapsed{% endif  %}">
       {% include "sidebar_feed_list.html" %}
     </ul>
 </li>

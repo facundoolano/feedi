@@ -30,6 +30,27 @@ def feed_domain(url):
     return parts.netloc.strip('www.')
 
 
+@app.template_filter('should_unfold_folder')
+def should_unfold_folder(filters, folder_name, folder_feeds):
+    if filters.get('folder') == folder_name:
+        return True
+
+    if filters.get('feed_name'):
+        if filters['feed_name'] in [f.name for f in folder_feeds]:
+            return True
+
+    return False
+
+
+@app.template_filter('contains_feed_name')
+def contains_feed_name(feed_list, selected_name):
+    print("LALALAL", feed_list, selected_name)
+    for feed in feed_list:
+        if feed.name == selected_name:
+            return True
+    return False
+
+
 @app.template_filter('sanitize')
 def sanitize_content(html):
     # poor man's line truncating: reduce the amount of characters and let bs4 fix the html
