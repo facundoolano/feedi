@@ -34,10 +34,10 @@
             <div class="navbar-end">
                 {% if folders %}
                   {% for (name, feeds) in folders.items() %}
-                <a class="dropdown-item" href="/folder/{{ name }}">
+                <a class="dropdown-item {% if filters.folder == name %}is-active"{% endif %}" href="/folder/{{ name }}">
                     <icon class="icon"><i class="far fa-folder-open"></i></icon> {{ name }}</a>
                 {% endfor %}
-                <a class="dropdown-item" href="/entries/favorites">
+                <a class="dropdown-item {% if filters.favorited %}is-active{% endif %}" href="/entries/favorites">
                     <icon class="icon"><i class="far fa-star"></i></icon> Favorites</a>
                 <hr class="dropdown-divider"/>
                 {% endif %}

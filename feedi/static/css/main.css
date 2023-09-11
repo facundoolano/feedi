@@ -152,8 +152,10 @@ but we only want it for mobile*/
     height: 0;
 }
 
-.feeds-sidebar .level-left.is-active {
+.feeds-sidebar .level-left.is-active, .dropdown-item.is-active {
     font-weight: bold;
+    background: inherit!important;
+    color: inherit!important;
 }
 
 .folder-feed-list {
