@@ -245,26 +245,42 @@ img[src=""] {
     visibility: hidden;
 }
 
-#autocomplete-items .navbar-dropdown {
+.autocomplete-items {
+    display: inherit;
+}
+.autocomplete-items .navbar-dropdown {
     border-radius: 0;
     box-shadow: 0 0 0 0;
     border: 1px solid #dbdbdb;
     border-top: 0;
     padding: 0;
+    background: white;
 }
 
-#autocomplete-items .navbar-item {
-    padding: .375rem;
-    white-space: unset;
+.autocomplete-items .navbar-item {
+    padding: .375rem!important;
+    white-space: unset!important;
 }
 
-#autocomplete-items .navbar-item .icon {
-    margin-right: .1rem;
+.autocomplete-items .navbar-item .icon {
+    margin-right: .1rem!important;
 }
 
-#search:focus {
+.search:focus {
     box-shadow:0 0 0 0;
 }
+
+/* tricks to make input field fit the mobile navbar */
+.navbar-item.navbar-autocomplete {
+    flex-grow: 1;
+}
+
+.navbar-autocomplete .dropdown,
+.navbar-autocomplete .dropdown-trigger,
+.autocomplete-items .navbar-dropdown {
+    width:100%!important;
+}
+
 
 /* tweak margins and padding to display properly on mobile
 https://github.com/jgthms/bulma/issues/1561#issuecomment-535475428 */
