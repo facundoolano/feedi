@@ -281,6 +281,10 @@ img[src=""] {
     width:100%!important;
 }
 
+.autocomplete-items .navbar-dropdown {
+    position: absolute!important;
+    display: block;
+}
 
 /* tweak margins and padding to display properly on mobile
 https://github.com/jgthms/bulma/issues/1561#issuecomment-535475428 */
