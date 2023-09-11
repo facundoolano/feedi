@@ -36,8 +36,10 @@
                   {% for (name, feeds) in folders.items() %}
                 <a class="dropdown-item" href="/folder/{{ name }}">
                     <icon class="icon"><i class="far fa-folder-open"></i></icon> {{ name }}</a>
-                  {% endfor %}
-                  <hr class="dropdown-divider"/>
+                {% endfor %}
+                <a class="dropdown-item" href="/entries/favorites">
+                    <icon class="icon"><i class="far fa-star"></i></icon> Favorites</a>
+                <hr class="dropdown-divider"/>
                 {% endif %}
                 {{ self.sidebar_right() }}
             </div>
@@ -102,14 +104,14 @@
                        {% include "autocomplete.html" %}
                        <hr class="dropdown-divider"/>
                        {% block sidebar_right %}
-                       <a class="dropdown-item" href="/feeds/add"><icon class="icon"><i class="fas fa-plus"></i></icon> Add feed</a>
-                       <a class="dropdown-item" href="/feeds"><icon class="icon"><i class="fas fa-edit"></i></icon> Manage feeds</a>
+                       <a class="dropdown-item is-hidden-mobile" href="/feeds/add"><icon class="icon"><i class="fas fa-plus"></i></icon> Add feed</a>
+                       <a class="dropdown-item is-hidden-mobile" href="/feeds"><icon class="icon"><i class="fas fa-edit"></i></icon> Manage feeds</a>
                        {% if filters.feed_name %}
-                       <a class="dropdown-item" href="/feeds/edit/{{filters.feed_name}}"><icon class="icon"><i class="fas fa-edit"></i></icon> Edit {{filters.feed_name}}</a>
-                       <a class="dropdown-item" hx-post="/feeds/sync/{{filters.feed_name}}"
+                       <a class="dropdown-item is-hidden-mobile" href="/feeds/edit/{{filters.feed_name}}"><icon class="icon"><i class="fas fa-edit"></i></icon> Edit {{filters.feed_name}}</a>
+                       <a class="dropdown-item is-hidden-mobile" hx-post="/feeds/sync/{{filters.feed_name}}"
                           _="on htmx:beforeRequest add .fa-spin to <i/> in me"><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{filters.feed_name}}</a>
                        {% endif %}
-                       <hr class="dropdown-divider"/>
+                       <hr class="dropdown-divider is-hidden-mobile"/>
                        <label class="checkbox dropdown-item">
                            <input type="checkbox" {% if not session.hide_media %} checked {% endif %}
                                   name="hide_media"
