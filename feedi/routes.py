@@ -135,7 +135,7 @@ def autocomplete():
         if term.lower() in so[0].lower():
             options.append(so)
 
-    return flask.render_template("autocomplete.html", options=options)
+    return flask.render_template("autocomplete_items.html", options=options)
 
 
 @app.put("/pinned/<int:id>")

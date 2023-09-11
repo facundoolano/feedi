@@ -1,8 +1,8 @@
 {% for entry in entries %}
 <div class="card feed-entry is-radiusless {% if entry.pinned and not is_pinned_list %}is-hidden{% endif %}" tabindex="0"
-     _="on keydown[key is 'ArrowDown'] focus() the next <.feed-entry:not(.is-hidden)/> then halt
-            then on keydown[key is 'ArrowUp'] focus() the previous <.feed-entry:not(.is-hidden)/> then halt
-            then on focus call window.getSelection().removeAllRanges() then go to top of me"
+     _="on keydown[key is 'ArrowDown'] focus() the next <.feed-entry:not(.is-hidden)/> then go to top of me then halt
+            then on keydown[key is 'ArrowUp'] focus() the previous <.feed-entry:not(.is-hidden)/> then go to middle of me then halt
+            then on focus call window.getSelection().removeAllRanges()"
      data-id="{{entry.id}}"
 >
      <div class="card-content">
