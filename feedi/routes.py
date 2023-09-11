@@ -464,13 +464,6 @@ def raw_entry(id):
 
 
 # TODO improve this views to accept only valid values
-@app.post("/session/<setting>")
-def toggle_setting(setting):
-    flask.session[setting] = not flask.session.get(setting, False)
-    return '', 204
-
-
-# TODO improve this views to accept only valid values
 @app.post("/session")
 def update_setting():
     for (key, value) in flask.request.form.items():
