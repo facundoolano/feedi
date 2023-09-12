@@ -44,7 +44,6 @@ def should_unfold_folder(filters, folder_name, folder_feeds):
 
 @app.template_filter('contains_feed_name')
 def contains_feed_name(feed_list, selected_name):
-    print("LALALAL", feed_list, selected_name)
     for feed in feed_list:
         if feed.name == selected_name:
             return True
