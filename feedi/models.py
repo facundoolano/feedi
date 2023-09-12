@@ -24,6 +24,10 @@ def init_db(app):
         # (TODO figure out how to prevent the lock in the first place?)
         dbapi_connection.execute('pragma busy_timeout=5000')
 
+        # experiment to try holding most of the db in memory
+        # this should be ~200mb
+        dbapi_connection.execute('pragma cache_size = -195313')
+
     db.create_all()
 
 
