@@ -20,6 +20,10 @@ def init_db(app):
         # so registering log as a custom function on connection
         dbapi_connection.create_function('log', 1, math.log)
 
+        # if there's a lock for concurrent access, don't fail forever
+        # (TODO figure out how to prevent the lock in the first place?)
+        dbapi_connection.execute('pragma busy_timeout=5000')
+
     db.create_all()
 
 
