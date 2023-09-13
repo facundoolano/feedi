@@ -19,10 +19,9 @@ from feedi.requests import requests
 from feedi.sources import rss
 
 
-# FIXME the feed_name/entries url is inconsistent with the rest
 @app.route("/users/<username>")
-@app.route("/entries/trash", defaults={'deleted': True}, endpoint='trash')
-@app.route("/entries/favorites", defaults={'favorited': True}, endpoint='favorites')
+@app.route("/trash", defaults={'deleted': True}, endpoint='trash')
+@app.route("/favorites", defaults={'favorited': True}, endpoint='favorites')
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
 @app.route("/")
@@ -163,7 +162,7 @@ def entry_pin(id):
                                  entries=pinned)
 
 
-@app.put("/entries/favorites/<int:id>")
+@app.put("/favorites/<int:id>")
 def entry_favorite(id):
     "Toggle the favorite status of the given entry."
     entry = db.get_or_404(models.Entry, id)
@@ -177,7 +176,7 @@ def entry_favorite(id):
     return '', 204
 
 
-@app.put("/entries/trash/<int:id>")
+@app.put("/trash/<int:id>")
 def entry_delete(id):
     "Toggle the deleted status of the given entry."
     entry = db.get_or_404(models.Entry, id)
