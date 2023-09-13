@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # Setup the server and the feedi app as a service.
-# The app will be installed in the current directory.
-# It should be run as sudo and with permissions to pull from github.
+# The app will be installed in the running user's home directory and the
+# service will run with a new feedi user.
 # Tested on a raspberry Pi OS but I assume should work on any debian
 #
-# scp -p setup_server.sh pi@feedi.local:.
-# ./setup_server.sh
+# ssh pi@feedi.local 'bash -s' < setup_server.sh
 
 set -e
 
