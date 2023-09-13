@@ -324,7 +324,7 @@ def feed_sync(feed_name):
 
 
 @app.get("/entries/<int:id>")
-def fetch_entry_content(id):
+def entry_view(id):
     """
     Fetch the entry content from the source and display it for reading locally.
     """

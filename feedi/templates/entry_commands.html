@@ -6,23 +6,23 @@
 {% endif %}
 {% if entry.content_url %}
 <a class="dropdown-item" _="on click writeText('{{ entry.content_url }}') into the navigator's clipboard"><span class="icon"><i class="fas fa-link"></i></span> Copy URL</a>
-<a class="dropdown-item" hx-post="/entries/kindle?url={{ entry.content_url }}"
+<a class="dropdown-item" hx-post="{{ url_for('send_to_kindle', url=entry.content_url ) }}"
    _="on htmx:beforeRequest or htmx:afterRequest toggle .fa-spin on <i/> in me"
 ><span class="icon"><i class="fas fa-tablet-alt "></i></span> Send to Kindle</a>
 
   {% if not entry.entry_url or entry.content_url != entry.entry_url %}
-  <a href="{{ url_for('feed_add', discover=entry.content_url) }}" class="dropdown-item"><span class="icon"><i class="fas fa-rss"></i></span> Discover feed</a>
-  {% endif %}
+<a href="{{ url_for('feed_add', discover=entry.content_url) }}" class="dropdown-item"><span class="icon"><i class="fas fa-rss"></i></span> Discover feed</a>
+{% endif %}
 <hr class="dropdown-divider">
 {% endif %}
 {% if entry.username %}
-<a class="dropdown-item" href="/users/{{ entry.username }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.username }}</a>
+<a class="dropdown-item" href="{{ url_for('entry_list', username=entry.username ) }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.username }}</a>
 {% endif %}
 {% if entry.feed %}
-<a class="dropdown-item" href="/feeds/{{ entry.feed.name }}/entries"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.feed.name }}</a>
-<a href="/feeds/edit/{{entry.feed.name}}" class="dropdown-item"><span class="icon"><i class="far fa-edit"></i></span> Edit {{ entry.feed.name }}</a>
-<a hx-delete="/feeds/{{entry.feed.name}}" _="on click call window.location.reload()" class="dropdown-item"><span class="icon"><i class="far fa-trash-alt"></i></span> Delete {{ entry.feed.name }}</a>
+<a class="dropdown-item" href="{{ url_for('send_to_kindle', feed_name=entry.feed.name ) }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.feed.name }}</a>
+<a href="{{ url_for('feed_edit', feed_name=entry.feed.name ) }}" class="dropdown-item"><span class="icon"><i class="far fa-edit"></i></span> Edit {{ entry.feed.name }}</a>
+<a hx-delete="{{ url_for('feed_delete', feed_name=entry.feed.name ) }}" _="on click call window.location.reload()" class="dropdown-item"><span class="icon"><i class="far fa-trash-alt"></i></span> Delete {{ entry.feed.name }}</a>
 <hr class="dropdown-divider is-hidden-mobile">
-<a class="dropdown-item is-hidden-mobile" href="/entries/{{ entry.id }}/raw" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw entry data</a>
-<a class="dropdown-item is-hidden-mobile" href="/feeds/{{ entry.feed.id }}/raw" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw feed data</a>
+<a class="dropdown-item is-hidden-mobile" href="{{ url_for('raw_entry', id=entry.id ) }}" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw entry data</a>
+<a class="dropdown-item is-hidden-mobile" href="{{ url_for('raw_feed', id=entry.feed.id ) }}" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw feed data</a>
 {% endif %}

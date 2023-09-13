@@ -8,7 +8,7 @@
         <li>
             <div class="level-left">
                 <div class="level-item">
-                    <a _="on click if history.length == 1 go to url '/' else go back end
+                    <a _="on click if history.length == 1 go to url '{{ url_for("entry_list")}}' else go back end
                           then on keyup[key is 'Escape'] elsewhere trigger click on me"
                     ><icon><i class="fas fa-arrow-left"></i></icon> Back</a>
                 </div>
@@ -25,11 +25,11 @@
         <figure class="media-left">
             <p class="image is-64x64">
                 {% if entry.avatar_url %}
-                <a href="/users/{{ entry.username }}">
+                <a href="{{ url_for('entry_list', username=entry.username ) }}">
           <img class="is-rounded" src="{{ entry.avatar_url }}" alt="{{ entry.username }}" title="{{ entry.username }}">
       </a>
       {% else %}
-      <a href="/feeds/{{ entry.feed.name }}/entries">
+      <a href="{{ url_for('entry_list', feed_name=entry.feed.name ) }}">
           <img class="is-rounded" src="{{ entry.feed.icon_url }}" alt="{{ entry.feed.name}}" title="{{ entry.feed.name }}">
       </a>
       {% endif %}

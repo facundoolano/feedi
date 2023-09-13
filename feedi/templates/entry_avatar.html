@@ -1,10 +1,10 @@
 <figure class="image is-32x32">
     {% if entry.avatar_url %}
-    <a href="/users/{{ entry.username }}">
+    <a href="{{ url_for('entry_list', username=entry.username ) }}">
         <img class="is-rounded feed-avatar" src="{{ entry.avatar_url }}" alt="{{ entry.username }}" title="{{ entry.username }}">
     </a>
     {% else %}
-    <a href="/feeds/{{ entry.feed.name }}/entries">
+    <a href="{{ url_for('entry_list', feed_name=entry.feed.name ) }}">
         <img class="is-rounded feed-avatar" src="{{ entry.feed.icon_url or '' }}" alt="{{ entry.feed.name.0 }}" title="{{ entry.feed.name }}">
     </a>
     {% endif %}
