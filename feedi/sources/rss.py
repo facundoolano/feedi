@@ -96,7 +96,10 @@ class BaseParser:
                     method = 'parse_' + field
                     result[field] = getattr(self, method)(entry)
             except Exception as error:
-                logger.exception("skipping errored entry %s %s", entry['link'], error)
+                logger.error("skipping errored entry %s %s %s",
+                             self.feed.get('title', 'notitle'),
+                             entry.get('link', 'nolink'),
+                             error)
                 continue
 
             load_count += 1
@@ -157,7 +160,7 @@ class BaseParser:
     def parse_remote_created(self, entry):
         dt = to_datetime(entry.get('published_parsed', entry.get('updated_parsed')))
         if dt > datetime.datetime.utcnow():
-            raise ValueError("publication date is in the future")
+            raise ValueError(f"publication date is in the future ${dt}")
         return dt
 
     def parse_remote_updated(self, entry):
