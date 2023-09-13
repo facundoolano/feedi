@@ -468,4 +468,4 @@ def sidebar_feeds():
                 folders[feed.folder].append(feed)
 
         return dict(shortcut_feeds=shortcut_feeds, folders=folders, filters={})
-    return {}
+    return dict(filters={})
