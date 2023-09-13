@@ -413,7 +413,7 @@ def compress_article(outfilename, article):
     with zipfile.ZipFile(outfilename, 'w', compression=zipfile.ZIP_DEFLATED) as zip:
         for img in soup.findAll('img'):
             img_url = img['src']
-            img_filename = 'article_files/' + img['src'].split('/')[-1]
+            img_filename = 'article_files/' + img['src'].split('/')[-1].split('?')[0]
 
             # update each img src url to point to the local copy of the file
             img['src'] = img_filename
@@ -431,7 +431,20 @@ def extract_article(url):
     # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
     # for parsing the article sadly this adds a dependency to node and a few npm pacakges
     r = subprocess.run(["feedi/extract_article.js", url], capture_output=True, text=True)
-    return json.loads(r.stdout)
+    article = json.loads(r.stdout)
+
+    # load lazy images by replacing putting the data-src into src and stripping other attrs
+    soup = BeautifulSoup(article['content'], 'lxml')
+
+    for img in soup.findAll('img', attrs={'data-src': True}):
+        img.attrs = {'src': img['data-src']}
+
+    for img in soup.findAll('img', attrs={'data-lazy-src': True}):
+        img.attrs = {'src': img['data-lazy-src']}
+
+    article['content'] = str(soup)
+
+    return article
 
 
 @app.route("/feeds/<int:id>/raw")
