@@ -3,6 +3,7 @@ import json
 import logging
 import pprint
 import time
+import traceback
 import urllib
 
 import favicon
@@ -96,10 +97,12 @@ class BaseParser:
                     method = 'parse_' + field
                     result[field] = getattr(self, method)(entry)
             except Exception as error:
+                exc_desc_lines = traceback.format_exception_only(type(error), error)
+                exc_desc = ''.join(exc_desc_lines).rstrip()
                 logger.error("skipping errored entry %s %s %s",
                              self.feed.get('title', 'notitle'),
                              entry.get('link', 'nolink'),
-                             error)
+                             exc_desc)
                 continue
 
             load_count += 1
