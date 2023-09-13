@@ -163,7 +163,7 @@ class BaseParser:
     def parse_remote_created(self, entry):
         dt = to_datetime(entry.get('published_parsed', entry.get('updated_parsed')))
         if dt > datetime.datetime.utcnow():
-            raise ValueError(f"publication date is in the future ${dt}")
+            raise ValueError(f"publication date is in the future {dt}")
         return dt
 
     def parse_remote_updated(self, entry):

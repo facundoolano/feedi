@@ -56,15 +56,15 @@
             <div class="field level-left">
                 {% if feed %}
                 <p class="control"><button class="button is-danger"
-                                           hx-delete="/feeds/{{feed.name}}"
-                                           _="on htmx:afterRequest go to url '/feeds'" >Delete</button></p>
+                                           hx-delete="{{ url_for('feed_delete', feed_name=feed.name )}}"
+                                           _="on htmx:afterRequest go to url '{{ url_for('feed_list')}}'" >Delete</button></p>
                 {% endif  %}
             </div>
             <div class="field is-grouped level-right">
 
 
 
-                <p class="control"><a class="button is-light" href="/feeds"
+                <p class="control"><a class="button is-light" href="{{ url_for('feed_list')}}"
                                       _="on keydown[key is 'Escape'] elsewhere go back" >Cancel</a></p>
                 <p class="control"><input class="button is-primary" type="submit" value="Save"></p>
             </div>
@@ -82,7 +82,7 @@
 <li>
     <div class="level-left">
         <div class="level-item">
-            <a hx-post="/feeds/sync/{{feed.name}}"
+            <a hx-post="{{ url_for('feed_list', feed_name=feed.name )}}"
                _="on htmx:beforeRequest add .fa-spin to <i/> in me"
             ><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{feed.name}}</a>
         </div>

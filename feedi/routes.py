@@ -19,10 +19,9 @@ from feedi.requests import requests
 from feedi.sources import rss
 
 
-# FIXME the feed_name/entries url is inconsistent with the rest
 @app.route("/users/<username>")
-@app.route("/entries/trash", defaults={'deleted': True}, endpoint='trash')
-@app.route("/entries/favorites", defaults={'favorited': True}, endpoint='favorites')
+@app.route("/trash", defaults={'deleted': True}, endpoint='trash')
+@app.route("/favorites", defaults={'favorited': True}, endpoint='favorites')
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
 @app.route("/")
@@ -49,6 +48,7 @@ def entry_list(**filters):
         # render a single page of the entry list
         return flask.render_template('entry_list_page.html',
                                      entries=entries,
+                                     filters=filters,
                                      next_page=next_page)
 
     # render home, including feeds sidebar
@@ -139,12 +139,7 @@ def autocomplete():
 
 
 @app.put("/pinned/<int:id>")
-@app.put("/folder/<folder>/pinned/<int:id>")
-@app.put("/feeds/<feed_name>/entries/pinned/<int:id>")
-@app.put("/users/<username>/pinned/<int:id>")
-@app.put("/entries/trash/pinned/<int:id>", defaults={'deleted': True})
-@app.put("/entries/favorites/pinned/<int:id>", defaults={'favorited': True})
-def entry_pin(id, **filters):
+def entry_pin(id):
     """
     Toggle the pinned status of the given entry and return the new list of pinned
     entries, respecting the url filters.
@@ -158,21 +153,16 @@ def entry_pin(id, **filters):
     db.session.commit()
 
     # get the new list of pinned based on filters
+    filters = dict(**flask.request.args)
     pinned = models.Entry.select_pinned(**filters)
-
-    # FIXME this, together with the template is a patch to prevent the newly rendered pinned list
-    # to base their pin links on this route's url.
-    # this is a consequence of sending the htmx fragment as part of this specialized url.
-    # there should be a better way to handle this
-    pin_base_path = flask.request.path.split('/pinned')[0]
 
     return flask.render_template("entry_list_page.html",
                                  is_pinned_list=True,
-                                 pin_base_path=pin_base_path,
+                                 filters=filters,
                                  entries=pinned)
 
 
-@app.put("/entries/favorites/<int:id>")
+@app.put("/favorites/<int:id>")
 def entry_favorite(id):
     "Toggle the favorite status of the given entry."
     entry = db.get_or_404(models.Entry, id)
@@ -186,7 +176,7 @@ def entry_favorite(id):
     return '', 204
 
 
-@app.put("/entries/trash/<int:id>")
+@app.put("/trash/<int:id>")
 def entry_delete(id):
     "Toggle the deleted status of the given entry."
     entry = db.get_or_404(models.Entry, id)
@@ -201,37 +191,13 @@ def entry_delete(id):
     return '', 204
 
 
-@app.context_processor
-def sidebar_feeds():
-    """
-    For regular browser request (i.e. no ajax requests triggered by htmx),
-    fetch folders and quick access feeds to make available to any template needing to render the sidebar.
-    """
-    if flask.request.headers.get('HX-Request') != 'true':
-        shortcut_feeds = db.session.scalars(db.select(models.Feed)
-                                            .order_by(models.Feed.score.desc())
-                                            .limit(5)).all()
-
-        in_folder = db.session.scalars(db.select(models.Feed)
-                                       .filter(models.Feed.folder != None, models.Feed.folder != '')
-                                       .order_by(models.Feed.score.desc())).all()
-
-        folders = defaultdict(list)
-        for feed in in_folder:
-            if len(folders[feed.folder]) < 5:
-                folders[feed.folder].append(feed)
-
-        return dict(shortcut_feeds=shortcut_feeds, folders=folders, filters={})
-    return {}
-
-
 @app.route("/feeds")
 def feed_list():
     feeds = db.session.scalars(db.select(models.Feed)).all()
     return flask.render_template('feeds.html', feeds=feeds)
 
 
-@app.get("/feeds/add")
+@app.get("/feeds/new")
 def feed_add():
     url = flask.request.args.get('url')
     discover = flask.request.args.get('discover')
@@ -247,7 +213,7 @@ def feed_add():
                                  name=name)
 
 
-@app.post("/feeds/add")
+@app.post("/feeds/new")
 def feed_add_submit():
     # Assume we only explicitly create RSS feeds for now. Mastodon would have a login flow, not a form
 
@@ -268,20 +234,7 @@ def feed_add_submit():
     return flask.redirect(flask.url_for('entry_list', feed_name=feed.name))
 
 
-@app.delete("/feeds/<feed_name>")
-def feed_delete(feed_name):
-    "Remove a feed and its entries from the database."
-    # FIXME this should probably do a "logic" delete and keep stuff around
-    # especially considering that it will kill child entries as well
-
-    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
-    # running from db.session ensures cascading effects
-    db.session.delete(feed)
-    db.session.commit()
-    return '', 204
-
-
-@app.get("/feeds/edit/<feed_name>")
+@app.get("/feeds/<feed_name>")
 def feed_edit(feed_name):
     feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     if not feed:
@@ -290,7 +243,7 @@ def feed_edit(feed_name):
     return flask.render_template('feed_edit.html', feed=feed)
 
 
-@app.post("/feeds/edit/<feed_name>")
+@app.post("/feeds/<feed_name>")
 def feed_edit_submit(feed_name):
     feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     if not feed:
@@ -305,7 +258,20 @@ def feed_edit_submit(feed_name):
     return flask.redirect(flask.url_for('feed_list'))
 
 
-@app.post("/feeds/sync/<feed_name>")
+@app.delete("/feeds/<feed_name>")
+def feed_delete(feed_name):
+    "Remove a feed and its entries from the database."
+    # FIXME this should probably do a "logic" delete and keep stuff around
+    # especially considering that it will kill child entries as well
+
+    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
+    # running from db.session ensures cascading effects
+    db.session.delete(feed)
+    db.session.commit()
+    return '', 204
+
+
+@app.post("/feeds/<feed_name>/entries")
 def feed_sync(feed_name):
     "Force sync the given feed and redirect to the entry list for it."
     feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
@@ -324,15 +290,11 @@ def feed_sync(feed_name):
 
 
 @app.get("/entries/<int:id>")
-def fetch_entry_content(id):
+def entry_view(id):
     """
     Fetch the entry content from the source and display it for reading locally.
     """
-    entry = db.session.scalar(db.select(models.Entry).filter_by(id=id))
-
-    # FIXME fix error handling in templates
-    if not entry:
-        return flask.render_template("error_message.html", message="Entry not found")
+    entry = db.get_or_404(models.Entry, id)
 
     if entry.feed.type == models.Feed.TYPE_RSS:
         try:
@@ -447,12 +409,14 @@ def extract_article(url):
     return article
 
 
-@app.route("/feeds/<int:id>/raw")
-def raw_feed(id):
+@app.route("/feeds/<feed_name>/debug")
+def raw_feed(feed_name):
     """
     Shows a JSON dump of the feed data as received from the source.
     """
-    feed = db.get_or_404(models.Feed, id)
+    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
+    if not feed:
+        flask.abort(404, "Feed not found")
 
     return app.response_class(
         response=feed.raw_data,
@@ -461,7 +425,7 @@ def raw_feed(id):
     )
 
 
-@app.route("/entries/<int:id>/raw")
+@app.route("/entries/<int:id>/debug")
 def raw_entry(id):
     """
     Shows a JSON dump of the entry data as received from the source.
@@ -481,3 +445,27 @@ def update_setting():
         flask.session[key] = value
 
     return '', 204
+
+
+@app.context_processor
+def sidebar_feeds():
+    """
+    For regular browser request (i.e. no ajax requests triggered by htmx),
+    fetch folders and quick access feeds to make available to any template needing to render the sidebar.
+    """
+    if flask.request.headers.get('HX-Request') != 'true':
+        shortcut_feeds = db.session.scalars(db.select(models.Feed)
+                                            .order_by(models.Feed.score.desc())
+                                            .limit(5)).all()
+
+        in_folder = db.session.scalars(db.select(models.Feed)
+                                       .filter(models.Feed.folder != None, models.Feed.folder != '')
+                                       .order_by(models.Feed.score.desc())).all()
+
+        folders = defaultdict(list)
+        for feed in in_folder:
+            if len(folders[feed.folder]) < 5:
+                folders[feed.folder].append(feed)
+
+        return dict(shortcut_feeds=shortcut_feeds, folders=folders, filters={})
+    return {}

@@ -4,7 +4,7 @@
             <input class="input is-small search" type="search" placeholder="Type or drag URL"
                    autocomplete="off"
                    name="q"
-                   hx-get="/autocomplete"
+                   hx-get="{{ url_for('autocomplete') }}"
                    hx-trigger="keyup[target.value.length > 3] changed delay:100ms, search, drop delay:50ms"
                    hx-target="next .autocomplete-items"
                    _="on keydown[key is '/'] elsewhere focus() me then halt
@@ -12,7 +12,7 @@
                           then on keyup[key is 'Enter'] click() on the next .autocomplete-item
                           then on keyup[key is 'Escape'] if (next .autocomplete-items) does not match .is-active then blur() me end
                           then on drop set my.value to event.dataTransfer.getData('text') -- set explicitly so text is replaced instead of appended
-                   "/>
+                          "/>
             <span class="icon is-small is-left">
                 <i class="fas fa-search"></i>
             </span>

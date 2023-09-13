@@ -59,20 +59,20 @@
          </div>
      </div>
      <div class="level is-mobile is-hidden-desktop entry-mobile-footer">
-             <a tabindex="-1" hx-put="/entries/trash/{{entry.id}}"
-                _="on click remove the closest .feed-entry"
-                class="level-item icon is-white is-rounded" title="Remove entry"><i class="fas {% if entry.deleted %}fa-trash-restore-alt{% else %}fa-trash-alt{% endif %}"></i></a>
+         <a tabindex="-1" hx-put="{{ url_for('entry_delete', id=entry.id )}}"
+            _="on click remove the closest .feed-entry"
+            class="level-item icon is-white is-rounded" title="Remove entry"><i class="fas {% if entry.deleted %}fa-trash-restore-alt{% else %}fa-trash-alt{% endif %}"></i></a>
 
-        <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
-           hx-put="{{pin_base_path|default(request.path.rstrip('/'))}}/pinned/{{entry.id}}"
-           hx-target="#pinned-entry-list"
-           _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />
-                     then toggle .is-hidden on < [data-id='{{entry.id}}'] />">
+         <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
+            hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
+            hx-target="#pinned-entry-list"
+            _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />
+                      then toggle .is-hidden on < [data-id='{{entry.id}}'] />">
             <i class="fas fa-thumbtack"></i></a>
-        <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite entry"
-           hx-put="/entries/favorites/{{entry.id}}"
-           _="on click toggle .toggled"
-        ><i class="fas fa-star"></i></a>
+         <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite entry"
+            hx-put="{{ url_for('entry_favorite', id=entry.id )}}"
+            _="on click toggle .toggled"
+         ><i class="fas fa-star"></i></a>
 
         <a class="icon is-white is-rounded level-item"
            tabindex="-1"
