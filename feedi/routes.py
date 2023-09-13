@@ -411,9 +411,6 @@ def compress_article(outfilename, article):
     soup = BeautifulSoup(article['content'], 'lxml')
 
     with zipfile.ZipFile(outfilename, 'w', compression=zipfile.ZIP_DEFLATED) as zip:
-        # create a subdir in the zip for image assets
-        zip.mkdir('article_files')
-
         for img in soup.findAll('img'):
             img_url = img['src']
             img_filename = 'article_files/' + img['src'].split('/')[-1]

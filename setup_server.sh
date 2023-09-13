@@ -30,7 +30,7 @@ sudo ufw --force enable
 FEEDI_DIR=$(pwd)
 git clone https://github.com/facundoolano/feedi.git
 cd feedi
-make venv deps secret-key
+make deps secret-key
 mkdir -p instance
 
 # setup the app as a service
