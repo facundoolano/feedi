@@ -19,7 +19,7 @@
 <a class="dropdown-item" href="{{ url_for('entry_list', username=entry.username ) }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.username }}</a>
 {% endif %}
 {% if entry.feed %}
-<a class="dropdown-item" href="{{ url_for('send_to_kindle', feed_name=entry.feed.name ) }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.feed.name }}</a>
+<a class="dropdown-item" href="{{ url_for('entry_list', feed_name=entry.feed.name ) }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.feed.name }}</a>
 <a href="{{ url_for('feed_edit', feed_name=entry.feed.name ) }}" class="dropdown-item"><span class="icon"><i class="far fa-edit"></i></span> Edit {{ entry.feed.name }}</a>
 <a hx-delete="{{ url_for('feed_delete', feed_name=entry.feed.name ) }}" _="on click call window.location.reload()" class="dropdown-item"><span class="icon"><i class="far fa-trash-alt"></i></span> Delete {{ entry.feed.name }}</a>
 <hr class="dropdown-divider is-hidden-mobile">

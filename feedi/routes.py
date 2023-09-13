@@ -294,11 +294,7 @@ def entry_view(id):
     """
     Fetch the entry content from the source and display it for reading locally.
     """
-    entry = db.session.scalar(db.select(models.Entry).filter_by(id=id))
-
-    # FIXME fix error handling in templates
-    if not entry:
-        return flask.render_template("error_message.html", message="Entry not found")
+    entry = db.get_or_404(models.Entry, id)
 
     if entry.feed.type == models.Feed.TYPE_RSS:
         try:
