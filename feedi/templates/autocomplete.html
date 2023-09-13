@@ -11,7 +11,7 @@
                           then on keydown[key is 'ArrowDown' or (key is 'n' and ctrlKey)] focus() on the next .autocomplete-item halt
                           then on keyup[key is 'Enter'] click() on the next .autocomplete-item
                           then on keyup[key is 'Escape'] if (next .autocomplete-items) does not match .is-active then blur() me end
-                          then on drop set my.value to event.dataTransfer.getData('text') -- set explicitly so text is replaced instead of appended
+                          then on drop set my.value to event.dataTransfer.getData('text') then halt -- set explicitly so text is replaced instead of appended
                           "/>
             <span class="icon is-small is-left">
                 <i class="fas fa-search"></i>
