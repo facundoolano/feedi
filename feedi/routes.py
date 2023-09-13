@@ -191,37 +191,13 @@ def entry_delete(id):
     return '', 204
 
 
-@app.context_processor
-def sidebar_feeds():
-    """
-    For regular browser request (i.e. no ajax requests triggered by htmx),
-    fetch folders and quick access feeds to make available to any template needing to render the sidebar.
-    """
-    if flask.request.headers.get('HX-Request') != 'true':
-        shortcut_feeds = db.session.scalars(db.select(models.Feed)
-                                            .order_by(models.Feed.score.desc())
-                                            .limit(5)).all()
-
-        in_folder = db.session.scalars(db.select(models.Feed)
-                                       .filter(models.Feed.folder != None, models.Feed.folder != '')
-                                       .order_by(models.Feed.score.desc())).all()
-
-        folders = defaultdict(list)
-        for feed in in_folder:
-            if len(folders[feed.folder]) < 5:
-                folders[feed.folder].append(feed)
-
-        return dict(shortcut_feeds=shortcut_feeds, folders=folders, filters={})
-    return {}
-
-
 @app.route("/feeds")
 def feed_list():
     feeds = db.session.scalars(db.select(models.Feed)).all()
     return flask.render_template('feeds.html', feeds=feeds)
 
 
-@app.get("/feeds/add")
+@app.get("/feeds/new")
 def feed_add():
     url = flask.request.args.get('url')
     discover = flask.request.args.get('discover')
@@ -237,7 +213,7 @@ def feed_add():
                                  name=name)
 
 
-@app.post("/feeds/add")
+@app.post("/feeds/new")
 def feed_add_submit():
     # Assume we only explicitly create RSS feeds for now. Mastodon would have a login flow, not a form
 
@@ -258,20 +234,7 @@ def feed_add_submit():
     return flask.redirect(flask.url_for('entry_list', feed_name=feed.name))
 
 
-@app.delete("/feeds/<feed_name>")
-def feed_delete(feed_name):
-    "Remove a feed and its entries from the database."
-    # FIXME this should probably do a "logic" delete and keep stuff around
-    # especially considering that it will kill child entries as well
-
-    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
-    # running from db.session ensures cascading effects
-    db.session.delete(feed)
-    db.session.commit()
-    return '', 204
-
-
-@app.get("/feeds/edit/<feed_name>")
+@app.get("/feeds/<feed_name>")
 def feed_edit(feed_name):
     feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     if not feed:
@@ -280,7 +243,7 @@ def feed_edit(feed_name):
     return flask.render_template('feed_edit.html', feed=feed)
 
 
-@app.post("/feeds/edit/<feed_name>")
+@app.post("/feeds/<feed_name>")
 def feed_edit_submit(feed_name):
     feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     if not feed:
@@ -295,7 +258,20 @@ def feed_edit_submit(feed_name):
     return flask.redirect(flask.url_for('feed_list'))
 
 
-@app.post("/feeds/sync/<feed_name>")
+@app.delete("/feeds/<feed_name>")
+def feed_delete(feed_name):
+    "Remove a feed and its entries from the database."
+    # FIXME this should probably do a "logic" delete and keep stuff around
+    # especially considering that it will kill child entries as well
+
+    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
+    # running from db.session ensures cascading effects
+    db.session.delete(feed)
+    db.session.commit()
+    return '', 204
+
+
+@app.post("/feeds/<feed_name>/entries")
 def feed_sync(feed_name):
     "Force sync the given feed and redirect to the entry list for it."
     feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
@@ -473,3 +449,27 @@ def update_setting():
         flask.session[key] = value
 
     return '', 204
+
+
+@app.context_processor
+def sidebar_feeds():
+    """
+    For regular browser request (i.e. no ajax requests triggered by htmx),
+    fetch folders and quick access feeds to make available to any template needing to render the sidebar.
+    """
+    if flask.request.headers.get('HX-Request') != 'true':
+        shortcut_feeds = db.session.scalars(db.select(models.Feed)
+                                            .order_by(models.Feed.score.desc())
+                                            .limit(5)).all()
+
+        in_folder = db.session.scalars(db.select(models.Feed)
+                                       .filter(models.Feed.folder != None, models.Feed.folder != '')
+                                       .order_by(models.Feed.score.desc())).all()
+
+        folders = defaultdict(list)
+        for feed in in_folder:
+            if len(folders[feed.folder]) < 5:
+                folders[feed.folder].append(feed)
+
+        return dict(shortcut_feeds=shortcut_feeds, folders=folders, filters={})
+    return {}
