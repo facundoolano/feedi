@@ -160,16 +160,19 @@ def entry_pin(id, **filters):
     # get the new list of pinned based on filters
     pinned = models.Entry.select_pinned(**filters)
 
-    # FIXME this, together with the template is a patch to prevent the newly rendered pinned list
-    # to base their pin links on this route's url.
-    # this is a consequence of sending the htmx fragment as part of this specialized url.
-    # there should be a better way to handle this
-    pin_base_path = flask.request.path.split('/pinned')[0]
-
     return flask.render_template("entry_list_page.html",
                                  is_pinned_list=True,
-                                 pin_base_path=pin_base_path,
                                  entries=pinned)
+
+
+@app.template_global('url_for_pinned')
+def url_for_pinned(entry_id):
+    """
+    Template helper to generically build the pin entry url. This is necessary beacuse the entry_pin route
+    returns the refreshed list of pinned entries in an html fragment, which needs to be aware of the current
+    route filters (e.g. if viewing a folder only return the pinned list for that folder)
+    """
+    return flask.request.path.split('/pinned')[0] + f'/pinned/{entry_id}'
 
 
 @app.put("/entries/favorites/<int:id>")
