@@ -37,6 +37,7 @@
   </figure>
   <div class="media-content">
       <a href="{{ entry.content_url }}" target="_blank"><strong>{{ entry.title }}</strong></a>
+      <br/>
       <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.content_url %}· {{ entry.content_url | url_domain}}{% endif %}</small>
   </div>
   <div class="media-right">
