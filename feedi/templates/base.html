@@ -10,8 +10,8 @@
     <link rel="icon" href="data:,">
     <title>Feedi {% block title %}{% endblock %}</title>
     <meta name="htmx-config" content='{"refreshOnHistoryMiss": true}'>
-</head>
-<body>
+    </head>
+    <body hx-boost="true">
     <nav class="navbar is-hidden-tablet is-fixed-top is-light" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
             <a class="navbar-item" href="{{ url_for('entry_list') }}"

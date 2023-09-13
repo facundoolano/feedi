@@ -42,10 +42,8 @@ def entry_list(**filters):
 
     (entries, next_page) = query_entries_page(ordering, page=page, **filters)
 
-    is_htmx = flask.request.headers.get('HX-Request') == 'true'
-
-    if is_htmx:
-        # render a single page of the entry list
+    if page:
+        # if it's a paginated request, render a single page of the entry list
         return flask.render_template('entry_list_page.html',
                                      entries=entries,
                                      filters=filters,
@@ -453,19 +451,17 @@ def sidebar_feeds():
     For regular browser request (i.e. no ajax requests triggered by htmx),
     fetch folders and quick access feeds to make available to any template needing to render the sidebar.
     """
-    if flask.request.headers.get('HX-Request') != 'true':
-        shortcut_feeds = db.session.scalars(db.select(models.Feed)
-                                            .order_by(models.Feed.score.desc())
-                                            .limit(5)).all()
+    shortcut_feeds = db.session.scalars(db.select(models.Feed)
+                                        .order_by(models.Feed.score.desc())
+                                        .limit(5)).all()
 
-        in_folder = db.session.scalars(db.select(models.Feed)
-                                       .filter(models.Feed.folder != None, models.Feed.folder != '')
-                                       .order_by(models.Feed.score.desc())).all()
+    in_folder = db.session.scalars(db.select(models.Feed)
+                                   .filter(models.Feed.folder != None, models.Feed.folder != '')
+                                   .order_by(models.Feed.score.desc())).all()
 
-        folders = defaultdict(list)
-        for feed in in_folder:
-            if len(folders[feed.folder]) < 5:
-                folders[feed.folder].append(feed)
+    folders = defaultdict(list)
+    for feed in in_folder:
+        if len(folders[feed.folder]) < 5:
+            folders[feed.folder].append(feed)
 
-        return dict(shortcut_feeds=shortcut_feeds, folders=folders, filters={})
-    return dict(filters={})
+    return dict(shortcut_feeds=shortcut_feeds, folders=folders, filters={})
