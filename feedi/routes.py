@@ -437,12 +437,14 @@ def extract_article(url):
     return article
 
 
-@app.route("/feeds/<int:id>/raw")
-def raw_feed(id):
+@app.route("/feeds/<feed_name>/debug")
+def raw_feed(feed_name):
     """
     Shows a JSON dump of the feed data as received from the source.
     """
-    feed = db.get_or_404(models.Feed, id)
+    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
+    if not feed:
+        flask.abort(404, "Feed not found")
 
     return app.response_class(
         response=feed.raw_data,
@@ -451,7 +453,7 @@ def raw_feed(id):
     )
 
 
-@app.route("/entries/<int:id>/raw")
+@app.route("/entries/<int:id>/debug")
 def raw_entry(id):
     """
     Shows a JSON dump of the entry data as received from the source.
