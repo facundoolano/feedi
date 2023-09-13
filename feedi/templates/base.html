@@ -1,12 +1,12 @@
 <!doctype html>
 <html class="has-background-light">
     <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" href="/static/css/main.css">
-    <link rel="stylesheet" href="/static/css/bulma.min.css">
-    <link rel="stylesheet" href="/static/css/fontawesome.min.css">
-    <script src="/static/js/htmx.min.js"></script>
-    <script src="/static/js/hyperscript.min.js"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/bulma.min.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/fontawesome.min.css') }}">
+        <script src="{{ url_for('static', filename='js/htmx.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/hyperscript.min.js') }}"></script>
     <link rel="icon" href="data:,">
     <title>Feedi {% block title %}{% endblock %}</title>
     <meta name="htmx-config" content='{"refreshOnHistoryMiss": true}'>
@@ -14,7 +14,7 @@
 <body>
     <nav class="navbar is-hidden-tablet is-fixed-top is-light" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
-            <a class="navbar-item" href="/"
+            <a class="navbar-item" href="{{ url_for('entry_list') }}"
                _="on click if document.documentElement.scrollTop go to top of window smoothly then halt"
             >
                 <h1 class="title is-4">feedi</h1>
@@ -36,10 +36,10 @@
             <div class="navbar-end">
                 {% if folders %}
                   {% for (name, feeds) in folders.items() %}
-                <a class="dropdown-item {% if filters.folder == name %}is-active"{% endif %}" href="/folder/{{ name }}">
+                <a class="dropdown-item {% if filters.folder == name %}is-active"{% endif %}" href="{{ url_for('entry_list', folder='name' ) }}">
                     <icon class="icon"><i class="far fa-folder-open"></i></icon> {{ name }}</a>
                 {% endfor %}
-                <a class="dropdown-item {% if filters.favorited %}is-active{% endif %}" href="/entries/favorites">
+                <a class="dropdown-item {% if filters.favorited %}is-active{% endif %}" href="{{ url_for('favorites') }}">
                     <icon class="icon"><i class="far fa-star"></i></icon> Favorites</a>
                 <hr class="dropdown-divider"/>
                 {% endif %}
@@ -56,7 +56,7 @@
                         <li>
                         <div class="level-left">
                             <div class="level-item">
-                                <a href="/"><icon class="icon"><i class="fas fa-home"></i></icon> home</a>
+                                <a href="{{ url_for('entry_list') }}"><icon class="icon"><i class="fas fa-home"></i></icon> home</a>
                             </div>
                         </div>
                         </li>
@@ -69,7 +69,7 @@
                         {% if shortcut_feeds %}
                         <hr class="dropdown-divider"/>
                         {% endif %}
-                        {% with name="Social", url="/", feeds=shortcut_feeds %}
+                        {% with feeds=shortcut_feeds %}
                           {% include "sidebar_feed_list.html" %}
                         {% endwith %}
 
@@ -77,7 +77,7 @@
                         <li>
                             <div class="level-left {% if filters.favorited %}is-active{% endif %}">
                                 <div class="level-item">
-                                    <a href="/entries/favorites"><icon class="icon"><i class="far fa-star"></i></icon>
+                                    <a href="{{ url_for('favorites') }}"><icon class="icon"><i class="far fa-star"></i></icon>
                                         Favorites</a>
                                 </div>
                             </div>
@@ -85,7 +85,7 @@
                         <li>
                             <div class="level-left {% if filters.deleted %}is-active{% endif %}">
                                 <div class="level-item">
-                                    <a href="/entries/trash">
+                                    <a href="{{ url_for('trash') }}">
                                         <icon class="icon"><i class="far fa-trash-alt"></i></icon>
                                         Trash</a>
                                 </div>
@@ -106,33 +106,33 @@
                        {% include "autocomplete.html" %}
                        <hr class="dropdown-divider"/>
                        {% block sidebar_right %}
-                       <a class="dropdown-item is-hidden-mobile" href="/feeds/add"><icon class="icon"><i class="fas fa-plus"></i></icon> Add feed</a>
-                       <a class="dropdown-item is-hidden-mobile" href="/feeds"><icon class="icon"><i class="fas fa-edit"></i></icon> Manage feeds</a>
+                       <a class="dropdown-item is-hidden-mobile" href="{{ url_for('feed_add') }}"><icon class="icon"><i class="fas fa-plus"></i></icon> Add feed</a>
+                       <a class="dropdown-item is-hidden-mobile" href="{{ url_for('feed_list') }}"><icon class="icon"><i class="fas fa-edit"></i></icon> Manage feeds</a>
                        {% if filters.feed_name %}
-                       <a class="dropdown-item is-hidden-mobile" href="/feeds/edit/{{filters.feed_name}}"><icon class="icon"><i class="fas fa-edit"></i></icon> Edit {{filters.feed_name}}</a>
-                       <a class="dropdown-item is-hidden-mobile" hx-post="/feeds/sync/{{filters.feed_name}}"
+                       <a class="dropdown-item is-hidden-mobile" href="{{ url_for('feed_edit', feed_name=filters.feed_name ) }}"><icon class="icon"><i class="fas fa-edit"></i></icon> Edit {{filters.feed_name}}</a>
+                       <a class="dropdown-item is-hidden-mobile" hx-post="{{ url_for('feed_sync', feed_name=filters.feed_name ) }}"
                           _="on htmx:beforeRequest add .fa-spin to <i/> in me"><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{filters.feed_name}}</a>
                        {% endif %}
                        <hr class="dropdown-divider is-hidden-mobile"/>
                        <form>
                            <label class="radio dropdown-item">
-                           <p class="menu-label">View style</p>
+                               <p class="menu-label">View style</p>
                                <input
-                                   hx-post="/session" _="on click set .feed-entry@data-view to 'full'"
+                                   hx-post="{{ url_for('update_setting') }}" _="on click set .feed-entry@data-view to 'full'"
                                    {% if not session.view or session.view == "full" %} checked {% endif %}
                                    type="radio" name="view" value="full">
                                Full preview
                            </label>
                            <label class="radio dropdown-item">
                                <input
-                                   hx-post="/session" _="on click set .feed-entry@data-view to 'text'"
+                                   hx-post="{{ url_for('update_setting') }}" _="on click set .feed-entry@data-view to 'text'"
                                    {% if session.view == "text" %} checked {% endif %}
                                    type="radio" name="view" value="text">
                                Text only
                            </label>
                            <label class="radio dropdown-item">
                                <input
-                                   hx-post="/session" _="on click set .feed-entry@data-view to 'compact'"
+                                   hx-post="{{ url_for('update_setting') }}" _="on click set .feed-entry@data-view to 'compact'"
                                    {% if session.view == "compact" %} checked {% endif %}
                                    type="radio" name="view" value="compact">
                                Compact
@@ -141,21 +141,21 @@
                            <label class="radio dropdown-item">
                                <p class="menu-label">Ordering</p>
                                <input
-                                   hx-post="/session" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
+                                   hx-post="{{ url_for('update_setting') }}" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
                                    {% if not session.ordering or session.ordering == "recency" %} checked {% endif %}
                                    type="radio" name="ordering" value="recency">
                                Most recent
                            </label>
-                       <label class="radio dropdown-item">
-                           <input hx-post="/session"
-                                  _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
-                                  {% if session.ordering == "score" %} checked {% endif %}
-                                  type="radio" name="ordering" value="score">
+                           <label class="radio dropdown-item">
+                               <input hx-post="{{ url_for('update_setting') }}"
+                                      _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
+                                      {% if session.ordering == "score" %} checked {% endif %}
+                                      type="radio" name="ordering" value="score">
                            Best score
                        </label>
                        <label class="radio dropdown-item">
                            <input
-                               hx-post="/session" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
+                               hx-post="{{ url_for('update_setting') }}" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
                                {% if session.ordering == "frequency" %} checked {% endif %}
                                type="radio" name="ordering" value="frequency">
                            Least frequent
