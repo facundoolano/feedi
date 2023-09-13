@@ -10,19 +10,19 @@
             {% for feed in feeds %}
             <tr>
                 <td class="is-narrow">
-                    <a href="/feeds/{{feed.name}}/entries">
+                    <a href="{{ url_for('entry_list', feed_name=feed.name )}}">
                         <figure class="image is-24x24 ">
                             <img class="feed-avatar is-rounded" {%if feed.icon_url%}src="{{ feed.icon_url }}"{%endif%} alt="{{ feed.name.0 }}">
                         </figure>
                     </a>
                 </td>
                 <td>
-                    <a href="/feeds/{{feed.name}}/entries">{{ feed.name }}</a>
+                    <a href="{{ url_for('entry_list', feed_name=feed.name )}}">{{ feed.name }}</a>
                 </td>
                 <td>{% if feed.folder %}<span class="icon"><i class="far fa-folder-open"></i></span> {{ feed.folder }}{% endif %}</td>
-                <td class="is-narrow"><a hx-delete="/feeds/{{feed.name}}" title="delete" _="on click remove the closest <tr/>"
+                <td class="is-narrow"><a hx-delete="{{ url_for('feed_delete', feed_name=feed.name )}}" title="delete" _="on click remove the closest <tr/>"
                                       ><span class="icon"><i class="far fa-trash-alt"></i></span></a></td>
-                <td class="is-narrow"><a href="/feeds/edit/{{feed.name}}" title="edit"><span class="icon"><i class="fas fa-edit"></i></span></a></td>
+                <td class="is-narrow"><a href="{{ url_for('feed_edit', feed_name=feed.name )}}" title="edit"><span class="icon"><i class="fas fa-edit"></i></span></a></td>
             </tr>
             {% endfor %}
         </tbody>

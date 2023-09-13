@@ -1,7 +1,7 @@
 {% for feed in feeds %}
   <li class="level-left {% if filters.feed_name == feed.name %}is-active{% endif %}">
     <div class="level-item">
-        <a href="/feeds/{{feed.name}}/entries">
+        <a href="{{ url_for('entry_list', feed_name=feed.name )}}">
             <span class="icon ">
                 <figure class="is-16x16 image">
                     <img class="is-rounded feed-avatar" src="{{ feed.icon_url or ''}}" alt="{{ feed.name.0 }}">

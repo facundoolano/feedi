@@ -2,7 +2,7 @@
     <div class="level is-marginless">
         <div class="level-left  {% if filters.folder == name %}is-active"{% endif %}">
         <div class="level-item">
-            <a href="/folder/{{ name }}">
+            <a href="{{ url_for('entry_list', folder=name )}}">
                 <icon class="icon"><i class="far fa-folder-open"></i></icon> {{ name }}</a>
         </div>
     </div>
