@@ -5,7 +5,7 @@
 # Tested on a raspberry Pi OS but I assume should work on any debian
 #
 # scp -p setup_server.sh pi@feedi.local:.
-# sudo ./setup_server.sh
+# ./setup_server.sh
 
 set -e
 
@@ -16,16 +16,16 @@ sudo apt install nginx ufw git vim python3-venv -y
 # install node 20 sigh
 sudo apt-get install -y ca-certificates curl gnupg
 mkdir -p /etc/apt/keyrings
-curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --yes --dearmor -o /etc/apt/keyrings/nodesource.gpg
+curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --yes --dearmor -o /etc/apt/keyrings/nodesource.gpg
 NODE_MAJOR=20
-echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
-apt-get update
-apt-get install nodejs -y
+echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
+sudo apt-get update
+sudo apt-get install nodejs -y
 
 # setup the firewall
-ufw allow ssh
-ufw allow 'Nginx HTTP'
-ufw --force enable
+sudo ufw allow ssh
+sudo ufw allow 'Nginx HTTP'
+sudo ufw --force enable
 
 # install the app
 FEEDI_DIR=$(pwd)
@@ -35,14 +35,14 @@ make venv deps secret-key
 mkdir -p instance
 
 # setup the app as a service
-groupadd feedi || true
-useradd feedi -g feedi || true
+sudo groupadd feedi || true
+sudo useradd feedi -g feedi || true
 touch instance/feedi.db
-chown -R feedi .
+sudo chown -R feedi .
 # let others write so we can overwrite with scp
-chmod 666 instance/feedi.db
+sudo chmod 666 instance/feedi.db
 
-cat <<EOF > /etc/systemd/system/gunicorn.service
+sudo tee -a /etc/systemd/system/gunicorn.service > /dev/null <<EOF
 [Unit]
 Description=gunicorn daemon
 Requires=gunicorn.socket
@@ -64,7 +64,7 @@ PrivateTmp=true
 WantedBy=multi-user.target
 EOF
 
-cat <<EOF > /etc/systemd/system/gunicorn.socket
+sudo tee -a /etc/systemd/system/gunicorn.socket > /dev/null <<EOF
 [Unit]
 Description=gunicorn socket
 
@@ -76,11 +76,11 @@ SocketUser=www-data
 WantedBy=sockets.target
 EOF
 
-systemctl enable gunicorn
-systemctl start gunicorn
+sudo systemctl enable gunicorn
+sudo systemctl start gunicorn
 
 # setup nginx as the proxy
-cat <<EOF > /etc/nginx/sites-available/feedi
+sudo tee -a /etc/nginx/sites-available/feedi > /dev/null <<EOF
 server {
     listen 80;
     server_name _;
@@ -97,8 +97,8 @@ server {
 }
 EOF
 
-rm -f /etc/nginx/sites-enabled/default
-ln -sf /etc/nginx/sites-available/feedi /etc/nginx/sites-enabled/feedi
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo ln -sf /etc/nginx/sites-available/feedi /etc/nginx/sites-enabled/feedi
 
-systemctl enable nginx
-systemctl restart nginx
+sudo systemctl enable nginx
+sudo systemctl restart nginx
