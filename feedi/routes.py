@@ -49,6 +49,7 @@ def entry_list(**filters):
         # render a single page of the entry list
         return flask.render_template('entry_list_page.html',
                                      entries=entries,
+                                     filters=filters,
                                      next_page=next_page)
 
     # render home, including feeds sidebar
@@ -139,12 +140,7 @@ def autocomplete():
 
 
 @app.put("/pinned/<int:id>")
-@app.put("/folder/<folder>/pinned/<int:id>")
-@app.put("/feeds/<feed_name>/entries/pinned/<int:id>")
-@app.put("/users/<username>/pinned/<int:id>")
-@app.put("/entries/trash/pinned/<int:id>", defaults={'deleted': True})
-@app.put("/entries/favorites/pinned/<int:id>", defaults={'favorited': True})
-def entry_pin(id, **filters):
+def entry_pin(id):
     """
     Toggle the pinned status of the given entry and return the new list of pinned
     entries, respecting the url filters.
@@ -158,21 +154,13 @@ def entry_pin(id, **filters):
     db.session.commit()
 
     # get the new list of pinned based on filters
+    filters = dict(**flask.request.args)
     pinned = models.Entry.select_pinned(**filters)
 
     return flask.render_template("entry_list_page.html",
                                  is_pinned_list=True,
+                                 filters=filters,
                                  entries=pinned)
-
-
-@app.template_global('url_for_pinned')
-def url_for_pinned(entry_id):
-    """
-    Template helper to generically build the pin entry url. This is necessary beacuse the entry_pin route
-    returns the refreshed list of pinned entries in an html fragment, which needs to be aware of the current
-    route filters (e.g. if viewing a folder only return the pinned list for that folder)
-    """
-    return flask.request.path.split('/pinned')[0] + f'/pinned/{entry_id}'
 
 
 @app.put("/entries/favorites/<int:id>")
