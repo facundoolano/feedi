@@ -42,7 +42,7 @@ class Feed(db.Model):
     TYPE_MASTODON_NOTIFICATIONS = 'mastodon_notifications'
     TYPE_SCRAPER = 'scraper'
 
-    url = sa.Column(sa.String)
+    url = sa.Column(sa.String, nullable=False)
     id = sa.Column(sa.Integer, primary_key=True)
     type = sa.Column(sa.String, nullable=False)
 
