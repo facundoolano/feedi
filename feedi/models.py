@@ -39,7 +39,10 @@ class Feed(db.Model):
 
     TYPE_RSS = 'rss'
     TYPE_MASTODON_ACCOUNT = 'mastodon'
+    TYPE_MASTODON_NOTIFICATIONS = 'mastodon_notifications'
+    TYPE_SCRAPER = 'scraper'
 
+    url = sa.Column(sa.String)
     id = sa.Column(sa.Integer, primary_key=True)
     type = sa.Column(sa.String, nullable=False)
 
@@ -93,23 +96,31 @@ class Feed(db.Model):
 
 
 class RssFeed(Feed):
-    url = sa.Column(sa.String)
     last_fetch = sa.Column(sa.TIMESTAMP)
     etag = sa.Column(
         sa.String, doc="Etag received on last parsed rss, to prevent re-fetching if it hasn't changed.")
     modified_header = sa.Column(
         sa.String, doc="Last-modified received on last parsed rss, to prevent re-fetching if it hasn't changed.")
 
-    __mapper_args__ = {'polymorphic_identity': 'rss'}
+    __mapper_args__ = {'polymorphic_identity': Feed.TYPE_RSS}
+
+
+# class Scraper(Feed):
+#     url = sa_orm.mapped_column(sa.String, doc="The front page of the site that will be scraped.",
+#                                nullable=False, use_existing_column=True)
+
+#     selector = sa.Column(sa.String, nullable=False,
+#                          doc="A CSS query selector that, when applied to the html of the website front page, will yield the anchors of each article.")
+
+#     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_SCRAPER}
 
 
 class MastodonAccount(Feed):
     # TODO this could be a fk to a separate table with client/secret
     # to share the feedi app across accounts of that same server
-    server_url = sa.Column(sa.String)
     access_token = sa.Column(sa.String)
 
-    __mapper_args__ = {'polymorphic_identity': 'mastodon'}
+    __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_ACCOUNT}
 
 
 class Entry(db.Model):
