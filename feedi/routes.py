@@ -218,6 +218,8 @@ def feed_add_submit():
     # TODO handle errors, eg required fields, duplicate name
     values = dict(**flask.request.form)
     values['icon_url'] = rss.detect_feed_icon(values['url'])
+    # TODO use a proper form library instead of this hack
+    values['javascript_enabled'] = bool(values.get('javascript_enabled'))
     feed = models.RssFeed(**values)
     db.session.add(feed)
     db.session.commit()
@@ -250,6 +252,9 @@ def feed_edit_submit(feed_name):
     # setting values at the instance level instead of issuing an update on models.Feed
     # so we don't need to explicitly inspect the feed to figure out its subclass
     for (attr, value) in flask.request.form.items():
+        if attr == 'javascript_enabled':
+            # TODO use a proper form library instead of this hack
+            value = bool(value)
         setattr(feed, attr, value)
     db.session.commit()
 
@@ -397,6 +402,7 @@ def extract_article(url, javascript=False):
         # pass a flag to use a headless browser to fetch the page source
         command += ['--js', '--delay', str(app.config['JS_LOADING_DELAY_MS'])]
 
+    app.logger.debug("Running subprocess: %s", ' '.join(command))
     r = subprocess.run(command, capture_output=True, text=True)
     article = json.loads(r.stdout)
 
