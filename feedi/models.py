@@ -40,7 +40,6 @@ class Feed(db.Model):
     TYPE_RSS = 'rss'
     TYPE_MASTODON_ACCOUNT = 'mastodon'
     TYPE_MASTODON_NOTIFICATIONS = 'mastodon_notifications'
-    TYPE_SCRAPER = 'scraper'
 
     url = sa.Column(sa.String, nullable=False)
     id = sa.Column(sa.Integer, primary_key=True)
@@ -103,16 +102,6 @@ class RssFeed(Feed):
         sa.String, doc="Last-modified received on last parsed rss, to prevent re-fetching if it hasn't changed.")
 
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_RSS}
-
-
-# class Scraper(Feed):
-#     url = sa_orm.mapped_column(sa.String, doc="The front page of the site that will be scraped.",
-#                                nullable=False, use_existing_column=True)
-
-#     selector = sa.Column(sa.String, nullable=False,
-#                          doc="A CSS query selector that, when applied to the html of the website front page, will yield the anchors of each article.")
-
-#     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_SCRAPER}
 
 
 class MastodonAccount(Feed):
