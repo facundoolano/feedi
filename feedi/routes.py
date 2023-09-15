@@ -395,7 +395,7 @@ def extract_article(url, javascript=False):
     command = ["feedi/extract_article.js", url]
     if javascript:
         # pass a flag to use a headless browser to fetch the page source
-        command.append('puppet')
+        command += ['--js', '--delay', str(app.config['JS_LOADING_DELAY_MS'])]
 
     r = subprocess.run(command, capture_output=True, text=True)
     article = json.loads(r.stdout)
