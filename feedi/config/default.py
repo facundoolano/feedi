@@ -16,3 +16,6 @@ DELETE_OLD_CRON_HOURS = '*/12'
 # a real implementation would require some way for the user to set up this integration
 # from the web, or at least some make target to make the setup reproducible
 KINDLE_CREDENTIALS_PATH = 'kindle.creds'
+
+# how much to wait for the headless browser load a page when extracting js enabled articles
+JS_LOADING_DELAY_MS = 1000

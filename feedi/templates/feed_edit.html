@@ -30,6 +30,15 @@
             </div>
         </div>
 
+        <br/>
+        <div class="field">
+            <label class="checkbox">
+                <input type="checkbox" {% if feed and feed.javascript_enabled %} checked {% endif %} name="javascript_enabled">
+                 Javascript required
+            </label>
+            <p class="help">Enable for websites that require javascript to render the article HTML (slower, uses a headless browser).</p>
+        </div>
+
         {% if feed %}
         <div class="field">
             <label class="label">Score</label>

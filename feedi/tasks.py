@@ -95,7 +95,7 @@ def sync_mastodon_feed(feed_name):
         args['limit'] = app.config['MASTODON_FETCH_LIMIT']
 
     app.logger.debug("Fetching toots %s", args)
-    toots = sources.mastodon.fetch_toots(server_url=db_feed.server_url,
+    toots = sources.mastodon.fetch_toots(server_url=db_feed.url,
                                          access_token=db_feed.access_token,
                                          **args)
     upsert_entries(db_feed.id, toots)
@@ -232,7 +232,7 @@ def create_test_feeds(file):
                 access_token = attrs[3]
 
                 db_feed = models.MastodonAccount(name=feed_name,
-                                                 server_url=server_url,
+                                                 url=server_url,
                                                  access_token=access_token,
                                                  icon_url=sources.mastodon.fetch_avatar(server_url, access_token))
 
