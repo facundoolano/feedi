@@ -33,8 +33,8 @@ class RSSParser(BaseParser):
     def fetch(self, previous_fetch_metadata=None):
         # using standard feed headers to prevent re-fetching unchanged feeds
         # https://feedparser.readthedocs.io/en/latest/http-etag.html
-        etag = previous_fetch_metadata and previous_fetch_metadata['etag']
-        modified = previous_fetch_metadata and previous_fetch_metadata['modified']
+        etag = previous_fetch_metadata and previous_fetch_metadata.get('etag')
+        modified = previous_fetch_metadata and previous_fetch_metadata.get('modified')
         feed = feedparser.parse(self.feed_url, etag=etag, modified=modified)
 
         if not feed['feed']:
@@ -42,7 +42,7 @@ class RSSParser(BaseParser):
             return None, []
 
         # also checking with the internal updated field in case feed doesn't support the standard headers
-        previous_updated = previous_fetch_metadata and previous_fetch_metadata['updated']
+        previous_updated = previous_fetch_metadata and previous_fetch_metadata.get('updated')
         if previous_updated and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) <= previous_updated:
             logger.info('skipping up to date feed %s', self.feed_url)
             return None, []
@@ -66,6 +66,7 @@ class RSSParser(BaseParser):
         return self.parse_content_url(entry)
 
     def parse_username(self, entry):
+        # TODO if missing try to get from meta?
         return entry.get('author')
 
     def parse_avatar_url(self, entry):

@@ -115,7 +115,7 @@ def sync_rss_feed(feed_name, force=False):
     parser = parser_cls(db_feed.url, db_feed.name)
     app.logger.debug('fetching rss %s %s %s', db_feed.name, db_feed.url, parser)
 
-    feed_data, feed_items = parser.fetch(json.loads(db_feed.raw_data))
+    feed_data, feed_items = parser.fetch(json.loads(db_feed.raw_data or 'null'))
     entries = []
     is_first_load = db_feed.last_fetch is None
 
