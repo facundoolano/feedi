@@ -30,6 +30,7 @@ def fetch(url, previous_fetch, skip_older_than, first_load_amount, etag=None, mo
         logger.info('skipping up to date feed %s', url)
         return [], None, None, None
 
+    # FIXME extract this part to public method, remove the rest of this function
     parser_cls = BaseParser
     # Try with all the custom parsers, and if none is compatible default to the generic parsing of the base class.
     # NOTE this is kind of hacky, it assumes the order doesn't matter
@@ -88,6 +89,7 @@ class BaseParser:
                 logger.debug('skipping old entry %s', entry['link'])
                 continue
 
+            # FIXME this should be handled closer to db layer
             result = {
                 'raw_data': json.dumps(entry)
             }
