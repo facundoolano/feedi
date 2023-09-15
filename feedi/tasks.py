@@ -117,10 +117,19 @@ def sync_rss_feed(feed_name, force=False):
 
     feed_data, feed_items = parser.fetch(json.loads(db_feed.raw_data))
     entries = []
+    is_first_load = db_feed.last_fetch is None
 
-    # FIXME add logic for app.config['RSS_MINIMUM_ENTRY_AMOUNT'] and last_fetch
     for item in feed_items:
-        entry = parser.parse(item, skip_older_than=app.config['RSS_SKIP_OLDER_THAN_DAYS'])
+        # we don't want to load old entries that are present in the feed, unless
+        # it's the first time we're loading it, in which case we prefer to show old stuff
+        # instead of showing nothing
+        if is_first_load and len(entries) < app.config['RSS_MINIMUM_ENTRY_AMOUNT']:
+            skip_older_than = None
+        else:
+            skip_older_than = app.config['RSS_SKIP_OLDER_THAN_DAYS']
+
+        entry = parser.parse(item, db_feed.last_fetch,
+                             skip_older_than)
         if entry:
             entry['raw_data'] = json.dumps(item)
             entries.append(entry)

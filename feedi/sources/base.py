@@ -54,7 +54,7 @@ class BaseParser:
         # TODO returns (new_metadata, [item_data])
         raise NotImplementedError
 
-    def parse(self, entry, skip_older_than=None):
+    def parse(self, entry, previous_fetch, skip_older_than):
         """
         FIXME
         """
@@ -62,6 +62,14 @@ class BaseParser:
 
         url = self.parse_entry_url(entry)
         published = self.parse_remote_created(entry)
+        updated = self.parse_remote_updated(entry)
+
+        # don't try to process stuff that hasn't changed recently
+        if previous_fetch and updated < previous_fetch:
+            logger.debug('skipping up to date entry %s', entry['link'])
+            return
+
+        # or that is too old
         if (skip_older_than and published and
                 datetime.datetime.utcnow() - published > datetime.timedelta(days=skip_older_than)):
             logger.debug('skipping old entry %s %s', self.feed_name, url)

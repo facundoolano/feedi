@@ -58,51 +58,6 @@ class RSSParser(BaseParser):
 
         return feed['feed'], feed['items']
 
-    # FIXME remove pieces
-    def _parse_old(self, previous_fetch, skip_older_than, first_load_amount):
-        """
-        Returns a generator of feed entry values, one for each entry found in the feed.
-        previous_fetch (datetime) and skip_older_than (minutes) are used to potentially skip some of the entries.
-        """
-        is_first_load = previous_fetch is None
-        load_count = 0
-
-        for entry in self.feed['entries']:
-            # again, don't try to process stuff that hasn't changed recently
-            if previous_fetch and 'updated_parsed' in entry and to_datetime(entry['updated_parsed']) < previous_fetch:
-                logger.debug('skipping up to date entry %s', entry['link'])
-                continue
-
-            # or that is too old
-            # but allow old ones on the first load, so we show stuff even if there aren't recent updates
-            published = entry.get('published_parsed', entry.get('updated_parsed'))
-            is_old_entry = (published and
-                            datetime.datetime.utcnow() - to_datetime(published) > datetime.timedelta(days=skip_older_than))
-            if is_old_entry and (not is_first_load or load_count >= first_load_amount):
-                logger.debug('skipping old entry %s', entry['link'])
-                continue
-
-            # FIXME this should be handled closer to db layer
-            result = {
-                'raw_data': json.dumps(entry)
-            }
-
-            try:
-                for field in self.FIELDS:
-                    method = 'parse_' + field
-                    result[field] = getattr(self, method)(entry)
-            except Exception as error:
-                exc_desc_lines = traceback.format_exception_only(type(error), error)
-                exc_desc = ''.join(exc_desc_lines).rstrip()
-                logger.error("skipping errored entry %s %s %s",
-                             self.feed.get('title', 'notitle'),
-                             entry.get('link', 'nolink'),
-                             exc_desc)
-                continue
-
-            load_count += 1
-            yield result
-
     def parse_title(self, entry):
         return entry['title']
 
