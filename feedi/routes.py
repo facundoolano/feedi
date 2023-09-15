@@ -296,7 +296,7 @@ def entry_view(id):
 
     if entry.feed.type == models.Feed.TYPE_RSS:
         try:
-            content = extract_article(entry.content_url)['content']
+            content = extract_article(entry.content_url, entry.feed.javascript_enabled)['content']
         except Exception as e:
             return flask.render_template("error_message.html", message=f"Error fetching article: {repr(e)}")
     else:
@@ -318,7 +318,8 @@ def preview_content():
     Preview an url content in the reader, as if it was an entry parsed from a feed.
     """
     url = flask.request.args['url']
-    article = extract_article(url)
+    js = 'js' in flask.request.args
+    article = extract_article(url, js)
     entry = {"content_url": url,
              "title": article['title'],
              "username": article['byline']}
@@ -345,7 +346,8 @@ def send_to_kindle():
         kindle_client = stkclient.Client.load(fp)
 
     url = flask.request.args['url']
-    article = extract_article(url)
+    js = 'js' in flask.request.args
+    article = extract_article(url, js)
 
     # a tempfile is necessary because the kindle client expects a local filepath to upload
     # the file contents are a zip including the article.html and its image assets
@@ -385,12 +387,17 @@ def compress_article(outfilename, article):
         zip.writestr('article.html', str(soup))
 
 
-def extract_article(url):
+def extract_article(url, javascript=False):
     # The mozilla/readability npm package shows better results at extracting the
     # article content than all the python libraries I've tried... even than the readabilipy
     # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
     # for parsing the article sadly this adds a dependency to node and a few npm pacakges
-    r = subprocess.run(["feedi/extract_article.js", url], capture_output=True, text=True)
+    command = ["feedi/extract_article.js", url]
+    if javascript:
+        # pass a flag to use a headless browser to fetch the page source
+        command.append('puppet')
+
+    r = subprocess.run(command, capture_output=True, text=True)
     article = json.loads(r.stdout)
 
     # load lazy images by replacing putting the data-src into src and stripping other attrs
