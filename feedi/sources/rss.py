@@ -1,9 +1,7 @@
 import datetime
-import json
 import logging
 import pprint
 import time
-import traceback
 import urllib
 
 import favicon
@@ -17,7 +15,7 @@ logger = logging.getLogger(__name__)
 feedparser.USER_AGENT = USER_AGENT
 
 
-def get_feed_parser(url):
+def get_best_parser(url):
     # Try with all the custom parsers, and if none is compatible default to the generic RSS parsing.
     # NOTE this is kind of hacky, it assumes the order doesn't matter
     # (i.e. that a single subclass is supposed to be compatible with the url)
@@ -144,8 +142,9 @@ class RSSParser(BaseParser):
 
 # FIXME reduce duplication between aggregators
 class RedditParser(RSSParser):
-    def is_compatible(_feed_url, feed_data):
-        return 'reddit.com' in feed_data['feed'].get('link', '')
+    @staticmethod
+    def is_compatible(feed_url):
+        return 'reddit.com' in feed_url
 
     def parse_body(self, entry):
         soup = BeautifulSoup(entry['summary'], 'lxml')
@@ -174,8 +173,9 @@ class RedditParser(RSSParser):
 
 
 class LobstersParser(RSSParser):
-    def is_compatible(_feed_url, feed_data):
-        return 'lobste.rs' in feed_data['feed'].get('link', '')
+    @staticmethod
+    def is_compatible(feed_url):
+        return 'lobste.rs' in feed_url
 
     def parse_body(self, entry):
         # skip link-only posts
@@ -197,8 +197,9 @@ class LobstersParser(RSSParser):
 
 
 class HackerNewsParser(RSSParser):
-    def is_compatible(_feed_url, feed_data):
-        return 'news.ycombinator.com' in feed_data['feed'].get('link', '')
+    @staticmethod
+    def is_compatible(feed_url):
+        return 'news.ycombinator.com' in feed_url or 'hnrss.org' in feed_url
 
     def parse_body(self, entry):
         # skip link-only posts
@@ -217,7 +218,7 @@ class GithubFeedParser(RSSParser):
     Parser for the personal Github notifications feed.
     """
     @staticmethod
-    def is_compatible(feed_url, _feed_data):
+    def is_compatible(feed_url):
         return 'github.com' in feed_url and 'private.atom' in feed_url
 
     def parse_body(self, _entry):
@@ -242,7 +243,7 @@ class GoodreadsFeedParser(RSSParser):
     Parser for the Goodreads private home rss feed.
     """
     @staticmethod
-    def is_compatible(feed_url, _feed_data):
+    def is_compatible(feed_url):
         return 'goodreads.com' in feed_url and '/home/index_rss' in feed_url
 
     def parse_body(self, _entry):
@@ -257,7 +258,8 @@ class GoodreadsFeedParser(RSSParser):
 
 
 class EconomistParser(RSSParser):
-    def is_compatible(feed_url, _feed_data):
+    @staticmethod
+    def is_compatible(feed_url):
         return 'economist.com' in feed_url
 
     def parse_content_url(self, entry):

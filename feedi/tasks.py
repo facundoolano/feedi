@@ -111,7 +111,7 @@ def sync_rss_feed(feed_name, force=False):
         app.logger.info('skipping recently synced feed %s', db_feed.name)
         return
 
-    parser_cls = sources.rss.get_feed_parser(db_feed.url)
+    parser_cls = sources.rss.get_best_parser(db_feed.url)
     parser = parser_cls(db_feed.url, db_feed.name)
     app.logger.debug('fetching rss %s %s %s', db_feed.name, db_feed.url, parser)
 
