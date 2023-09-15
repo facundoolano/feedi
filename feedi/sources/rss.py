@@ -41,13 +41,13 @@ class RSSParser(BaseParser):
 
         if not feed['feed']:
             logger.info('skipping empty feed %s %s', self.feed_url, feed.get('debug_message'))
-            return
+            return None, []
 
         # also checking with the internal updated field in case feed doesn't support the standard headers
         previous_updated = previous_fetch_metadata and previous_fetch_metadata['updated']
         if previous_updated and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) <= previous_updated:
             logger.info('skipping up to date feed %s', self.feed_url)
-            return
+            return None, []
 
         # save the metadata we want to get next time
         new_metadata = dict(**feed['feed'])

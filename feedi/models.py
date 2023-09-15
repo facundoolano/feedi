@@ -98,8 +98,11 @@ class Feed(db.Model):
 
 class RssFeed(Feed):
     last_fetch = sa.Column(sa.TIMESTAMP)
+
+    # FIXME this shouldnt be necessary anymore?
     etag = sa.Column(
         sa.String, doc="Etag received on last parsed rss, to prevent re-fetching if it hasn't changed.")
+    # FIXME this shouldnt be necessary anymore?
     modified_header = sa.Column(
         sa.String, doc="Last-modified received on last parsed rss, to prevent re-fetching if it hasn't changed.")
 

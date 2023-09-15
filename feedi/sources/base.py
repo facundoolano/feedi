@@ -65,6 +65,7 @@ class BaseParser:
         if (skip_older_than and published and
                 datetime.datetime.utcnow() - published > datetime.timedelta(days=skip_older_than)):
             logger.debug('skipping old entry %s %s', self.feed_name, url)
+            return
 
         for field in self.FIELDS:
             method = 'parse_' + field

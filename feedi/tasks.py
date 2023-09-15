@@ -101,6 +101,7 @@ def sync_mastodon_feed(feed_name):
     upsert_entries(db_feed.id, toots)
 
 
+# TODO this could eventually be turned into a generic sync feed, not rss only
 @huey_task()
 def sync_rss_feed(feed_name, force=False):
     db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
@@ -110,17 +111,24 @@ def sync_rss_feed(feed_name, force=False):
         app.logger.info('skipping recently synced feed %s', db_feed.name)
         return
 
-    app.logger.debug('fetching rss %s %s', db_feed.name, db_feed.url)
-    entries, feed_data, etag, modified, = sources.rss.fetch(db_feed.url,
-                                                            db_feed.last_fetch,
-                                                            app.config['RSS_SKIP_OLDER_THAN_DAYS'],
-                                                            app.config['RSS_MINIMUM_ENTRY_AMOUNT'],
-                                                            etag=db_feed.etag, modified=db_feed.modified_header)
+    parser_cls = sources.rss.get_feed_parser(db_feed.url)
+    parser = parser_cls(db_feed.url, db_feed.name)
+    app.logger.debug('fetching rss %s %s %s', db_feed.name, db_feed.url, parser)
+
+    feed_data, feed_items = parser.fetch(json.loads(db_feed.raw_data))
+    entries = []
+
+    # FIXME add logic for app.config['RSS_MINIMUM_ENTRY_AMOUNT'] and last_fetch
+    for item in feed_items:
+        entry = parser.parse(item, skip_older_than=app.config['RSS_SKIP_OLDER_THAN_DAYS'])
+        if entry:
+            entry['raw_data'] = json.dumps(item)
+            entries.append(entry)
 
     db_feed.last_fetch = utcnow
-    db_feed.etag = etag
-    db_feed.modified_header = modified
-    db_feed.raw_data = json.dumps(feed_data)
+    if feed_data:
+        db_feed.raw_data = json.dumps(feed_data)
+
     db.session.merge(db_feed)
     db.session.commit()
 
