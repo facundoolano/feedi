@@ -60,13 +60,20 @@ class BaseParser:
         """
         result = {}
 
-        url = self.parse_entry_url(entry)
-        published = self.parse_remote_created(entry)
-        updated = self.parse_remote_updated(entry)
+        try:
+            url = self.parse_entry_url(entry)
+            published = self.parse_remote_created(entry)
+            updated = self.parse_remote_updated(entry)
+        except Exception as error:
+            exc_desc_lines = traceback.format_exception_only(type(error), error)
+            exc_desc = ''.join(exc_desc_lines).rstrip()
+            logger.error("skipping errored entry %s %s",
+                         self.feed_name, exc_desc)
+            return
 
         # don't try to process stuff that hasn't changed recently
         if previous_fetch and updated < previous_fetch:
-            logger.debug('skipping up to date entry %s', entry['link'])
+            logger.debug('skipping up to date entry %s', entry.get('link'))
             return
 
         # or that is too old

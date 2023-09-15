@@ -42,15 +42,17 @@ class RSSParser(BaseParser):
             return None, []
 
         # also checking with the internal updated field in case feed doesn't support the standard headers
-        previous_updated = previous_fetch_metadata and previous_fetch_metadata.get('updated')
-        if previous_updated and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) <= previous_updated:
-            logger.info('skipping up to date feed %s', self.feed_url)
-            return None, []
+        if previous_fetch_metadata and previous_fetch_metadata.get('updated_ts'):
+            previous_updated = datetime.datetime.fromtimestamp(
+                previous_fetch_metadata['updated_ts'])
+            if previous_updated and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) <= previous_updated:
+                logger.info('skipping up to date feed %s', self.feed_url)
+                return None, []
 
         # save the metadata we want to get next time
         new_metadata = dict(**feed['feed'])
         if 'updated_parsed' in feed:
-            new_metadata['updated_parsed'] = to_datetime(feed['updated_parsed'])
+            new_metadata['updated_ts'] = to_datetime(feed['updated_parsed']).timestamp()
         new_metadata['etag'] = getattr(feed, 'etag', None)
         new_metadata['modified'] = getattr(feed, 'modified', None)
 
