@@ -36,7 +36,7 @@
             <div class="navbar-end">
                 {% if folders %}
                   {% for (name, feeds) in folders.items() %}
-                <a class="dropdown-item {% if filters.folder == name %}is-active"{% endif %}" href="{{ url_for('entry_list', folder='name' ) }}">
+                <a class="dropdown-item {% if filters.folder == name %}is-active"{% endif %}" href="{{ url_for('entry_list', folder=name ) }}">
                     <icon class="icon"><i class="far fa-folder-open"></i></icon> {{ name }}</a>
                 {% endfor %}
                 <a class="dropdown-item {% if filters.favorited %}is-active{% endif %}" href="{{ url_for('favorites') }}">
