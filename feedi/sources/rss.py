@@ -30,33 +30,23 @@ class RSSParser(BaseParser):
     TODO
     """
 
-    def fetch(self, previous_fetch_metadata=None):
+    def fetch(self, previous_fetch, etag, modified):
         # using standard feed headers to prevent re-fetching unchanged feeds
         # https://feedparser.readthedocs.io/en/latest/http-etag.html
-        etag = previous_fetch_metadata and previous_fetch_metadata.get('etag')
-        modified = previous_fetch_metadata and previous_fetch_metadata.get('modified')
         feed = feedparser.parse(self.feed_url, etag=etag, modified=modified)
 
         if not feed['feed']:
             logger.info('skipping empty feed %s %s', self.feed_url, feed.get('debug_message'))
-            return None, []
+            return None, [], None, None
 
         # also checking with the internal updated field in case feed doesn't support the standard headers
-        if previous_fetch_metadata and previous_fetch_metadata.get('updated_ts'):
-            previous_updated = datetime.datetime.fromtimestamp(
-                previous_fetch_metadata['updated_ts'])
-            if previous_updated and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) <= previous_updated:
-                logger.info('skipping up to date feed %s', self.feed_url)
-                return None, []
+        if previous_fetch and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) <= previous_fetch:
+            logger.info('skipping up to date feed %s', self.feed_url)
+            return None, [], None, None
 
-        # save the metadata we want to get next time
-        new_metadata = dict(**feed['feed'])
-        if 'updated_parsed' in feed:
-            new_metadata['updated_ts'] = to_datetime(feed['updated_parsed']).timestamp()
-        new_metadata['etag'] = getattr(feed, 'etag', None)
-        new_metadata['modified'] = getattr(feed, 'modified', None)
-
-        return feed['feed'], feed['items']
+        etag = getattr(feed, 'etag', None)
+        modified = getattr(feed, 'modified', None)
+        return feed['feed'], feed['items'], etag, modified
 
     def parse_title(self, entry):
         return entry['title']

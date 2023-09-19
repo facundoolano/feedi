@@ -115,10 +115,11 @@ def sync_rss_feed(feed_name, force=False):
     parser = parser_cls(db_feed.url, db_feed.name)
     app.logger.debug('fetching rss %s %s %s', db_feed.name, db_feed.url, parser)
 
-    feed_data, feed_items = parser.fetch(json.loads(db_feed.raw_data or 'null'))
+    feed_data, feed_items, etag, modified = parser.fetch(
+        db_feed.last_fetch, db_feed.etag, db_feed.modified)
+
     entries = []
     is_first_load = db_feed.last_fetch is None
-
     for item in feed_items:
         # we don't want to load old entries that are present in the feed, unless
         # it's the first time we're loading it, in which case we prefer to show old stuff
@@ -135,6 +136,8 @@ def sync_rss_feed(feed_name, force=False):
             entries.append(entry)
 
     db_feed.last_fetch = utcnow
+    db_feed.etag = etag
+    db_feed.modified = modified
     if feed_data:
         db_feed.raw_data = json.dumps(feed_data)
 

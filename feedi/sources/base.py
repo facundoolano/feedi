@@ -48,7 +48,7 @@ class BaseParser:
         self.feed_name = feed_name
         self.response_cache = {}
 
-    def fetch(self, _previous_fetch_metadata):
+    def fetch(self):
         # TODO add doc.
         # fetch with self.feed_url
         # TODO returns (new_metadata, [item_data])
