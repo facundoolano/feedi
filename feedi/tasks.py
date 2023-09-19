@@ -116,7 +116,7 @@ def sync_rss_feed(feed_name, force=False):
     app.logger.debug('fetching rss %s %s %s', db_feed.name, db_feed.url, parser)
 
     feed_data, feed_items, etag, modified = parser.fetch(
-        db_feed.last_fetch, db_feed.etag, db_feed.modified)
+        db_feed.last_fetch, db_feed.etag, db_feed.modified_header)
 
     entries = []
     is_first_load = db_feed.last_fetch is None
@@ -137,7 +137,7 @@ def sync_rss_feed(feed_name, force=False):
 
     db_feed.last_fetch = utcnow
     db_feed.etag = etag
-    db_feed.modified = modified
+    db_feed.modified_header = modified
     if feed_data:
         db_feed.raw_data = json.dumps(feed_data)
 
