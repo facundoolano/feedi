@@ -62,15 +62,10 @@ def sync_all_feeds():
 
     tasks = []
     for feed in feeds:
-        if feed.type == models.Feed.TYPE_RSS:
-            task = sync_rss_feed(feed.name)
-        elif feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
-            task = sync_mastodon_feed(feed.name)
-        else:
-            app.logger.error("unknown feed type %s", feed.type)
-            continue
-
-        tasks.append(task)
+        try:
+            tasks.append(sync_feed(feed))
+        except:
+            app.logger.error("Skipping errored feed %s", feed.name)
 
     # wait for concurrent tasks to finish before returning
     for task in tasks:
@@ -79,6 +74,15 @@ def sync_all_feeds():
         except:
             app.logger.exception("failure during async task %s", task)
             continue
+
+
+def sync_feed(feed):
+    if feed.type == models.Feed.TYPE_RSS:
+        return sync_rss_feed(feed.name)
+    elif feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
+        return sync_mastodon_feed(feed.name)
+    else:
+        raise ValueError("unknown feed type %s", feed.type)
 
 
 @huey_task()

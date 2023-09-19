@@ -281,10 +281,7 @@ def feed_sync(feed_name):
     if not feed:
         flask.abort(404, "Feed not found")
 
-    if feed.type == models.Feed.TYPE_RSS:
-        task = tasks.sync_rss_feed(feed.name, force=True)
-    elif feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
-        task = tasks.sync_mastodon_feed(feed.name)
+    task = tasks.sync_feed(feed)
     task.get()
 
     response = flask.make_response()
