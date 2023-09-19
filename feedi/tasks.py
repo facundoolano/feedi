@@ -101,6 +101,7 @@ def sync_mastodon_feed(feed_name):
     upsert_entries(db_feed.id, toots)
 
 
+# TODO this could eventually be turned into a generic sync feed, not rss only
 @huey_task()
 def sync_rss_feed(feed_name, force=False):
     db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
@@ -110,17 +111,38 @@ def sync_rss_feed(feed_name, force=False):
         app.logger.info('skipping recently synced feed %s', db_feed.name)
         return
 
-    app.logger.debug('fetching rss %s %s', db_feed.name, db_feed.url)
-    entries, feed_data, etag, modified, = sources.rss.fetch(db_feed.url,
-                                                            db_feed.last_fetch,
-                                                            app.config['RSS_SKIP_OLDER_THAN_DAYS'],
-                                                            app.config['RSS_MINIMUM_ENTRY_AMOUNT'],
-                                                            etag=db_feed.etag, modified=db_feed.modified_header)
+    parser_cls = sources.rss.get_best_parser(db_feed.url)
+    parser = parser_cls(db_feed.name)
+    app.logger.debug('fetching rss %s %s %s', db_feed.name, db_feed.url, parser)
+
+    feed_data, feed_items, etag, modified = parser.fetch(db_feed.url,
+                                                         db_feed.last_fetch,
+                                                         db_feed.etag,
+                                                         db_feed.modified_header)
+
+    entries = []
+    is_first_load = db_feed.last_fetch is None
+    for item in feed_items:
+        # we don't want to load old entries that are present in the feed, unless
+        # it's the first time we're loading it, in which case we prefer to show old stuff
+        # instead of showing nothing
+        if is_first_load and len(entries) < app.config['RSS_MINIMUM_ENTRY_AMOUNT']:
+            skip_older_than = None
+        else:
+            skip_older_than = app.config['RSS_SKIP_OLDER_THAN_DAYS']
+
+        entry = parser.parse(item, db_feed.last_fetch,
+                             skip_older_than)
+        if entry:
+            entry['raw_data'] = json.dumps(item)
+            entries.append(entry)
 
     db_feed.last_fetch = utcnow
     db_feed.etag = etag
     db_feed.modified_header = modified
-    db_feed.raw_data = json.dumps(feed_data)
+    if feed_data:
+        db_feed.raw_data = json.dumps(feed_data)
+
     db.session.merge(db_feed)
     db.session.commit()
 
@@ -225,7 +247,7 @@ def create_test_feeds(file):
                 url = attrs[2]
                 db_feed = models.RssFeed(name=feed_name,
                                          url=url,
-                                         icon_url=sources.rss.detect_feed_icon(url))
+                                         icon_url=sources.rss.RSSParser.detect_feed_icon(url))
 
             elif feed_type == models.Feed.TYPE_MASTODON_ACCOUNT:
                 server_url = attrs[2]

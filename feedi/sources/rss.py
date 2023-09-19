@@ -1,112 +1,70 @@
 import datetime
-import json
 import logging
 import pprint
 import time
-import traceback
 import urllib
 
-import favicon
 import feedparser
 from bs4 import BeautifulSoup
 from feedi.requests import USER_AGENT, requests
+from feedi.sources.base import BaseParser
 
 logger = logging.getLogger(__name__)
 
 feedparser.USER_AGENT = USER_AGENT
 
 
-def fetch(url, previous_fetch, skip_older_than, first_load_amount, etag=None, modified=None):
-    # using standard feed headers to prevent re-fetching unchanged feeds
-    # https://feedparser.readthedocs.io/en/latest/http-etag.html
-    feed = feedparser.parse(url, etag=etag, modified=modified)
-
-    if not feed['feed']:
-        logger.info('skipping empty feed %s %s', url, feed.get('debug_message'))
-        return [], None, None, None
-
-    # also checking with the internal updated field in case feed doesn't support the standard headers
-    if previous_fetch and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) <= previous_fetch:
-        logger.info('skipping up to date feed %s', url)
-        return [], None, None, None
-
-    parser_cls = BaseParser
-    # Try with all the custom parsers, and if none is compatible default to the generic parsing of the base class.
-    # NOTE this is kind of hacky, it assumes the order doesn't matter
-    # (i.e. that a single subclass is supposed to be compatible with the url)
-    for cls in BaseParser.__subclasses__():
-        if cls.is_compatible(url, feed):
-            parser_cls = cls
-            break
-    parser = parser_cls(feed)
-
-    logger.debug('parsing %s with %s', url, parser_cls)
-    return parser.parse(previous_fetch, skip_older_than, first_load_amount), feed['feed'], getattr(feed, 'etag', None), getattr(feed, 'modified', None)
+def get_best_parser(url):
+    # Try with all the customized parsers, and if none is compatible default to the generic RSS parsing.
+    for cls in RSSParser.__subclasses__():
+        if cls.is_compatible(url):
+            return cls
+    return RSSParser
 
 
-class BaseParser:
+class RSSParser(BaseParser):
     """
-    TODO
+    A generic parser for RSS articles.
     """
-
-    FIELDS = ['title', 'avatar_url', 'username', 'body',
-              'media_url', 'remote_id', 'remote_created', 'remote_updated', 'entry_url', 'content_url']
 
     @staticmethod
-    def is_compatible(_feed_url, _feed_data):
+    def is_compatible(_feed_url):
         """
-        Returns whether this class knows how to parse entries from the given feed.
-        The base parser should reasonably work with any rss feed.
+        To be overridden by subclasses, this method inspects the url to decide if a given parser
+        class is suited to parse the source at the given url.
         """
-        # subclasses need to override this. This base class can be used directly without testing for compatibility
         raise NotImplementedError
 
-    def __init__(self, feed):
-        self.feed = feed
-        self.response_cache = {}
+    @staticmethod
+    def detect_feed_icon(url):
+        # try to get the icon from an rss field
+        feed = feedparser.parse(url)
+        icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
+        if icon_url and requests.head(icon_url).ok:
+            logger.debug("using feed icon: %s", icon_url)
+            return icon_url
 
-    def parse(self, previous_fetch, skip_older_than, first_load_amount):
-        """
-        Returns a generator of feed entry values, one for each entry found in the feed.
-        previous_fetch (datetime) and skip_older_than (minutes) are used to potentially skip some of the entries.
-        """
-        is_first_load = previous_fetch is None
-        load_count = 0
+        # if not found default to favicon from url domain
 
-        for entry in self.feed['entries']:
-            # again, don't try to process stuff that hasn't changed recently
-            if previous_fetch and 'updated_parsed' in entry and to_datetime(entry['updated_parsed']) < previous_fetch:
-                logger.debug('skipping up to date entry %s', entry['link'])
-                continue
+        return BaseParser.detect_feed_icon(url)
 
-            # or that is too old
-            # but allow old ones on the first load, so we show stuff even if there aren't recent updates
-            published = entry.get('published_parsed', entry.get('updated_parsed'))
-            is_old_entry = (published and
-                            datetime.datetime.utcnow() - to_datetime(published) > datetime.timedelta(days=skip_older_than))
-            if is_old_entry and (not is_first_load or load_count >= first_load_amount):
-                logger.debug('skipping old entry %s', entry['link'])
-                continue
+    def fetch(self, feed_url, previous_fetch, etag, modified):
+        # using standard feed headers to prevent re-fetching unchanged feeds
+        # https://feedparser.readthedocs.io/en/latest/http-etag.html
+        feed = feedparser.parse(feed_url, etag=etag, modified=modified)
 
-            result = {
-                'raw_data': json.dumps(entry)
-            }
+        if not feed['feed']:
+            logger.info('skipping empty feed %s %s', feed_url, feed.get('debug_message'))
+            return None, [], None, None
 
-            try:
-                for field in self.FIELDS:
-                    method = 'parse_' + field
-                    result[field] = getattr(self, method)(entry)
-            except Exception as error:
-                exc_desc_lines = traceback.format_exception_only(type(error), error)
-                exc_desc = ''.join(exc_desc_lines).rstrip()
-                logger.error("skipping errored entry %s %s %s",
-                             self.feed.get('title', 'notitle'),
-                             entry.get('link', 'nolink'),
-                             exc_desc)
-                continue
+        # also checking with the internal updated field in case feed doesn't support the standard headers
+        if previous_fetch and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) <= previous_fetch:
+            logger.info('skipping up to date feed %s', feed_url)
+            return None, [], None, None
 
-            load_count += 1
-            yield result
+        etag = getattr(feed, 'etag', None)
+        modified = getattr(feed, 'modified', None)
+        return feed['feed'], feed['items'], etag, modified
 
     def parse_title(self, entry):
         return entry['title']
@@ -118,6 +76,7 @@ class BaseParser:
         return self.parse_content_url(entry)
 
     def parse_username(self, entry):
+        # TODO if missing try to get from meta?
         return entry.get('author')
 
     def parse_avatar_url(self, entry):
@@ -193,9 +152,10 @@ class BaseParser:
 
 
 # FIXME reduce duplication between aggregators
-class RedditParser(BaseParser):
-    def is_compatible(_feed_url, feed_data):
-        return 'reddit.com' in feed_data['feed'].get('link', '')
+class RedditParser(RSSParser):
+    @staticmethod
+    def is_compatible(feed_url):
+        return 'reddit.com' in feed_url
 
     def parse_body(self, entry):
         soup = BeautifulSoup(entry['summary'], 'lxml')
@@ -223,9 +183,10 @@ class RedditParser(BaseParser):
         return entry['link']
 
 
-class LobstersParser(BaseParser):
-    def is_compatible(_feed_url, feed_data):
-        return 'lobste.rs' in feed_data['feed'].get('link', '')
+class LobstersParser(RSSParser):
+    @staticmethod
+    def is_compatible(feed_url):
+        return 'lobste.rs' in feed_url
 
     def parse_body(self, entry):
         # skip link-only posts
@@ -246,9 +207,10 @@ class LobstersParser(BaseParser):
         return username.split('@')[0]
 
 
-class HackerNewsParser(BaseParser):
-    def is_compatible(_feed_url, feed_data):
-        return 'news.ycombinator.com' in feed_data['feed'].get('link', '')
+class HackerNewsParser(RSSParser):
+    @staticmethod
+    def is_compatible(feed_url):
+        return 'news.ycombinator.com' in feed_url or 'hnrss.org' in feed_url
 
     def parse_body(self, entry):
         # skip link-only posts
@@ -262,25 +224,12 @@ class HackerNewsParser(BaseParser):
         return soup.find(lambda tag: tag.name == 'p' and 'Comments URL' in tag.text).a['href']
 
 
-class MastodonUserParser(BaseParser):
-    """
-    Parser for the public rss feed of a single mastodon user.
-    (wouldn't typically be necessary if the mastond account login is being used)
-    """
-    @staticmethod
-    def is_compatible(_feed_url, feed_data):
-        return 'mastodon' in feed_data['feed'].get('generator', '').lower()
-
-    def parse_title(self, _entry):
-        return self.feed['feed']['title']
-
-
-class GithubFeedParser(BaseParser):
+class GithubFeedParser(RSSParser):
     """
     Parser for the personal Github notifications feed.
     """
     @staticmethod
-    def is_compatible(feed_url, _feed_data):
+    def is_compatible(feed_url):
         return 'github.com' in feed_url and 'private.atom' in feed_url
 
     def parse_body(self, _entry):
@@ -300,12 +249,12 @@ class GithubFeedParser(BaseParser):
         return None
 
 
-class GoodreadsFeedParser(BaseParser):
+class GoodreadsFeedParser(RSSParser):
     """
     Parser for the Goodreads private home rss feed.
     """
     @staticmethod
-    def is_compatible(feed_url, _feed_data):
+    def is_compatible(feed_url):
         return 'goodreads.com' in feed_url and '/home/index_rss' in feed_url
 
     def parse_body(self, _entry):
@@ -319,8 +268,9 @@ class GoodreadsFeedParser(BaseParser):
         return None
 
 
-class EconomistParser(BaseParser):
-    def is_compatible(feed_url, _feed_data):
+class EconomistParser(RSSParser):
+    @staticmethod
+    def is_compatible(feed_url):
         return 'economist.com' in feed_url
 
     def parse_content_url(self, entry):
@@ -392,27 +342,6 @@ def make_absolute(url, path):
 
         path = urllib.parse.urljoin(url, path)
     return path
-
-
-def detect_feed_icon(url):
-    feed = feedparser.parse(url)
-    icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
-    if icon_url and requests.head(icon_url).ok:
-        logger.debug("using feed icon: %s", icon_url)
-    else:
-        try:
-            favicons = favicon.get(feed['feed'].get('link', url))
-        except:
-            logger.exception("error fetching favicon: %s", url)
-            return
-        favicons = [f for f in favicons if f.height == f.width]
-        if not favicons:
-            logger.debug("no feed icon found: %s", favicons)
-            return
-        icon_url = favicons[0].url
-        logger.debug('using favicon %s', icon_url)
-
-    return icon_url
 
 
 def pretty_print(url):

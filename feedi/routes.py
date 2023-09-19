@@ -217,7 +217,7 @@ def feed_add_submit():
 
     # TODO handle errors, eg required fields, duplicate name
     values = dict(**flask.request.form)
-    values['icon_url'] = rss.detect_feed_icon(values['url'])
+    values['icon_url'] = rss.RSSParser.detect_feed_icon(values['url'])
     # TODO use a proper form library instead of this hack
     values['javascript_enabled'] = bool(values.get('javascript_enabled'))
     feed = models.RssFeed(**values)
