@@ -1,6 +1,7 @@
 import datetime
 import logging
 import traceback
+import urllib
 
 import favicon
 from bs4 import BeautifulSoup
@@ -11,24 +12,18 @@ logger = logging.getLogger(__name__)
 
 class BaseParser:
     """
-    TODO
+    Abstract class with base parsing logic to produce a list of entry values from a
+    remote resource. The actual fetching and field parsing is to be defined by subclasses.
     """
 
     FIELDS = ['title', 'avatar_url', 'username', 'body',
               'media_url', 'remote_id', 'remote_created', 'remote_updated', 'entry_url', 'content_url']
 
     @staticmethod
-    def is_compatible(_feed_url):
-        """
-        # FIXME update
-        Returns whether this class knows how to parse entries from the given feed.
-        The base parser should reasonably work with any rss feed.
-        """
-        # subclasses need to override this. This base class can be used directly without testing for compatibility
-        raise NotImplementedError
-
-    @staticmethod
     def detect_feed_icon(url):
+        # strip path
+        url_parts = urllib.parse.urlparse(url)
+        url = f'{url_parts.scheme}://{url_parts.netloc}'
         try:
             favicons = favicon.get(url)
         except:

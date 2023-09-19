@@ -4,7 +4,6 @@ import pprint
 import time
 import urllib
 
-import favicon
 import feedparser
 from bs4 import BeautifulSoup
 from feedi.requests import USER_AGENT, requests
@@ -16,9 +15,7 @@ feedparser.USER_AGENT = USER_AGENT
 
 
 def get_best_parser(url):
-    # Try with all the custom parsers, and if none is compatible default to the generic RSS parsing.
-    # NOTE this is kind of hacky, it assumes the order doesn't matter
-    # (i.e. that a single subclass is supposed to be compatible with the url)
+    # Try with all the customized parsers, and if none is compatible default to the generic RSS parsing.
     for cls in RSSParser.__subclasses__():
         if cls.is_compatible(url):
             return cls
@@ -27,8 +24,29 @@ def get_best_parser(url):
 
 class RSSParser(BaseParser):
     """
-    TODO
+    A generic parser for RSS articles.
     """
+
+    @staticmethod
+    def is_compatible(_feed_url):
+        """
+        To be overridden by subclasses, this method inspects the url to decide if a given parser
+        class is suited to parse the source at the given url.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def detect_feed_icon(url):
+        # try to get the icon from an rss field
+        feed = feedparser.parse(url)
+        icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
+        if icon_url and requests.head(icon_url).ok:
+            logger.debug("using feed icon: %s", icon_url)
+            return icon_url
+
+        # if not found default to favicon from url domain
+
+        return BaseParser.detect_feed_icon(url)
 
     def fetch(self, previous_fetch, etag, modified):
         # using standard feed headers to prevent re-fetching unchanged feeds
@@ -324,28 +342,6 @@ def make_absolute(url, path):
 
         path = urllib.parse.urljoin(url, path)
     return path
-
-
-# FIXME move to the parser class, reuse base defaults
-def detect_feed_icon(url):
-    feed = feedparser.parse(url)
-    icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
-    if icon_url and requests.head(icon_url).ok:
-        logger.debug("using feed icon: %s", icon_url)
-    else:
-        try:
-            favicons = favicon.get(feed['feed'].get('link', url))
-        except:
-            logger.exception("error fetching favicon: %s", url)
-            return
-        favicons = [f for f in favicons if f.height == f.width]
-        if not favicons:
-            logger.debug("no feed icon found: %s", favicons)
-            return
-        icon_url = favicons[0].url
-        logger.debug('using favicon %s', icon_url)
-
-    return icon_url
 
 
 def pretty_print(url):

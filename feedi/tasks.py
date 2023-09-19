@@ -245,7 +245,7 @@ def create_test_feeds(file):
                 url = attrs[2]
                 db_feed = models.RssFeed(name=feed_name,
                                          url=url,
-                                         icon_url=sources.rss.detect_feed_icon(url))
+                                         icon_url=sources.rss.RSSParser.detect_feed_icon(url))
 
             elif feed_type == models.Feed.TYPE_MASTODON_ACCOUNT:
                 server_url = attrs[2]
