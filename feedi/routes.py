@@ -412,7 +412,7 @@ def extract_article(url, javascript=False):
     # load lazy images by replacing putting the data-src into src and stripping other attrs
     soup = BeautifulSoup(article['content'], 'lxml')
 
-    LAZY_DATA_ATTRS = ['data-src', 'data-lazy-src', 'data-td-src-property']
+    LAZY_DATA_ATTRS = ['data-src', 'data-lazy-src', 'data-td-src-property', 'data-srcset']
     for data_attr in LAZY_DATA_ATTRS:
         for img in soup.findAll('img', attrs={data_attr: True}):
             img.attrs = {'src': img[data_attr]}
