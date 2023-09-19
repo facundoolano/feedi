@@ -112,11 +112,13 @@ def sync_rss_feed(feed_name, force=False):
         return
 
     parser_cls = sources.rss.get_best_parser(db_feed.url)
-    parser = parser_cls(db_feed.url, db_feed.name)
+    parser = parser_cls(db_feed.name)
     app.logger.debug('fetching rss %s %s %s', db_feed.name, db_feed.url, parser)
 
-    feed_data, feed_items, etag, modified = parser.fetch(
-        db_feed.last_fetch, db_feed.etag, db_feed.modified_header)
+    feed_data, feed_items, etag, modified = parser.fetch(db_feed.url,
+                                                         db_feed.last_fetch,
+                                                         db_feed.etag,
+                                                         db_feed.modified_header)
 
     entries = []
     is_first_load = db_feed.last_fetch is None

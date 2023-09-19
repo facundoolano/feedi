@@ -48,18 +48,18 @@ class RSSParser(BaseParser):
 
         return BaseParser.detect_feed_icon(url)
 
-    def fetch(self, previous_fetch, etag, modified):
+    def fetch(self, feed_url, previous_fetch, etag, modified):
         # using standard feed headers to prevent re-fetching unchanged feeds
         # https://feedparser.readthedocs.io/en/latest/http-etag.html
-        feed = feedparser.parse(self.feed_url, etag=etag, modified=modified)
+        feed = feedparser.parse(feed_url, etag=etag, modified=modified)
 
         if not feed['feed']:
-            logger.info('skipping empty feed %s %s', self.feed_url, feed.get('debug_message'))
+            logger.info('skipping empty feed %s %s', feed_url, feed.get('debug_message'))
             return None, [], None, None
 
         # also checking with the internal updated field in case feed doesn't support the standard headers
         if previous_fetch and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) <= previous_fetch:
-            logger.info('skipping up to date feed %s', self.feed_url)
+            logger.info('skipping up to date feed %s', feed_url)
             return None, [], None, None
 
         etag = getattr(feed, 'etag', None)

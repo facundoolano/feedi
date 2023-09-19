@@ -38,20 +38,22 @@ class BaseParser:
 
         return icon_url
 
-    def __init__(self, feed_url, feed_name):
-        self.feed_url = feed_url
+    def __init__(self, feed_name):
         self.feed_name = feed_name
         self.response_cache = {}
 
-    def fetch(self):
-        # TODO add doc.
-        # fetch with self.feed_url
-        # TODO returns (new_metadata, [item_data])
+    def fetch(self, _feed_url):
+        """
+        To be implemented by subclasses, fetch the feed entries from the given url
+        and return a (feed_metadata, [item_data]) tuple.
+        """
         raise NotImplementedError
 
     def parse(self, entry, previous_fetch, skip_older_than):
         """
-        FIXME
+        Given an entry raw data (as produced by the `fetch` method) and parse
+        into a dictionary by using parse_* methods on each of the `cls.FIELDS`
+        names.
         """
         result = {}
 
@@ -92,8 +94,12 @@ class BaseParser:
 
         return result
 
-     # FIXME make this a proper cache of any sort of request, and cache all.
+    # TODO make this a proper cache of any sort of request, and cache all.
     def request(self, url):
+        """
+        GET the content of the given url, and if the response is succesful
+        cache it for subsequent calls to this method.
+        """
         if url in self.response_cache:
             logger.debug("using cached response %s", url)
             return self.response_cache[url]
