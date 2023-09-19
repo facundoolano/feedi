@@ -22,6 +22,15 @@ class CustomParser(BaseParser):
         """
         raise NotImplementedError
 
+    def parse_entry_url(self, entry):
+        return self.parse_content_url(entry)
+
+    def parse_remote_updated(self, entry):
+        return self.parse_remote_created(entry)
+
+    def parse_avatar_url(self, entry):
+        return None
+
 
 class AgendaBAParser(CustomParser):
     BASE_URL = 'https://laagenda.buenosaires.gob.ar'
@@ -30,11 +39,10 @@ class AgendaBAParser(CustomParser):
     def is_compatible(cls, feed_url):
         return cls.BASE_URL in feed_url
 
-    def fetch(self, _url, _previous_fetch):
+    def fetch(self, _url):
         api_url = f'{self.BASE_URL}/currentChannel.json'
         response = requests.get(api_url)
         items = response.json()['firstElements'][0]['items']['data']
-
         return None, items
 
     def parse_remote_id(self, entry):
@@ -49,9 +57,6 @@ class AgendaBAParser(CustomParser):
     def parse_remote_created(self, entry):
         return datetime.datetime.fromisoformat(entry['created_at'])
 
-    def parse_remote_updated(self, entry):
-        return self.parse_remote_created(entry)
-
     def parse_body(self, entry):
         return entry['synopsis']
 
@@ -59,4 +64,4 @@ class AgendaBAParser(CustomParser):
         return entry['image']['url']
 
     def parse_content_url(self, entry):
-        return f'{self.BASE_URL}?contenido={entry["id"]}',
+        return f'{self.BASE_URL}?contenido={entry["id"]}'

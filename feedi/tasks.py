@@ -96,21 +96,11 @@ def sync_custom_feed(feed_name):
     parser = parser_cls(db_feed.name)
     app.logger.debug('fetching custom %s %s %s', db_feed.name, db_feed.url, parser)
 
-    feed_data, feed_items = parser.fetch(db_feed.url, db_feed.last_fetch)
+    feed_data, feed_items = parser.fetch(db_feed.url)
 
     entries = []
-    is_first_load = db_feed.last_fetch is None
     for item in feed_items:
-        # we don't want to load old entries that are present in the feed, unless
-        # it's the first time we're loading it, in which case we prefer to show old stuff
-        # instead of showing nothing
-        if is_first_load and len(entries) < app.config['RSS_MINIMUM_ENTRY_AMOUNT']:
-            skip_older_than = None
-        else:
-            skip_older_than = app.config['RSS_SKIP_OLDER_THAN_DAYS']
-
-        entry = parser.parse(item, db_feed.last_fetch,
-                             skip_older_than)
+        entry = parser.parse(item, None, None)
         if entry:
             entry['raw_data'] = json.dumps(item)
             entries.append(entry)
