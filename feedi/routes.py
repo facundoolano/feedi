@@ -312,25 +312,15 @@ def entry_view(id):
     # browser behavior. I don't like it, but I couldn't figure out how to preserve the feed
     # page/scrolling position on back button unless I jump to view content via htmx
 
-    # FIXME refactor for sharing the async loading with preview
-    def do_extract():
+    if 'HX-Request' in flask.request.headers and not 'content' in flask.request.args:
+        # if ajax/htmx just load the empty UI and load content asynchronously
+        content = None
+    else:
+        # if full browser load or explicit content request, fetch the article synchronously
         content = extract_article(
             entry.content_url, entry.feed.javascript_enabled)['content']
         entry.feed.score += 1
         db.session.commit()
-        return content
-
-    content = None
-    if 'HX-Request' in flask.request.headers:
-        if 'content' in flask.request.args:
-            # if content flag, this is the UI asking for the article html after loading the layout
-            content = do_extract()
-        else:
-            # if no content flag just return the empty UI and load asynchronously
-            pass
-    else:
-        # if full browser load, fetch the article synchronously
-        content = do_extract()
 
     return flask.render_template("entry_content.html", entry=entry, content=content)
 
