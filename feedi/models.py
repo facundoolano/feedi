@@ -69,6 +69,13 @@ class Feed(db.Model):
         return f'<Feed {self.name}>'
 
     @classmethod
+    def resolve(cls, type):
+        for subcls in cls.__subclasses__():
+            if subcls.__mapper_args__['polymorphic_identity'] == type:
+                return subcls
+        raise ValueError('unknown type')
+
+    @classmethod
     def frequency_rank_query(cls):
         """
         Count the daily average amount of entries per feed seen in the last two weeks
