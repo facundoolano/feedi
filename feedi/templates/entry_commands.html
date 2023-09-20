@@ -17,7 +17,7 @@
 <hr class="dropdown-divider">
 {% endif %}
 {% if entry.username %}
-<a class="dropdown-item" href="{{ url_for('entry_list', username=entry.username ) }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.username }}</a>
+<a class="dropdown-item" href="{{ url_for('entry_list', username=entry.username ) }}"><span class="icon"><i class="fas fa-user"></i></span> View {{ entry.username }}</a>
 {% endif %}
 {% if entry.feed %}
 <a class="dropdown-item" href="{{ url_for('entry_list', feed_name=entry.feed.name ) }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.feed.name }}</a>
