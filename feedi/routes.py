@@ -305,18 +305,22 @@ def entry_view(id):
     """
     entry = db.get_or_404(models.Entry, id)
 
-    if entry.content_url:
-        try:
-            content = extract_article(entry.content_url, entry.feed.javascript_enabled)['content']
-        except Exception as e:
-            return flask.render_template("error_message.html", message=f"Error fetching article: {repr(e)}")
-    else:
-        # this is not ideal for mastodon, but at least doesn't break
-        content = entry.body
+    # When requested through htmx (ajax), this page loads layout first, then the content
+    # on a separate request. The reason for this is that article fetching is slow, and we
+    # don't want the view entry action to freeze the UI without loading indication.
+    # Now, the reason for that freezing is that we are using hx-boosting instead of default
+    # browser behavior. I don't like it, but I couldn't figure out how to preserve the feed
+    # page/scrolling position on back button unless I jump to view content via htmx
 
-    # increase the feed score counter
-    entry.feed.score += 1
-    db.session.commit()
+    if 'HX-Request' in flask.request.headers and not 'content' in flask.request.args:
+        # if ajax/htmx just load the empty UI and load content asynchronously
+        content = None
+    else:
+        # if full browser load or explicit content request, fetch the article synchronously
+        content = extract_article(
+            entry.content_url, entry.feed.javascript_enabled)['content']
+        entry.feed.score += 1
+        db.session.commit()
 
     return flask.render_template("entry_content.html", entry=entry, content=content)
 
