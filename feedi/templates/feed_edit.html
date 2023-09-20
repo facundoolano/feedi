@@ -38,7 +38,14 @@
             </div>
         </div>
 
-        <br/>
+        <div class="field">
+            <label class="label">Filters</label>
+            <p class="help">A comma-separated list of field=value expressions to be used to filter items from the source when parsing the feed entries.</p>
+            <div class="control">
+                <input class="input" name="filters" type="text" {% if feed and feed.filters %}value="{{ feed.filters }}" {% endif %}>
+            </div>
+        </div>
+
         <div class="field">
             <label class="checkbox">
                 <input type="checkbox" {% if feed and feed.javascript_enabled %} checked {% endif %} name="javascript_enabled">

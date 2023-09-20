@@ -151,7 +151,8 @@ def sync_rss_feed(feed_name, force=False):
     feed_data, feed_items, etag, modified = parser.fetch(db_feed.url,
                                                          db_feed.last_fetch,
                                                          db_feed.etag,
-                                                         db_feed.modified_header)
+                                                         db_feed.modified_header,
+                                                         db_feed.filters)
 
     entries = []
     is_first_load = db_feed.last_fetch is None

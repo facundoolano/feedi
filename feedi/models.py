@@ -69,6 +69,13 @@ class Feed(db.Model):
         return f'<Feed {self.name}>'
 
     @classmethod
+    def resolve(cls, type):
+        for subcls in cls.__subclasses__():
+            if subcls.__mapper_args__['polymorphic_identity'] == type:
+                return subcls
+        raise ValueError('unknown type')
+
+    @classmethod
     def frequency_rank_query(cls):
         """
         Count the daily average amount of entries per feed seen in the last two weeks
@@ -104,6 +111,9 @@ class RssFeed(Feed):
         sa.String, doc="Etag received on last parsed rss, to prevent re-fetching if it hasn't changed.")
     modified_header = sa.Column(
         sa.String, doc="Last-modified received on last parsed rss, to prevent re-fetching if it hasn't changed.")
+
+    filters = sa.Column(
+        sa.String, doc="a comma separated list of conditions that feed source entries need to meet to be included in the feed.")
 
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_RSS}
 
