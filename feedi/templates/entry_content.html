@@ -44,7 +44,21 @@
   </div>
     </article>
     <div class="content entry-content">
+        {% if content %}
         {{ content | safe }}
+        {% else %}
+        <div class="buttons is-centered"
+             hx-get="{{url_for('entry_view', id=entry.id, content='true' )}}"
+             hx-trigger="revealed"
+             hx-swap="outerHTML"
+             hx-select=".entry-content"
+             hx-target=".entry-content">
+            <br/>
+            <button class="button is-loading is-large is-centered " style="border: none;">
+            Button
+            </button>
+        </div>
+        {% endif %}
     </div>
 </div>
 {% endblock content %}
