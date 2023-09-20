@@ -105,6 +105,9 @@ class RssFeed(Feed):
     modified_header = sa.Column(
         sa.String, doc="Last-modified received on last parsed rss, to prevent re-fetching if it hasn't changed.")
 
+    filters = sa.Column(
+        sa.String, doc="a comma separated list of conditions that feed source entries need to meet to be included in the feed.")
+
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_RSS}
 
 
