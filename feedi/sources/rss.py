@@ -48,7 +48,7 @@ class RSSParser(BaseParser):
 
         return BaseParser.detect_feed_icon(url)
 
-    def fetch(self, feed_url, previous_fetch, etag, modified):
+    def fetch(self, feed_url, previous_fetch, etag, modified, filters=None):
         # using standard feed headers to prevent re-fetching unchanged feeds
         # https://feedparser.readthedocs.io/en/latest/http-etag.html
         feed = feedparser.parse(feed_url, etag=etag, modified=modified)
@@ -64,7 +64,27 @@ class RSSParser(BaseParser):
 
         etag = getattr(feed, 'etag', None)
         modified = getattr(feed, 'modified', None)
-        return feed['feed'], feed['items'], etag, modified
+        items = [i for i in feed['items'] if self._matches(i, filters)]
+        return feed['feed'], items, etag, modified
+
+    @staticmethod
+    def _matches(entry, filters):
+        """
+        Check a filter expression (e.g. "author=John Doe") against the parsed entry and return whether it matches the condition.
+        """
+        # this is very brittle and ad hoc but gets the job done
+        if not filters:
+            return True
+        filters = filters.split(',')
+        for filter in filters:
+            field, value = filter.strip().split('=')
+            field = field.lower().strip()
+            value = value.lower().strip()
+
+            if not value in entry.get(field, '').lower():
+                return False
+
+        return True
 
     def parse_title(self, entry):
         return entry['title']
