@@ -217,16 +217,22 @@ def feed_add_submit():
 
     # TODO handle errors, eg required fields, duplicate name
     values = dict(**flask.request.form)
-    values['icon_url'] = rss.RSSParser.detect_feed_icon(values['url'])
+
+    # FIXME this is hacky
+    if values['type'] == models.Feed.TYPE_RSS:
+        values['icon_url'] = rss.RSSParser.detect_feed_icon(values['url'])
+    else:
+        values['icon_url'] = rss.BaseParser.detect_feed_icon(values['url'])
+
     # TODO use a proper form library instead of this hack
     values['javascript_enabled'] = bool(values.get('javascript_enabled'))
-    feed = models.RssFeed(**values)
+    feed = models.Feed(**values)
     db.session.add(feed)
     db.session.commit()
 
     # trigger a sync of this feed to fetch its entries.
     # making it blocking with .get() so we have entries to show on the redirect
-    tasks.sync_rss_feed(feed.name).get()
+    tasks.sync_feed(feed).get()
 
     # NOTE it would be better to redirect to the feed itself, but since we load it async
     # we'd have to show a spinner or something and poll until it finishes loading
@@ -281,10 +287,7 @@ def feed_sync(feed_name):
     if not feed:
         flask.abort(404, "Feed not found")
 
-    if feed.type == models.Feed.TYPE_RSS:
-        task = tasks.sync_rss_feed(feed.name, force=True)
-    elif feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
-        task = tasks.sync_mastodon_feed(feed.name)
+    task = tasks.sync_feed(feed)
     task.get()
 
     response = flask.make_response()
@@ -299,7 +302,7 @@ def entry_view(id):
     """
     entry = db.get_or_404(models.Entry, id)
 
-    if entry.feed.type == models.Feed.TYPE_RSS:
+    if entry.content_url:
         try:
             content = extract_article(entry.content_url, entry.feed.javascript_enabled)['content']
         except Exception as e:
@@ -402,14 +405,14 @@ def extract_article(url, javascript=False):
         # pass a flag to use a headless browser to fetch the page source
         command += ['--js', '--delay', str(app.config['JS_LOADING_DELAY_MS'])]
 
-    app.logger.debug("Running subprocess: %s", ' '.join(command))
+    app.logger.info("Running subprocess: %s", ' '.join(command))
     r = subprocess.run(command, capture_output=True, text=True)
     article = json.loads(r.stdout)
 
     # load lazy images by replacing putting the data-src into src and stripping other attrs
     soup = BeautifulSoup(article['content'], 'lxml')
 
-    LAZY_DATA_ATTRS = ['data-src', 'data-lazy-src', 'data-td-src-property']
+    LAZY_DATA_ATTRS = ['data-src', 'data-lazy-src', 'data-td-src-property', 'data-srcset']
     for data_attr in LAZY_DATA_ATTRS:
         for img in soup.findAll('img', attrs={data_attr: True}):
             img.attrs = {'src': img[data_attr]}

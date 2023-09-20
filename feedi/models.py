@@ -40,6 +40,7 @@ class Feed(db.Model):
     TYPE_RSS = 'rss'
     TYPE_MASTODON_ACCOUNT = 'mastodon'
     TYPE_MASTODON_NOTIFICATIONS = 'mastodon_notifications'
+    TYPE_CUSTOM = 'custom'
 
     url = sa.Column(sa.String, nullable=False)
     id = sa.Column(sa.Integer, primary_key=True)
@@ -113,6 +114,10 @@ class MastodonAccount(Feed):
     access_token = sa.Column(sa.String)
 
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_ACCOUNT}
+
+
+class CustomFeed(Feed):
+    __mapper_args__ = {'polymorphic_identity': Feed.TYPE_CUSTOM}
 
 
 class Entry(db.Model):

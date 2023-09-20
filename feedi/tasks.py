@@ -62,15 +62,10 @@ def sync_all_feeds():
 
     tasks = []
     for feed in feeds:
-        if feed.type == models.Feed.TYPE_RSS:
-            task = sync_rss_feed(feed.name)
-        elif feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
-            task = sync_mastodon_feed(feed.name)
-        else:
-            app.logger.error("unknown feed type %s", feed.type)
-            continue
-
-        tasks.append(task)
+        try:
+            tasks.append(sync_feed(feed))
+        except:
+            app.logger.error("Skipping errored feed %s", feed.name)
 
     # wait for concurrent tasks to finish before returning
     for task in tasks:
@@ -79,6 +74,44 @@ def sync_all_feeds():
         except:
             app.logger.exception("failure during async task %s", task)
             continue
+
+
+def sync_feed(feed):
+    if feed.type == models.Feed.TYPE_RSS:
+        return sync_rss_feed(feed.name)
+    elif feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
+        return sync_mastodon_feed(feed.name)
+    elif feed.type == models.Feed.TYPE_CUSTOM:
+        return sync_custom_feed(feed.name)
+    else:
+        raise ValueError("unknown feed type %s", feed.type)
+
+
+# FIXME there's duplication here, some of it could be handled by moving stuff to the base parser
+@huey_task()
+def sync_custom_feed(feed_name):
+    db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
+
+    parser_cls = sources.custom.get_best_parser(db_feed.url)
+    parser = parser_cls(db_feed.name)
+    app.logger.debug('fetching custom %s %s %s', db_feed.name, db_feed.url, parser)
+
+    feed_data, feed_items = parser.fetch(db_feed.url)
+
+    entries = []
+    for item in feed_items:
+        entry = parser.parse(item, None, None)
+        if entry:
+            entry['raw_data'] = json.dumps(item)
+            entries.append(entry)
+
+    if feed_data:
+        db_feed.raw_data = json.dumps(feed_data)
+
+    db.session.merge(db_feed)
+    db.session.commit()
+
+    upsert_entries(db_feed.id, entries)
 
 
 @huey_task()
