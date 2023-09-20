@@ -11,7 +11,7 @@
     <title>Feedi {% block title %}{% endblock %}</title>
     <meta name="htmx-config" content='{"refreshOnHistoryMiss": true}'>
     </head>
-    <body hx-boost="true">
+    <body>
     <nav class="navbar is-hidden-tablet is-fixed-top is-light" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
             <a class="navbar-item"
@@ -96,7 +96,7 @@
                 {% endblock %}
             </div>
             <div class="column is-centered is-two-thirds is-paddingless">
-                <div id="entry-list">
+                <div id="entry-list" hx-boost="true">
                     {% block content %}{% endblock %}
                 </div>
             </div>
