@@ -40,7 +40,7 @@ def entry_list(**filters):
     if text:
         filters = dict(text=text, **filters)
 
-    (entries, next_page) = query_entries_page(ordering, page=page, **filters)
+    (entries, next_page) = fetch_entries_page(ordering, page=page, **filters)
 
     if page:
         # if it's a paginated request, render a single page of the entry list
@@ -57,12 +57,15 @@ def entry_list(**filters):
                                  filters=filters)
 
 
-def query_entries_page(ordering, page=None, **kwargs):
+def fetch_entries_page(ordering, page=None, **kwargs):
     """
     Fetch a `page` of entries from db, optionally filtered by feed_name, folder or username.
     and according to the provided `ordering` criteria.
     The return value is a tuple with the page of resulting entries and a string to
     be passed to fetch the next page in a subsequent request.
+
+    When pages other than the first are requested, the previous page of entries
+    is marked as 'viewed'.
     """
     ENTRY_PAGE_SIZE = 20
 
@@ -78,6 +81,19 @@ def query_entries_page(ordering, page=None, **kwargs):
 
     query = models.Entry.sorted_by(ordering, start_at, **kwargs)
     entries = db.paginate(query, per_page=ENTRY_PAGE_SIZE, page=page)
+
+    if page > 1:
+        # mark the previous page as viewed. The rationale is that the user fetches
+        # nth page we can assume the previous one can be marked as viewed.
+        ids_query = query.with_only_columns(models.Entry.id)
+        previous_ids = db.paginate(ids_query, per_page=ENTRY_PAGE_SIZE, page=page - 1).items
+        update = db.update(models.Entry)\
+            .where(models.Entry.id.in_(previous_ids))\
+            .values(viewed=datetime.datetime.utcnow())
+        res = db.session.execute(update)
+        db.session.commit()
+        if res.rowcount:
+            app.logger.debug("Marked %s entries as viewed", res.rowcount)
 
     next_page = f'{start_at.timestamp()}:{page + 1}' if entries.has_next else None
     return entries, next_page

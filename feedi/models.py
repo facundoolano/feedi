@@ -200,7 +200,7 @@ class Entry(db.Model):
         query = db.select(cls)
 
         if older_than:
-            query = query.filter(cls.updated < older_than)
+            query = query.filter(cls.created < older_than)
 
         if deleted:
             query = query.filter(cls.deleted.is_not(None))
