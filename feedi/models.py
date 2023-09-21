@@ -174,6 +174,7 @@ class Entry(db.Model):
     remote_updated = sa.Column(sa.TIMESTAMP, nullable=False)
 
     deleted = sa.Column(sa.TIMESTAMP, index=True)
+    viewed = sa.Column(sa.TIMESTAMP, index=True)
     favorited = sa.Column(sa.TIMESTAMP, index=True)
     pinned = sa.Column(sa.TIMESTAMP, index=True)
 
