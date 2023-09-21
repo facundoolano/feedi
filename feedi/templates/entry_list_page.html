@@ -59,12 +59,6 @@
          </div>
      </div>
      <div class="level is-mobile is-hidden-desktop entry-mobile-footer">
-         <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
-            hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
-            hx-target="#pinned-entry-list"
-            _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />
-                      then toggle .is-hidden on < [data-id='{{entry.id}}'] />">
-            <i class="fas fa-thumbtack"></i></a>
          <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite entry"
             hx-put="{{ url_for('entry_favorite', id=entry.id )}}"
             _="on click toggle .toggled"
@@ -81,6 +75,12 @@
                 <div class="dropdown-content">{% include "entry_commands.html" %}</div>
             </div>
         </div>
+        <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
+           hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
+           hx-target="#pinned-entry-list"
+           _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />
+                     then toggle .is-hidden on < [data-id='{{entry.id}}'] />">
+            <i class="fas fa-thumbtack"></i></a>
      </div>
 </div>
  {% if loop.last and next_page %}
