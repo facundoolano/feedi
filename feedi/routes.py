@@ -67,7 +67,7 @@ def fetch_entries_page(ordering, page=None, **kwargs):
     When pages other than the first are requested, the previous page of entries
     is marked as 'viewed'.
     """
-    ENTRY_PAGE_SIZE = 20
+    ENTRY_PAGE_SIZE = 10
 
     # pagination includes a start at timestamp so the entry set remains the same
     # even if new entries are added between requests
