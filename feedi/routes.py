@@ -36,11 +36,19 @@ def entry_list(**filters):
     page = flask.request.args.get('page')
     ordering = flask.session.get('ordering', models.Entry.ORDER_RECENCY)
 
+    # already viewed entries should be skipped according to setting
+    # but only for views that mix multiple feeds(e.g. home page, folders).
+    # If a specific feed is beeing browsed, it makes sense to show all the entries.
+    hide_seen_setting = flask.session.get('hide_seen', True)
+    is_mixed_feed_view = filters.get('folder') or flask.request.path == '/'
+    hide_seen = hide_seen_setting and is_mixed_feed_view
+
+    filters = dict(hide_seen=hide_seen, **filters)
     text = flask.request.args.get('q', '').strip()
     if text:
-        filters = dict(text=text, **filters)
+        filters['text'] = text
 
-    (entries, next_page) = query_entries_page(ordering, page=page, **filters)
+    (entries, next_page) = fetch_entries_page(ordering, page=page, **filters)
 
     if page:
         # if it's a paginated request, render a single page of the entry list
@@ -54,17 +62,21 @@ def entry_list(**filters):
                                  pinned=models.Entry.select_pinned(**filters),
                                  entries=entries,
                                  next_page=next_page,
+                                 is_mixed_feed_view=is_mixed_feed_view,
                                  filters=filters)
 
 
-def query_entries_page(ordering, page=None, **kwargs):
+def fetch_entries_page(ordering, page=None, **kwargs):
     """
     Fetch a `page` of entries from db, optionally filtered by feed_name, folder or username.
     and according to the provided `ordering` criteria.
     The return value is a tuple with the page of resulting entries and a string to
     be passed to fetch the next page in a subsequent request.
+
+    When pages other than the first are requested, the previous page of entries
+    is marked as 'viewed'.
     """
-    ENTRY_PAGE_SIZE = 20
+    ENTRY_PAGE_SIZE = 10
 
     # pagination includes a start at timestamp so the entry set remains the same
     # even if new entries are added between requests
@@ -78,8 +90,19 @@ def query_entries_page(ordering, page=None, **kwargs):
 
     query = models.Entry.sorted_by(ordering, start_at, **kwargs)
     entries = db.paginate(query, per_page=ENTRY_PAGE_SIZE, page=page)
-
     next_page = f'{start_at.timestamp()}:{page + 1}' if entries.has_next else None
+
+    if page > 1:
+        # mark the previous page as viewed. The rationale is that the user fetches
+        # nth page we can assume the previous one can be marked as viewed.
+        ids_query = query.with_only_columns(models.Entry.id)
+        previous_ids = db.paginate(ids_query, per_page=ENTRY_PAGE_SIZE, page=page - 1).items
+        update = db.update(models.Entry)\
+            .where(models.Entry.id.in_(previous_ids))\
+            .values(viewed=datetime.datetime.utcnow())
+        res = db.session.execute(update)
+        db.session.commit()
+
     return entries, next_page
 
 
@@ -464,6 +487,13 @@ def update_setting():
     for (key, value) in flask.request.form.items():
         flask.session[key] = value
 
+    return '', 204
+
+
+# TODO improve this views to accept only valid values
+@app.post("/session/<setting>")
+def toggle_setting(setting):
+    flask.session[setting] = not flask.session.get(setting, False)
     return '', 204
 
 

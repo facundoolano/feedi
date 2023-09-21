@@ -137,6 +137,7 @@
                                    type="radio" name="view" value="compact">
                                Compact
                            </label>
+                           {% if is_mixed_feed_view %}
                            <hr class="dropdown-divider"/>
                            <label class="radio dropdown-item">
                                <p class="menu-label">Ordering</p>
@@ -160,6 +161,15 @@
                                type="radio" name="ordering" value="frequency">
                            Least frequent
                        </label>
+                       <hr class="dropdown-divider"/>
+                       <label class="checkbox dropdown-item">
+                           <input
+                               hx-post="{{ url_for('toggle_setting', setting='hide_seen') }}" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
+                               {% if session.get('hide_seen', True) %} checked {% endif %}
+                               type="checkbox">
+                           Hide already seen
+                       </label>
+                       {% endif %}
                        </form>
                        {% endblock %}
                    </ul>
