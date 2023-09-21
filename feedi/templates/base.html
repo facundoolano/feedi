@@ -160,6 +160,14 @@
                                type="radio" name="ordering" value="frequency">
                            Least frequent
                        </label>
+                       <hr class="dropdown-divider"/>
+                       <label class="checkbox dropdown-item">
+                           <input
+                               hx-post="{{ url_for('toggle_setting', setting='hide_seen') }}" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
+                               {% if session.get('hide_seen', True) %} checked {% endif %}
+                               type="checkbox" name="hide_seen" value="True">
+                           Hide already seen
+                       </label>
                        </form>
                        {% endblock %}
                    </ul>
