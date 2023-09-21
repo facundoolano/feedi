@@ -137,6 +137,7 @@
                                    type="radio" name="view" value="compact">
                                Compact
                            </label>
+                           {% if is_mixed_feed_view %}
                            <hr class="dropdown-divider"/>
                            <label class="radio dropdown-item">
                                <p class="menu-label">Ordering</p>
@@ -168,6 +169,7 @@
                                type="checkbox">
                            Hide already seen
                        </label>
+                       {% endif %}
                        </form>
                        {% endblock %}
                    </ul>

@@ -35,7 +35,13 @@ def entry_list(**filters):
 
     page = flask.request.args.get('page')
     ordering = flask.session.get('ordering', models.Entry.ORDER_RECENCY)
-    hide_seen = flask.session.get('hide_seen', True)
+
+    # already viewed entries should be skipped according to setting
+    # but only for views that mix multiple feeds(e.g. home page, folders).
+    # If a specific feed is beeing browsed, it makes sense to show all the entries.
+    hide_seen_setting = flask.session.get('hide_seen', True)
+    is_mixed_feed_view = filters.get('folder') or flask.request.path == '/'
+    hide_seen = hide_seen_setting and is_mixed_feed_view
 
     filters = dict(hide_seen=hide_seen, **filters)
     text = flask.request.args.get('q', '').strip()
@@ -56,6 +62,7 @@ def entry_list(**filters):
                                  pinned=models.Entry.select_pinned(**filters),
                                  entries=entries,
                                  next_page=next_page,
+                                 is_mixed_feed_view=is_mixed_feed_view,
                                  filters=filters)
 
 
@@ -83,6 +90,7 @@ def fetch_entries_page(ordering, page=None, **kwargs):
 
     query = models.Entry.sorted_by(ordering, start_at, **kwargs)
     entries = db.paginate(query, per_page=ENTRY_PAGE_SIZE, page=page)
+    next_page = f'{start_at.timestamp()}:{page + 1}' if entries.has_next else None
 
     if page > 1:
         # mark the previous page as viewed. The rationale is that the user fetches
@@ -94,10 +102,7 @@ def fetch_entries_page(ordering, page=None, **kwargs):
             .values(viewed=datetime.datetime.utcnow())
         res = db.session.execute(update)
         db.session.commit()
-        if res.rowcount:
-            app.logger.debug("Marked %s entries as viewed", res.rowcount)
 
-    next_page = f'{start_at.timestamp()}:{page + 1}' if entries.has_next else None
     return entries, next_page
 
 
