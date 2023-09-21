@@ -202,6 +202,15 @@ class Entry(db.Model):
         if older_than:
             query = query.filter(cls.created < older_than)
 
+            if not any([feed_name, favorited, deleted, username, text]):
+                # already viewed entries should be skipped but only for multisource views
+                # (e.g. home page, folders). If a specific feed is requested, it makes sense to
+                # show everything. Also, we use older_than so we don't exclude viewed entries
+                # from the current pagination "session" (those previous entries need to be included
+                # for a correct calculation of the limit/offset next time a page is fetch).
+                query = query.filter(cls.viewed.is_(None) |
+                                     (cls.viewed.isnot(None) & cls.viewed > older_than))
+
         if deleted:
             query = query.filter(cls.deleted.is_not(None))
         else:
