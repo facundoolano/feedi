@@ -20,7 +20,6 @@ from feedi.sources import rss
 
 
 @app.route("/users/<username>")
-@app.route("/trash", defaults={'deleted': True}, endpoint='trash')
 @app.route("/favorites", defaults={'favorited': True}, endpoint='favorites')
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
@@ -149,7 +148,6 @@ def autocomplete():
     static_options = [
         ('Home', flask.url_for('entry_list'), 'fas fa-home'),
         ('Favorites', flask.url_for('favorites', favorited=True), 'far fa-star'),
-        ('Trash', flask.url_for('trash', deleted=True), 'far fa-trash-alt'),
         ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit')
     ]
     for so in static_options:
@@ -192,21 +190,6 @@ def entry_favorite(id):
     else:
         entry.favorited = datetime.datetime.utcnow()
         entry.feed.score += 2
-
-    db.session.commit()
-    return '', 204
-
-
-@app.put("/trash/<int:id>")
-def entry_delete(id):
-    "Toggle the deleted status of the given entry."
-    entry = db.get_or_404(models.Entry, id)
-
-    if entry.deleted:
-        entry.deleted = None
-    else:
-        entry.deleted = datetime.datetime.utcnow()
-        entry.feed.score -= 1
 
     db.session.commit()
     return '', 204

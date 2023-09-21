@@ -173,7 +173,6 @@ class Entry(db.Model):
     remote_created = sa.Column(sa.TIMESTAMP, nullable=False)
     remote_updated = sa.Column(sa.TIMESTAMP, nullable=False)
 
-    deleted = sa.Column(sa.TIMESTAMP, index=True)
     viewed = sa.Column(sa.TIMESTAMP, index=True)
     favorited = sa.Column(sa.TIMESTAMP, index=True)
     pinned = sa.Column(sa.TIMESTAMP, index=True)
@@ -190,7 +189,7 @@ class Entry(db.Model):
         return f'<Entry {self.feed_id}/{self.remote_id}>'
 
     @classmethod
-    def _filtered_query(cls, hide_seen=False, deleted=None, favorited=None,
+    def _filtered_query(cls, hide_seen=False, favorited=None,
                         feed_name=None, username=None, folder=None,
                         older_than=None, text=None):
         """
@@ -208,11 +207,6 @@ class Entry(db.Model):
                 # next time a page is fetch).
                 query = query.filter(cls.viewed.is_(None) |
                                      (cls.viewed.isnot(None) & cls.viewed > older_than))
-
-        if deleted:
-            query = query.filter(cls.deleted.is_not(None))
-        else:
-            query = query.filter(cls.deleted.is_(None))
 
         if favorited:
             query = query.filter(cls.favorited.is_not(None))
