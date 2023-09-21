@@ -190,7 +190,7 @@ class Entry(db.Model):
         return f'<Entry {self.feed_id}/{self.remote_id}>'
 
     @classmethod
-    def _filtered_query(cls, deleted=None, favorited=None,
+    def _filtered_query(cls, hide_seen=False, deleted=None, favorited=None,
                         feed_name=None, username=None, folder=None,
                         older_than=None, text=None):
         """
@@ -202,7 +202,7 @@ class Entry(db.Model):
         if older_than:
             query = query.filter(cls.created < older_than)
 
-            if not any([feed_name, favorited, deleted, username, text]):
+            if hide_seen and not any([feed_name, favorited, deleted, username, text]):
                 # already viewed entries should be skipped but only for multisource views
                 # (e.g. home page, folders). If a specific feed is requested, it makes sense to
                 # show everything. Also, we use older_than so we don't exclude viewed entries

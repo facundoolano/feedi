@@ -35,10 +35,12 @@ def entry_list(**filters):
 
     page = flask.request.args.get('page')
     ordering = flask.session.get('ordering', models.Entry.ORDER_RECENCY)
+    hide_seen = flask.session.get('hide_seen', True)
 
+    filters = dict(hide_seen=hide_seen, **filters)
     text = flask.request.args.get('q', '').strip()
     if text:
-        filters = dict(text=text, **filters)
+        filters['text'] = text
 
     (entries, next_page) = fetch_entries_page(ordering, page=page, **filters)
 
