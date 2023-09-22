@@ -79,11 +79,18 @@ class Feed(db.Model):
         but not long sequences of the same feed if there are several at the frequency ballpark.
         """
         month_ago = datetime.datetime.utcnow() - datetime.timedelta(days=30)
+        # FIXME we're keeping stuff for less than a week :/
         days_since_creation = 1 + sa.func.min(30, sa.func.round(
             sa.func.julianday('now') - sa.func.julianday(cls.created)))
 
-        # FIXME remove this and use explicit buckets
-        rank_func = sa.func.round(sa.func.round((sa.func.count(cls.id) / days_since_creation)))
+        # TODO EXPLAIN
+        rank_func = sa.case(
+            (sa.func.count(cls.id) / days_since_creation < 1 / 30, 0),  # once a month or less
+            (sa.func.count(cls.id) / days_since_creation < 1 / 7, 1),  # once week or less
+            (sa.func.count(cls.id) / days_since_creation < 1, 2),  # once a day or less
+            (sa.func.count(cls.id) / days_since_creation < 5, 3),  # 5 times a day or less
+            else_=4
+        )
 
         return db.select(cls.id, rank_func.label('rank'))\
             .join(Entry)\
