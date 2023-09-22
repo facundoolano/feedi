@@ -33,7 +33,7 @@ def entry_list(**filters):
     next_page = None
 
     page = flask.request.args.get('page')
-    ordering = flask.session.get('ordering', models.Entry.ORDER_RECENCY)
+    ordering = flask.session.get('ordering', models.Entry.ORDER_FREQUENCY)
 
     # already viewed entries should be skipped according to setting
     # but only for views that mix multiple feeds(e.g. home page, folders).
@@ -310,6 +310,19 @@ def entry_view(id):
     Fetch the entry content from the source and display it for reading locally.
     """
     entry = db.get_or_404(models.Entry, id)
+
+    # if request to open source or discussion, increase score then redirect
+    redirect_url = None
+    redirect_arg = flask.request.args.get('redirect')
+    if redirect_arg == 'entry' and entry.entry_url:
+        redirect_url = entry.entry_url
+    elif redirect_arg == 'content' and entry.content_url:
+        redirect_url = entry.content_url
+
+    if redirect_url:
+        entry.feed.score += 1
+        db.session.commit()
+        return flask.redirect(redirect_url)
 
     # When requested through htmx (ajax), this page loads layout first, then the content
     # on a separate request. The reason for this is that article fetching is slow, and we

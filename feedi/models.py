@@ -1,7 +1,6 @@
 # coding: utf-8
 
 import datetime
-import math
 
 import sqlalchemy as sa
 from flask_sqlalchemy import SQLAlchemy
@@ -16,10 +15,6 @@ def init_db(app):
 
     @sa.event.listens_for(db.engine, 'connect')
     def on_connect(dbapi_connection, _connection_record):
-        # math functions are not available by default in sqlite
-        # so registering log as a custom function on connection
-        dbapi_connection.create_function('log', 1, math.log)
-
         # if there's a lock for concurrent access, don't fail forever
         # (TODO figure out how to prevent the lock in the first place?)
         dbapi_connection.execute('pragma busy_timeout=5000')
@@ -78,18 +73,30 @@ class Feed(db.Model):
     @classmethod
     def frequency_rank_query(cls):
         """
-        Count the daily average amount of entries per feed seen in the last two weeks
+        Count the daily average amount of entries per feed currently in the db
         and put the result into "buckets". The rationale is to show least frequent first,
-        but not long sequences of the same feed if there are several at the "same order" of frequency.
+        but not long sequences of the same feed if there are several at the frequency ballpark.
         """
-        two_weeks_ago = datetime.datetime.utcnow() - datetime.timedelta(days=14)
-        days_since_creation = 1 + sa.func.min(14, sa.func.round(
+        from flask import current_app as app
+        retention_days = app.config['DELETE_AFTER_DAYS']
+        retention_date = datetime.datetime.utcnow() - datetime.timedelta(days=retention_days)
+        days_since_creation = 1 + sa.func.min(retention_days, sa.func.round(
             sa.func.julianday('now') - sa.func.julianday(cls.created)))
-        rank_func = sa.func.round(sa.func.log(sa.func.round(
-            (sa.func.count(cls.id) / days_since_creation * 10))))
+
+        # this expression ranks feeds (puts them in "buckets") according to how much daily entries they have on average
+        # NOTE: some of this categories are impossible with a low retention period
+        # (e.g. we can't distinguish between weekly and monthly if we only keep 5 days or records)
+        rank_func = sa.case(
+            (sa.func.count(cls.id) / days_since_creation < 1 / 30, 0),  # once a month or less
+            (sa.func.count(cls.id) / days_since_creation < 1 / 7, 1),  # once week or less
+            (sa.func.count(cls.id) / days_since_creation < 1, 2),  # once a day or less
+            (sa.func.count(cls.id) / days_since_creation < 5, 3),  # 5 times a day or less
+            else_=4  # more
+        )
+
         return db.select(cls.id, rank_func.label('rank'))\
             .join(Entry)\
-            .filter(Entry.remote_updated >= two_weeks_ago)\
+            .filter(Entry.remote_updated >= retention_date)\
             .group_by(cls)\
             .subquery()
 
