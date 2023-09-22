@@ -283,6 +283,9 @@ class GoodreadsFeedParser(RSSParser):
     def parse_media_url(self, _entry):
         return None
 
+    def parse_entry_url(self, entry):
+        return entry['link']
+
     def parse_content_url(self, _entry):
         # don't open this in the local reader
         return None
