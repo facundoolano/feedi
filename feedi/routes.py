@@ -311,18 +311,40 @@ def entry_view(id):
     """
     entry = db.get_or_404(models.Entry, id)
 
-    # if request to open source or discussion, increase score then redirect
+    # TODO cleanup this logic and unit test
+    # if request to go to source or discussion, increase score then redirect
     redirect_url = None
     redirect_arg = flask.request.args.get('redirect')
     if redirect_arg == 'entry' and entry.entry_url:
         redirect_url = entry.entry_url
     elif redirect_arg == 'content' and entry.content_url:
         redirect_url = entry.content_url
+    elif entry.content_url or entry_entry_url:
+        dest_url = entry.content_url or entry_entry_url
+        res = requests.head(dest_url)
+
+        # TODO we could handle urls known to be video here as well eg youtube, vimeo
+
+        if not res.ok:
+            app.logger.error("Can't open entry url", res)
+            return "Can't open entry url", 500
+        else res.headers.get('Content-Type', '').startswith('application/'):
+            # if the content type is application eg youtube video or pdf, don't try to render locally
+            redirect_url = dest_url
+    else:
+        # this view can't work if no entry or content url
+        return "Entry not readable", 400
 
     if redirect_url:
         entry.feed.score += 1
         db.session.commit()
-        return flask.redirect(redirect_url)
+
+        if 'HX-Request' in flask.request.headers:
+            response = flask.make_response()
+            response.headers['HX-Redirect'] = dest_url
+            return response
+        else:
+            return flask.redirect(redirect_url)
 
     # When requested through htmx (ajax), this page loads layout first, then the content
     # on a separate request. The reason for this is that article fetching is slow, and we
