@@ -33,7 +33,7 @@ def entry_list(**filters):
     next_page = None
 
     page = flask.request.args.get('page')
-    ordering = flask.session.get('ordering', models.Entry.ORDER_RECENCY)
+    ordering = flask.session.get('ordering', models.Entry.ORDER_FREQUENCY)
 
     # already viewed entries should be skipped according to setting
     # but only for views that mix multiple feeds(e.g. home page, folders).
