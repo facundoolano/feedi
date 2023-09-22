@@ -210,6 +210,16 @@ img[src=""] {
     letter-spacing: .03em;
 }
 
+/* tweak figure and iframe to handle embedded videos */
+.entry-content figure {
+    margin-left: 0!important;
+    margin-right: 0!important;
+}
+
+.entry-content iframe {
+    width: 100%;
+}
+
 /* FIXME mobile-only, do this properly with sass */
 @media screen and (max-width: 1023px) {
     .entry-content {
