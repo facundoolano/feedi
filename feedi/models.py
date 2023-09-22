@@ -16,10 +16,6 @@ def init_db(app):
 
     @sa.event.listens_for(db.engine, 'connect')
     def on_connect(dbapi_connection, _connection_record):
-        # math functions are not available by default in sqlite
-        # so registering log as a custom function on connection
-        dbapi_connection.create_function('log', 1, math.log)
-
         # if there's a lock for concurrent access, don't fail forever
         # (TODO figure out how to prevent the lock in the first place?)
         dbapi_connection.execute('pragma busy_timeout=5000')
@@ -78,18 +74,20 @@ class Feed(db.Model):
     @classmethod
     def frequency_rank_query(cls):
         """
-        Count the daily average amount of entries per feed seen in the last two weeks
+        Count the daily average amount of entries per feed seen in the last month
         and put the result into "buckets". The rationale is to show least frequent first,
-        but not long sequences of the same feed if there are several at the "same order" of frequency.
+        but not long sequences of the same feed if there are several at the frequency ballpark.
         """
-        two_weeks_ago = datetime.datetime.utcnow() - datetime.timedelta(days=14)
-        days_since_creation = 1 + sa.func.min(14, sa.func.round(
+        month_ago = datetime.datetime.utcnow() - datetime.timedelta(days=30)
+        days_since_creation = 1 + sa.func.min(30, sa.func.round(
             sa.func.julianday('now') - sa.func.julianday(cls.created)))
-        rank_func = sa.func.round(sa.func.log(sa.func.round(
-            (sa.func.count(cls.id) / days_since_creation * 10))))
+
+        # FIXME remove this and use explicit buckets
+        rank_func = sa.func.round(sa.func.round((sa.func.count(cls.id) / days_since_creation)))
+
         return db.select(cls.id, rank_func.label('rank'))\
             .join(Entry)\
-            .filter(Entry.remote_updated >= two_weeks_ago)\
+            .filter(Entry.remote_updated >= month_ago)\
             .group_by(cls)\
             .subquery()
 
