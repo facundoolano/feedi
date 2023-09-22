@@ -209,12 +209,12 @@ def upsert_entries(feed_id, entries_values):
 @huey_task(crontab(minute=app.config['DELETE_OLD_CRON_HOURS']))
 def delete_old_entries():
     """
-    Delete entries that are older than RSS_SKIP_OLDER_THAN_DAYS but
+    Delete entries that are older than RSS_DELETE_AFTER_DAYS but
     making sure we always keep RSS_MINIMUM_ENTRY_AMOUNT for each feed.
     Favorite and pinned entries aren't deleted.
     """
     older_than_date = (datetime.datetime.utcnow() -
-                       datetime.timedelta(days=app.config['RSS_SKIP_OLDER_THAN_DAYS']))
+                       datetime.timedelta(days=app.config['RSS_DELETE_AFTER_DAYS']))
     minimum = app.config['RSS_MINIMUM_ENTRY_AMOUNT']
     # there must be more clever sql ways to do this, but it doesn't have to be efficient
 
