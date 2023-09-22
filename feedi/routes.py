@@ -311,6 +311,19 @@ def entry_view(id):
     """
     entry = db.get_or_404(models.Entry, id)
 
+    # if request to open source or discussion, increase score then redirect
+    redirect_url = None
+    redirect_arg = flask.request.args.get('redirect')
+    if redirect_arg == 'entry' and entry.entry_url:
+        redirect_url = entry.entry_url
+    elif redirect_arg == 'content' and entry.content_url:
+        redirect_url = entry.content_url
+
+    if redirect_url:
+        entry.feed.score += 1
+        db.session.commit()
+        return flask.redirect(redirect_url)
+
     # When requested through htmx (ajax), this page loads layout first, then the content
     # on a separate request. The reason for this is that article fetching is slow, and we
     # don't want the view entry action to freeze the UI without loading indication.

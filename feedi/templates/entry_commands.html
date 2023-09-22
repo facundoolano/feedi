@@ -1,8 +1,8 @@
 {% if entry.content_url %}
-<a href="{{ entry.content_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-external-link-alt"></i></span> Go to source</a>
+<a href="{{ url_for('entry_view', id=entry.id, redirect='content') }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-external-link-alt"></i></span> Go to source</a>
 {% endif %}
 {% if entry.entry_url and entry.content_url != entry.entry_url %}
-<a href="{{ entry.entry_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="far fa-comment-alt"></i></span> Go to discussion</a>
+<a href="{{ url_for('entry_view', id=entry.id, redirect='entry') }}" target="_blank" class="dropdown-item"><span class="icon"><i class="far fa-comment-alt"></i></span> Go to discussion</a>
 {% endif %}
 {% if entry.content_url %}
 <a class="dropdown-item" _="on click writeText('{{ entry.content_url }}') into the navigator's clipboard"><span class="icon"><i class="fas fa-link"></i></span> Copy URL</a>
