@@ -304,23 +304,28 @@ def feed_sync(feed_name):
     return response
 
 
+# TODO unit test this view
 @app.get("/entries/<int:id>")
 def entry_view(id):
     """
     Fetch the entry content from the source and display it for reading locally.
     """
     entry = db.get_or_404(models.Entry, id)
+    dest_url = entry.content_url or entry.entry_url
+    if not dest_url:
+        # this view can't work if no entry or content url
+        return "Entry not readable", 400
 
-    # TODO cleanup this logic and unit test
-    # if request to go to source or discussion, increase score then redirect
+    # Handle the cases when we should redirect instead of trying to render locally.
+    # either because the UI requests it explicitly, or because the source content is not
+    # renderable locally (e.g. it's a pdf or a video)
     redirect_url = None
     redirect_arg = flask.request.args.get('redirect')
     if redirect_arg == 'entry' and entry.entry_url:
         redirect_url = entry.entry_url
     elif redirect_arg == 'content' and entry.content_url:
         redirect_url = entry.content_url
-    elif entry.content_url or entry_entry_url:
-        dest_url = entry.content_url or entry_entry_url
+    else:
         res = requests.head(dest_url)
 
         # TODO we could handle urls known to be video here as well eg youtube, vimeo
@@ -328,12 +333,9 @@ def entry_view(id):
         if not res.ok:
             app.logger.error("Can't open entry url", res)
             return "Can't open entry url", 500
-        else res.headers.get('Content-Type', '').startswith('application/'):
+        elif res.headers.get('Content-Type', '').startswith('application/'):
             # if the content type is application eg youtube video or pdf, don't try to render locally
             redirect_url = dest_url
-    else:
-        # this view can't work if no entry or content url
-        return "Entry not readable", 400
 
     if redirect_url:
         entry.feed.score += 1
