@@ -10,8 +10,10 @@
             <div class="field">
                 <label class="label">Feed Type</label>
                 <div class="select">
-                    <select name="type">
+                    <select name="type" {% if feed %}disabled{% endif %}>
                         <option value="rss" {% if feed and feed.type == "rss" %} selected {% endif %}>RSS/Atom</option>
+                        <option value="mastodon" {% if feed and feed.type == "mastodon" %} selected {% endif %}>Mastodon</option>
+                        <option value="mastodon_notifications" {% if feed and feed.type == "mastodon_notifications" %} selected {% endif %}>Mastodon Notifications</option>
                         <option value="custom" {% if feed and feed.type == "custom" %} selected {% endif %}>Custom</option>
                     </select>
                 </div>
@@ -21,6 +23,16 @@
             <label class="label">Name</label>
             <div class="control">
                 <input class="input" name="name" type="text" placeholder="Text input" {% if feed or name %}value="{{ name or feed.name }}" {% endif %}>
+            </div>
+        </div>
+
+        <div class="field {% if not feed or not feed.type.startswith('mastodon')%}is-hidden{% endif %} " }"
+             _="on load or change from <select[name='type']/> if (the value of the previous <select[name='type']/>) includes('mastodon') then remove .is-hidden else add .is-hidden end">
+
+
+            <label class="label">Mastodon access token</label>
+            <div class="control">
+                <input class="input" name="access_token" type="text" {% if feed or url  %}value="{{ feed.access_token }}"{% endif %}>
             </div>
         </div>
 
