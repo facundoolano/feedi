@@ -133,6 +133,10 @@ class MastodonAccount(Feed):
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_ACCOUNT}
 
 
+class MastodonNotifications(MastodonAccount):
+    __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_NOTIFICATIONS}
+
+
 class CustomFeed(Feed):
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_CUSTOM}
 
