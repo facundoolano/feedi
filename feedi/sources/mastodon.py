@@ -45,7 +45,6 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
         # result['content_url'] = toot['url']
 
         # use server-local urls
-        entry['user_url'] = user_url(server_url, toot)
         entry['entry_url'] = status_url(server_url, toot)
 
         # for media we only support images for now and will take just the first one
@@ -91,7 +90,6 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
             'remote_updated': notification['created_at'],
             'remote_created': notification['created_at'],
             'raw_data': json.dumps(notification, default=str),
-            'user_url': user_url(server_url, notification),
             'avatar_url': notification['account']['avatar'],
             'username': notification['account']['acct'],
             'title': display_name,
@@ -101,7 +99,7 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
         # but I'm guessing that more often than not that would result in useless messages spamming the feed.
         # leaving it empty and relying on the entry_url / title link to get to the source status
         if notification['type'] in ['follow', 'follow_request']:
-            entry['entry_url'] = entry['user_url']
+            entry['entry_url'] = user_url(server_url, notification)
         else:
             entry['entry_url'] = status_url(server_url, notification)
 
