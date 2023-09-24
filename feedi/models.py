@@ -65,10 +65,17 @@ class Feed(db.Model):
 
     @classmethod
     def resolve(cls, type):
-        for subcls in cls.__subclasses__():
-            if subcls.__mapper_args__['polymorphic_identity'] == type:
-                return subcls
-        raise ValueError('unknown type')
+        subclasses = {
+            cls.TYPE_RSS: RssFeed,
+            cls.TYPE_MASTODON_ACCOUNT: MastodonAccount,
+            cls.TYPE_MASTODON_NOTIFICATIONS: MastodonNotifications,
+            cls.TYPE_CUSTOM: CustomFeed
+        }
+
+        subcls = subclasses.get(type)
+        if not subcls:
+            raise ValueError(f'unknown type {type}')
+        return subcls
 
     @classmethod
     def frequency_rank_query(cls):
