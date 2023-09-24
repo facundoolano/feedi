@@ -79,9 +79,8 @@ def sync_all_feeds():
 def sync_feed(feed):
     if feed.type == models.Feed.TYPE_RSS:
         return sync_rss_feed(feed.name)
-    elif feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
-        return sync_mastodon_feed(feed.name)
-    elif feed.type == models.Feed.TYPE_MASTODON_NOTIFICATIONS:
+    elif feed.type in [models.Feed.TYPE_MASTODON_ACCOUNT,
+                       models.Feed.TYPE_MASTODON_NOTIFICATIONS]:
         return sync_mastodon_feed(feed.name)
     elif feed.type == models.Feed.TYPE_CUSTOM:
         return sync_custom_feed(feed.name)
