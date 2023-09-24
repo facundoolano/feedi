@@ -81,6 +81,8 @@ def sync_feed(feed):
         return sync_rss_feed(feed.name)
     elif feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
         return sync_mastodon_feed(feed.name)
+    elif feed.type == models.Feed.TYPE_MASTODON_NOTIFICATIONS:
+        return sync_mastodon_feed(feed.name)
     elif feed.type == models.Feed.TYPE_CUSTOM:
         return sync_custom_feed(feed.name)
     else:
@@ -118,7 +120,7 @@ def sync_custom_feed(feed_name):
 def sync_mastodon_feed(feed_name):
     db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     latest_entry = db_feed.entries.order_by(models.Entry.remote_updated.desc()).first()
-    args = {}
+    args = dict(server_url=db_feed.url, access_token=db_feed.access_token)
     if latest_entry:
         # there's some entry on db, this is not the first time we're syncing
         # get all toots since the last seen one
@@ -127,11 +129,13 @@ def sync_mastodon_feed(feed_name):
         # if there isn't any entry yet, get the "first page" of toots from the timeline
         args['limit'] = app.config['MASTODON_FETCH_LIMIT']
 
-    app.logger.debug("Fetching toots %s", args)
-    toots = sources.mastodon.fetch_toots(server_url=db_feed.url,
-                                         access_token=db_feed.access_token,
-                                         **args)
-    upsert_entries(db_feed.id, toots)
+    if db_feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
+        values = sources.mastodon.fetch_toots(**args)
+    elif db_feed.type == models.Feed.TYPE_MASTODON_NOTIFICATIONS:
+        values = sources.mastodon.fetch_notifications(**args)
+    else:
+        raise ValueError('unknown mastodon feed type %s', db_feed.type)
+    upsert_entries(db_feed.id, values)
 
 
 # TODO this could eventually be turned into a generic sync feed, not rss only

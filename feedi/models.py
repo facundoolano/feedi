@@ -166,7 +166,10 @@ class Entry(db.Model):
 
     title = sa.Column(sa.String, nullable=False)
     username = sa.Column(sa.String, index=True)
+
+    # FIXME I dont think we ever use this, we could remove it
     user_url = sa.Column(sa.String, doc="The url of the user that authored the entry.")
+
     avatar_url = sa.Column(
         sa.String, doc="The url of the avatar image to be displayed for the entry.")
 
@@ -190,7 +193,7 @@ class Entry(db.Model):
 
     raw_data = sa.Column(sa.String, doc="The original entry data received from the feed, as JSON")
 
-    # mastodon specific
+    # TODO rename to header
     reblogged_by = sa.Column(sa.String)
 
     __table_args__ = (sa.UniqueConstraint("feed_id", "remote_id"),
