@@ -29,11 +29,11 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
         entry['remote_updated'] = toot['edited_at'] or toot['created_at']
 
         if toot.get('reblog'):
-            reblogged_by = toot['account']['display_name']
+            reblogged_by = display_name(toot)
             entry['header'] = f'<i class="fas fa-retweet"></i> { reblogged_by } boosted'
             toot = toot['reblog']
 
-        entry['title'] = toot['account']['display_name']
+        entry['title'] = display_name(toot)
         entry['avatar_url'] = toot['account']['avatar']
         entry['username'] = toot['account']['acct']
         entry['body'] = toot['content']
@@ -79,11 +79,9 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
         # admin.report = A new report has been filed
         if notification['type'] not in NOTIFICATION_PHRASES:
             continue
-        # FIXME extract to helper and reuse
-        display_name = notification['account']['display_name'] or notification['account']['acct'].split(
-            '@')[0]
+
         (icon, phrase) = NOTIFICATION_PHRASES[notification["type"]]
-        header_text = f'<i class="fas {icon}"></i> {display_name} {phrase}'
+        header_text = f'<i class="fas {icon}"></i> {display_name(notification)} {phrase}'
 
         entry = {
             'remote_id': notification['id'],
@@ -92,7 +90,7 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
             'raw_data': json.dumps(notification, default=str),
             'avatar_url': notification['account']['avatar'],
             'username': notification['account']['acct'],
-            'title': display_name,
+            'title': display_name(notification),
             'header': header_text}
 
         # NOTE: we could attempt to render the source toot in the body as the mastodon web ui does,
@@ -119,6 +117,10 @@ def user_url(server_url, status_dict):
 def status_url(server_url, status_dict):
     "Return the url of the given status local to the given server."
     return f'{user_url(server_url, status_dict)}/{status_dict["id"]}'
+
+
+def display_name(status_dict):
+    return status_dict['account']['display_name'] or status_dict['account']['acct'].split('@')[0]
 
 
 def mastodon_request(server_url, method, access_token, newer_than=None, limit=None):
