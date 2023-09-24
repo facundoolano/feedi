@@ -30,7 +30,7 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
 
         if toot.get('reblog'):
             reblogged_by = toot['account']['display_name']
-            entry['reblogged_by'] = f'<i class="fas fa-retweet"></i> { reblogged_by } boosted'
+            entry['header'] = f'<i class="fas fa-retweet"></i> { reblogged_by } boosted'
             toot = toot['reblog']
 
         entry['title'] = toot['account']['display_name']
@@ -93,7 +93,7 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
             'avatar_url': notification['account']['avatar'],
             'username': notification['account']['acct'],
             'title': display_name,
-            'reblogged_by': header_text}
+            'header': header_text}
 
         # NOTE: we could attempt to render the source toot in the body as the mastodon web ui does,
         # but I'm guessing that more often than not that would result in useless messages spamming the feed.
@@ -101,7 +101,7 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
         if notification['type'] in ['follow', 'follow_request']:
             entry['entry_url'] = user_url(server_url, notification)
         else:
-            entry['entry_url'] = status_url(server_url, notification)
+            entry['entry_url'] = status_url(server_url, notification['status'])
 
         entries.append(entry)
 
@@ -118,7 +118,7 @@ def user_url(server_url, status_dict):
 
 def status_url(server_url, status_dict):
     "Return the url of the given status local to the given server."
-    return f'{user_url(server_url, status_dict)}/{status_dict["status"]["id"]}'
+    return f'{user_url(server_url, status_dict)}/{status_dict["id"]}'
 
 
 def mastodon_request(server_url, method, access_token, newer_than=None, limit=None):

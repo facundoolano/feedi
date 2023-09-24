@@ -197,8 +197,8 @@ class Entry(db.Model):
 
     raw_data = sa.Column(sa.String, doc="The original entry data received from the feed, as JSON")
 
-    # TODO rename to header
-    reblogged_by = sa.Column(sa.String)
+    header = sa.Column(
+        sa.String, doc="an html line to put above the title, such as 'user reblogged'.")
 
     __table_args__ = (sa.UniqueConstraint("feed_id", "remote_id"),
                       sa.Index("entry_updated_ts", remote_updated.desc()))
