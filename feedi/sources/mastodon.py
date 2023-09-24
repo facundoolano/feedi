@@ -67,12 +67,12 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
     entries = []
     for notification in notifications:
         NOTIFICATION_PHRASES = {
-            "mention": "mentioned you",
-            "status": "posted",
-            "reblog": "reblogged",
-            "follow": "followed you",
-            "follow_request": "requested to follow you",
-            "favourite": "favorited",
+            "mention": ('fa-comment-alt', "mentioned you"),
+            "status": ('fa-comment-alt', "posted"),
+            "reblog": ('fa-retweet', 'reblogged'),
+            "follow": ('fa-user-plus', "followed you"),
+            "follow_request": ('fa-user-plus', "requested to follow you"),
+            "favourite": ('fa-star', "favorited"),
         }
         # NOTE: ignoring these notification types
         # poll = A poll you have voted in or created has ended
@@ -82,7 +82,8 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
         if notification['type'] not in NOTIFICATION_PHRASES:
             continue
         display_name = notification['account']['display_name']
-        header_text = f'{display_name} {NOTIFICATION_PHRASES[notification["type"]]}'
+        (icon, phrase) = NOTIFICATION_PHRASES[notification["type"]]
+        header_text = f'<i class="fas {icon}"></i> {display_name} {phrase}'
 
         entry = {
             'id': notification['id'],
