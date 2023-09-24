@@ -69,10 +69,10 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
         NOTIFICATION_PHRASES = {
             "mention": ('fa-comment-alt', "mentioned you"),
             "status": ('fa-comment-alt', "posted"),
-            "reblog": ('fa-retweet', 'reblogged'),
+            "reblog": ('fa-retweet', 'reblogged a post'),
             "follow": ('fa-user-plus', "followed you"),
             "follow_request": ('fa-user-plus', "requested to follow you"),
-            "favourite": ('fa-star', "favorited"),
+            "favourite": ('fa-star', "favorited a post"),
         }
         # NOTE: ignoring these notification types
         # poll = A poll you have voted in or created has ended
@@ -81,15 +81,18 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
         # admin.report = A new report has been filed
         if notification['type'] not in NOTIFICATION_PHRASES:
             continue
-        display_name = notification['account']['display_name']
+        # FIXME extract to helper and reuse
+        display_name = notification['account']['display_name'] or notification['account']['acct'].split(
+            '@')[0]
         (icon, phrase) = NOTIFICATION_PHRASES[notification["type"]]
         header_text = f'<i class="fas {icon}"></i> {display_name} {phrase}'
 
         entry = {
-            'id': notification['id'],
+            'remote_id': notification['id'],
             'remote_updated': notification['created_at'],
             'remote_created': notification['created_at'],
             'raw_data': json.dumps(notification, default=str),
+            # FIXME extract to helper and reuse
             'user_url': f'{server_url}/@{notification["account"]["acct"]}',
             'avatar_url': notification['account']['avatar'],
             'username': notification['account']['acct'],
@@ -102,6 +105,7 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
         if notification['type'] in ['follow', 'follow_request']:
             entry['entry_url'] = entry['user_url']
         else:
+            # FIXME extract to helper and reuse
             entry['entry_url'] = f'{entry["user_url"]}/{notification["status"]["id"]}'
 
         entries.append(entry)

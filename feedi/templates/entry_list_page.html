@@ -10,7 +10,7 @@
          {% if entry.reblogged_by %}
          <div class="reblogged">
              <div class="column">
-                 <small class="has-text-grey-light">{{ entry.reblogged_by }}</small>
+                 <small class="has-text-grey-light">{{ entry.reblogged_by | safe }}</small>
                  <br/>
              </div>
          </div>
