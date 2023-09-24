@@ -44,10 +44,9 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
         # this could change if we started to add stuff like displaying (or adding) comments
         # result['content_url'] = toot['url']
 
-        # we typically want to open the logged in user account's instance, not the original mastodon instance,
-        # so we build the local url (which doesn't seem to come in the api response)
-        entry['user_url'] = f'{server_url}/@{toot["account"]["acct"]}'
-        entry['entry_url'] = f'{entry["user_url"]}/{toot["id"]}'
+        # use server-local urls
+        entry['user_url'] = user_url(server_url, toot)
+        entry['entry_url'] = status_url(server_url, toot)
 
         # for media we only support images for now and will take just the first one
         media = [m['preview_url'] for m in toot['media_attachments'] if m['type'] == 'image']
@@ -92,8 +91,7 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
             'remote_updated': notification['created_at'],
             'remote_created': notification['created_at'],
             'raw_data': json.dumps(notification, default=str),
-            # FIXME extract to helper and reuse
-            'user_url': f'{server_url}/@{notification["account"]["acct"]}',
+            'user_url': user_url(server_url, notification),
             'avatar_url': notification['account']['avatar'],
             'username': notification['account']['acct'],
             'title': display_name,
@@ -105,12 +103,24 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
         if notification['type'] in ['follow', 'follow_request']:
             entry['entry_url'] = entry['user_url']
         else:
-            # FIXME extract to helper and reuse
-            entry['entry_url'] = f'{entry["user_url"]}/{notification["status"]["id"]}'
+            entry['entry_url'] = status_url(server_url, notification)
 
         entries.append(entry)
 
     return entries
+
+
+def user_url(server_url, status_dict):
+    """
+    Return the url of the given status author in the given server.
+    (as opposed of the user url in their own mastodon instance).
+    """
+    return f'{server_url}/@{status_dict["account"]["acct"]}'
+
+
+def status_url(server_url, status_dict):
+    "Return the url of the given status local to the given server."
+    return f'{user_url(server_url, status_dict)}/{status_dict["status"]["id"]}'
 
 
 def mastodon_request(server_url, method, access_token, newer_than=None, limit=None):
