@@ -233,9 +233,12 @@ def feed_add_submit():
     # TODO use a proper form library instead of this hack
     values['javascript_enabled'] = bool(values.get('javascript_enabled'))
 
-    # FIXME this is hacky
+    # FIXME all of this is hacky
     feed_cls = models.Feed.resolve(values['type'])
+    # skip blanks, prevents unsupported fields in subclasses
+    values = {k: v for k, v in values.items() if v}
     feed = feed_cls(**values)
+
     db.session.add(feed)
     db.session.commit()
 

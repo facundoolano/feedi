@@ -7,10 +7,10 @@
      data-view="{{ session.view | default('full')}}"
 >
      <div class="card-content">
-         {% if entry.reblogged_by %}
+         {% if entry.header %}
          <div class="reblogged">
              <div class="column">
-                 <small class="has-text-grey-light"><i class="fas fa-retweet"></i> {{ entry.reblogged_by }} boosted</small>
+                 <small class="has-text-grey-light">{{ entry.header | safe }}</small>
                  <br/>
              </div>
          </div>

@@ -65,10 +65,17 @@ class Feed(db.Model):
 
     @classmethod
     def resolve(cls, type):
-        for subcls in cls.__subclasses__():
-            if subcls.__mapper_args__['polymorphic_identity'] == type:
-                return subcls
-        raise ValueError('unknown type')
+        subclasses = {
+            cls.TYPE_RSS: RssFeed,
+            cls.TYPE_MASTODON_ACCOUNT: MastodonAccount,
+            cls.TYPE_MASTODON_NOTIFICATIONS: MastodonNotifications,
+            cls.TYPE_CUSTOM: CustomFeed
+        }
+
+        subcls = subclasses.get(type)
+        if not subcls:
+            raise ValueError(f'unknown type {type}')
+        return subcls
 
     @classmethod
     def frequency_rank_query(cls):
@@ -133,6 +140,10 @@ class MastodonAccount(Feed):
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_ACCOUNT}
 
 
+class MastodonNotifications(MastodonAccount):
+    __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_NOTIFICATIONS}
+
+
 class CustomFeed(Feed):
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_CUSTOM}
 
@@ -162,7 +173,7 @@ class Entry(db.Model):
 
     title = sa.Column(sa.String, nullable=False)
     username = sa.Column(sa.String, index=True)
-    user_url = sa.Column(sa.String, doc="The url of the user that authored the entry.")
+
     avatar_url = sa.Column(
         sa.String, doc="The url of the avatar image to be displayed for the entry.")
 
@@ -186,8 +197,8 @@ class Entry(db.Model):
 
     raw_data = sa.Column(sa.String, doc="The original entry data received from the feed, as JSON")
 
-    # mastodon specific
-    reblogged_by = sa.Column(sa.String)
+    header = sa.Column(
+        sa.String, doc="an html line to put above the title, such as 'user reblogged'.")
 
     __table_args__ = (sa.UniqueConstraint("feed_id", "remote_id"),
                       sa.Index("entry_updated_ts", remote_updated.desc()))

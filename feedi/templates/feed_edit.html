@@ -10,8 +10,10 @@
             <div class="field">
                 <label class="label">Feed Type</label>
                 <div class="select">
-                    <select name="type">
+                    <select name="type" {% if feed %}disabled{% endif %}>
                         <option value="rss" {% if feed and feed.type == "rss" %} selected {% endif %}>RSS/Atom</option>
+                        <option value="mastodon" {% if feed and feed.type == "mastodon" %} selected {% endif %}>Mastodon</option>
+                        <option value="mastodon_notifications" {% if feed and feed.type == "mastodon_notifications" %} selected {% endif %}>Mastodon Notifications</option>
                         <option value="custom" {% if feed and feed.type == "custom" %} selected {% endif %}>Custom</option>
                     </select>
                 </div>
@@ -20,14 +22,24 @@
         <div class="field">
             <label class="label">Name</label>
             <div class="control">
-                <input class="input" name="name" type="text" placeholder="Text input" {% if feed or name %}value="{{ name or feed.name }}" {% endif %}>
+                <input class="input" name="name" type="text"  {% if feed or name %}value="{{ name or feed.name }}" {% endif %}>
+            </div>
+        </div>
+
+        <div class="field {% if not feed or not feed.type.startswith('mastodon')%}is-hidden{% endif %} " }"
+             _="on load or change from <select[name='type']/> if (the value of the previous <select[name='type']/>) includes('mastodon') then remove .is-hidden else add .is-hidden end">
+
+
+            <label class="label">Mastodon access token</label>
+            <div class="control">
+                <input class="input" name="access_token" type="text" {% if feed or url  %}value="{{ feed.access_token }}"{% endif %}>
             </div>
         </div>
 
         <div class="field">
             <label class="label">URL</label>
             <div class="control">
-                <input class="input" name="url" type="text" placeholder="Text input" {% if feed or url  %}value="{{ url or feed.url }}"{% endif %}>
+                <input class="input" name="url" type="text"  {% if feed or url  %}value="{{ url or feed.url }}"{% endif %}>
             </div>
         </div>
 
@@ -38,7 +50,9 @@
             </div>
         </div>
 
-        <div class="field">
+        <div class="field"
+             _="on load or change from <select[name='type']/> if (the value of the previous <select[name='type']/>) includes('mastodon') then add .is-hidden else remove .is-hidden end"
+        >
             <label class="label">Filters</label>
             <p class="help">A comma-separated list of field=value expressions to be used to filter items from the source when parsing the feed entries.</p>
             <div class="control">
@@ -46,7 +60,9 @@
             </div>
         </div>
 
-        <div class="field">
+        <div class="field"
+             _="on load or change from <select[name='type']/> if (the value of the previous <select[name='type']/>) includes('mastodon') then add .is-hidden else remove .is-hidden end"
+        >
             <label class="checkbox">
                 <input type="checkbox" {% if feed and feed.javascript_enabled %} checked {% endif %} name="javascript_enabled">
                  Javascript required
