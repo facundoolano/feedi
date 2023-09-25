@@ -14,12 +14,6 @@ logger = logging.getLogger(__name__)
 feedparser.USER_AGENT = USER_AGENT
 
 
-def strip_html(text):
-    """Remove html tags from a string"""
-    import re
-    clean = re.compile('<.*?>|<.*?$')
-    return re.sub(clean, '', text)
-
 def get_best_parser(url):
     # Try with all the customized parsers, and if none is compatible default to the generic RSS parsing.
     for cls in RSSParser.__subclasses__():
@@ -95,8 +89,12 @@ class RSSParser(BaseParser):
     def parse_title(self, entry):
         if entry.has_key('title'):  # Not required by RSS spec
             return entry['title']
-        else:  # Return first 10 words of description
-            return strip_html(' '.join(entry['description'].split()[:10]))
+        else:  # Fallback
+            max_words = 10
+            soup = BeautifulSoup(entry['summary'], 'lxml')
+            quote = ' '.join(soup.text.split()[:max_words])
+            return quote
+            # return f'@{self.parse_username(entry)}: "{quote}..."'  # Will look nice once the below Todo is fixed
 
     def parse_content_url(self, entry):
         return entry['link']
