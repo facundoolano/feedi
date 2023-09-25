@@ -12,11 +12,11 @@
                    on keydown[key is 'Enter' and not metaKey and not shiftKey] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id )}}'
                    then on click[metaKey and shiftKey] go to url '{{ url_for("entry_view", id=entry.id, redirect="content") }}' in new window then halt"
 
-                   href="{{ url_for('entry_view', id=entry.id )}}">{{ entry.title }}</a>
+                   href="{{ url_for('entry_view', id=entry.id )}}">{{ entry.title | safe }}</a>
                 {% elif entry.entry_url %}
-                <a href="{{ url_for('entry_view', id=entry.id, redirect='entry') }}" target="_blank">{{ entry.title }}</a>
+                <a href="{{ url_for('entry_view', id=entry.id, redirect='entry') }}" target="_blank">{{ entry.title | safe }}</a>
                 {% else %}
-                <span>{{ entry.title }}</span>
+                <span>{{ entry.title | safe }}</span>
                 {% endif %}
             </b>
             <br/>

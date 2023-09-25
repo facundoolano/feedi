@@ -81,7 +81,7 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
             continue
 
         (icon, phrase) = NOTIFICATION_PHRASES[notification["type"]]
-        header_text = f'<i class="fas {icon}"></i> {display_name(notification)} {phrase}'
+        title = f'<i class="fas {icon}"></i> {display_name(notification)} {phrase}'
 
         entry = {
             'remote_id': notification['id'],
@@ -90,8 +90,7 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
             'raw_data': json.dumps(notification, default=str),
             'avatar_url': notification['account']['avatar'],
             'username': notification['account']['acct'],
-            'title': display_name(notification),
-            'header': header_text}
+            'title': title}
 
         # NOTE: we could attempt to render the source toot in the body as the mastodon web ui does,
         # but I'm guessing that more often than not that would result in useless messages spamming the feed.
