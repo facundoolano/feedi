@@ -13,7 +13,7 @@ Requires Python 3 (tested with 3.9 and 3.11) and nodejs (for the reader function
 
 To install on a local virtual env run:
 
-    make deps
+    make deps-dev
 
 Then a development server can be run at http://localhost:5000 with:
 
@@ -72,17 +72,29 @@ class LobstersParser(BaseParser):
 
 ### Mastodon account setup
 
-One or more Mastodon accounts can be added to ingest the user home feed into the app.
-The account login flow isn't supported in the web interface yet, so to use this feature in the meantime
-one needs to:
+One or more Mastodon accounts can be added to ingest the user home feed and notifications.
+The account login flow isn't supported in the web interface yet, so some steps need to be run manually
+in the python shell to obtain a user access token:
 
-* Register a mastodon app on the server the account belongs to. The same app can be reused for multiple accounts in that server.
-* Login with the account to obtain a user access token.
-* Load the feed in a csv file as shown in a [previous section](#bulk-load-feeds-from-csv) (in the format `mastodon,$NAME,$SERVER,$ACCES_TOKEN`).
+    make shell
+    >>> import mastodon
+    >>> Mastodon.create_app("feedi", scopes=['read'], to_file='mastodon.creds', api_base_url='https://mastodon.social')
 
-See the [Mastodon.py documentation](https://mastodonpy.readthedocs.io/en/stable/#usage) for details.
+The code above will register a `feedi` app in the mastodon.social server, storing the client and secret in the `mastodon.creds` file.
+Note that you don't need to create more than one app per server (even if to plan to log in mutliple times or multiple accounts,
+the same app credentials file can be reused).
 
-(Ingesting user notifications is a planned feature).
+Once app credentials are available, they can be used to instantiate a client and log in a user to obtain an access token:
+
+    >>> client = Mastodon('mastodon.creds', api_base_url='https://mastodon.social')
+    >>> client.log_in(username='some@email.address', password='password', scopes=['read'])
+    [CLIENT ACCESS TOKEN PRINTED HERE]
+
+With the resulting access token, you can add the user home feed or the user notification feed from the web UI by accessing
+ `/feeds/new` and selecting feed type `Mastodon` or `Mastodon Notifications`. (the same access token can be reused to add
+ both feeds).
+
+See the [Mastodon.py documentation](https://mastodonpy.readthedocs.io/en/stable/#usage) for further details.
 
 ### Kindle device setup
 
