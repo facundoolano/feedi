@@ -1,5 +1,7 @@
-{% if entry.id and entry.content_url %}
+{% if entry.id  %}
 <a href="{{ url_for('entry_view', id=entry.id, redirect='content') }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-external-link-alt"></i></span> Go to source</a>
+{% else %}
+<a href="{{ entry.content_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-external-link-alt"></i></span> Go to source</a>
 {% endif %}
 {% if entry.entry_url and entry.content_url != entry.entry_url %}
 <a href="{{ url_for('entry_view', id=entry.id, redirect='entry') }}" target="_blank" class="dropdown-item"><span class="icon"><i class="far fa-comment-alt"></i></span> Go to discussion</a>
