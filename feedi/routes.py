@@ -88,21 +88,20 @@ def fetch_entries_page(ordering, page=None, **kwargs):
         page = 1
 
     query = models.Entry.sorted_by(ordering, start_at, **kwargs)
-    entries = db.paginate(query, per_page=ENTRY_PAGE_SIZE, page=page)
-    next_page = f'{start_at.timestamp()}:{page + 1}' if entries.has_next else None
+    entry_page = db.paginate(query, per_page=ENTRY_PAGE_SIZE, page=page)
+    next_page = f'{start_at.timestamp()}:{page + 1}' if entry_page.has_next else None
 
-    if page > 1:
+    if entry_page.has_prev:
         # mark the previous page as viewed. The rationale is that the user fetches
         # nth page we can assume the previous one can be marked as viewed.
-        ids_query = query.with_only_columns(models.Entry.id)
-        previous_ids = db.paginate(ids_query, per_page=ENTRY_PAGE_SIZE, page=page - 1).items
+        previous_ids = [e.id for e in entry_page.prev().items]
         update = db.update(models.Entry)\
             .where(models.Entry.id.in_(previous_ids))\
             .values(viewed=datetime.datetime.utcnow())
-        res = db.session.execute(update)
+        db.session.execute(update)
         db.session.commit()
 
-    return entries, next_page
+    return entry_page, next_page
 
 
 @app.get("/autocomplete")
