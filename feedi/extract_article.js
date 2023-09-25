@@ -27,8 +27,7 @@ if (values.js) {
 function parseAndPrint(dom) {
   let reader = new Readability(dom.window.document);
   let article = reader.parse();
-  process.stdout.write(JSON.stringify(article));
-  process.exit();
+  process.stdout.write(JSON.stringify(article), process.exit);
 }
 
 async function fetchWithPuppeteer(url, delay) {
