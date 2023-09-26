@@ -134,7 +134,6 @@ Then update [the config](https://github.com/facundoolano/feedi/blob/a7a0c6e8b13b
 | Cmd+Shift+Enter, Cmd+Shift+Left Click | entry focused                | open entry discussion on new window |
 | Down Arrow, Tab                       | entry focused                | focus next entry                    |
 | Up Arrow, Shift+Tab                   | entry focused                | focus previous entry                |
-| Delete, Backspace                     | entry focused                | delete entry                        |
 | p                                     | entry focused                | pin entry                           |
 | f                                     | entry focused                | favorite entry                      |
 | Escape                                | viewing entry content        | go back                             |
