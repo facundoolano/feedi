@@ -6,8 +6,8 @@ import urllib
 
 import feedparser
 from bs4 import BeautifulSoup
+from feedi.parsers.base import BaseParser
 from feedi.requests import USER_AGENT, requests
-from feedi.sources.base import BaseParser
 
 logger = logging.getLogger(__name__)
 

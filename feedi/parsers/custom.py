@@ -3,8 +3,8 @@ import json
 import urllib
 
 from bs4 import BeautifulSoup
+from feedi.parsers.base import BaseParser
 from feedi.requests import requests
-from feedi.sources.base import BaseParser
 
 
 def get_best_parser(url):

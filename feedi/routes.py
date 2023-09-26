@@ -15,8 +15,8 @@ from flask import current_app as app
 import feedi.models as models
 import feedi.tasks as tasks
 from feedi.models import db
+from feedi.parsers import rss
 from feedi.requests import requests
-from feedi.sources import rss
 
 
 @app.route("/users/<username>")

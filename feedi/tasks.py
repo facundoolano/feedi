@@ -18,7 +18,7 @@ from huey import crontab
 from huey.contrib.mini import MiniHuey
 
 import feedi.models as models
-import feedi.sources as sources
+import feedi.parsers as parsers
 from feedi.app import create_huey_app
 from feedi.models import db
 
@@ -93,7 +93,7 @@ def sync_feed(feed):
 def sync_custom_feed(feed_name):
     db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
 
-    parser_cls = sources.custom.get_best_parser(db_feed.url)
+    parser_cls = parsers.custom.get_best_parser(db_feed.url)
     parser = parser_cls(db_feed.name)
     app.logger.debug('fetching custom %s %s %s', db_feed.name, db_feed.url, parser)
 
@@ -129,9 +129,9 @@ def sync_mastodon_feed(feed_name):
         args['limit'] = app.config['MASTODON_FETCH_LIMIT']
 
     if db_feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
-        values = sources.mastodon.fetch_toots(**args)
+        values = parsers.mastodon.fetch_toots(**args)
     elif db_feed.type == models.Feed.TYPE_MASTODON_NOTIFICATIONS:
-        values = sources.mastodon.fetch_notifications(**args)
+        values = parsers.mastodon.fetch_notifications(**args)
     else:
         raise ValueError('unknown mastodon feed type %s', db_feed.type)
     upsert_entries(db_feed.id, values)
@@ -147,7 +147,7 @@ def sync_rss_feed(feed_name, force=False):
         app.logger.info('skipping recently synced feed %s', db_feed.name)
         return
 
-    parser_cls = sources.rss.get_best_parser(db_feed.url)
+    parser_cls = parsers.rss.get_best_parser(db_feed.url)
     parser = parser_cls(db_feed.name)
     app.logger.debug('fetching rss %s %s %s', db_feed.name, db_feed.url, parser)
 
@@ -262,7 +262,7 @@ def delete_old_entries():
 @feed_cli.command('debug')
 @click.argument('url')
 def debug_feed(url):
-    sources.rss.pretty_print(url)
+    parsers.rss.pretty_print(url)
 
 
 @feed_cli.command('load')
@@ -284,7 +284,7 @@ def create_test_feeds(file):
                 url = attrs[2]
                 db_feed = models.RssFeed(name=feed_name,
                                          url=url,
-                                         icon_url=sources.rss.RSSParser.detect_feed_icon(url))
+                                         icon_url=parsers.rss.RSSParser.detect_feed_icon(url))
 
             elif feed_type == models.Feed.TYPE_MASTODON_ACCOUNT:
                 server_url = attrs[2]
@@ -293,7 +293,7 @@ def create_test_feeds(file):
                 db_feed = models.MastodonAccount(name=feed_name,
                                                  url=server_url,
                                                  access_token=access_token,
-                                                 icon_url=sources.mastodon.fetch_avatar(server_url, access_token))
+                                                 icon_url=parsers.mastodon.fetch_avatar(server_url, access_token))
 
             else:
                 app.logger.error("unknown feed type %s", attrs[0])
