@@ -1,6 +1,5 @@
 import datetime
 import json
-import urllib
 
 from bs4 import BeautifulSoup
 from feedi.parsers.base import BaseParser
