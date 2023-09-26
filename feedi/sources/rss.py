@@ -134,7 +134,7 @@ class RSSParser(BaseParser):
                 return soup.img['src']
 
         parsed_dest_url = self.parse_content_url(entry)
-        return self.fetch_meta(parsed_dest_url, "og:image") or self.fetch_meta(parsed_dest_url, "twitter:image")
+        return self.fetch_meta(parsed_dest_url, "og:image", "twitter:image")
 
     def parse_remote_id(self, entry):
         return entry.get('id', entry['link'])
@@ -172,8 +172,7 @@ class RedditParser(RSSParser):
             comments_url.decompose()
             return str(soup)
 
-        return (self.fetch_meta(link_url, 'og:description') or
-                self.fetch_meta(link_url, 'description'))
+        return self.fetch_meta(link_url, 'og:description', 'description')
 
     def parse_content_url(self, entry):
         soup = BeautifulSoup(entry['summary'], 'lxml')
@@ -193,8 +192,7 @@ class LobstersParser(RSSParser):
         # skip link-only posts
         if 'Comments' in entry['summary']:
             url = self.parse_content_url(entry)
-            return (self.fetch_meta(url, 'og:description') or
-                    self.fetch_meta(url, 'description'))
+            return self.fetch_meta(url, 'og:description', 'description')
         return entry['summary']
 
     def parse_entry_url(self, entry):
@@ -217,7 +215,7 @@ class HackerNewsParser(RSSParser):
         # skip link-only posts
         if 'Article URL' in entry['summary']:
             url = self.parse_content_url(entry)
-            return (self.fetch_meta(url, 'og:description') or self.fetch_meta(url, 'description'))
+            return self.fetch_meta(url, 'og:description', 'description')
         return entry['summary']
 
     def parse_entry_url(self, entry):
@@ -284,7 +282,7 @@ class EconomistParser(RSSParser):
 
     def parse_body(self, entry):
         url = self.parse_content_url(entry)
-        return (self.fetch_meta(url, 'og:description') or self.fetch_meta(url, 'description'))
+        return self.fetch_meta(url, 'og:description', 'description')
 
 
 # TODO unit test
