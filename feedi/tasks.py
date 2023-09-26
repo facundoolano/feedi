@@ -63,7 +63,7 @@ def sync_all_feeds():
     tasks = []
     for feed in feeds:
         try:
-            tasks.append(sync_feed(feed))
+            tasks.append(sync_feed(feed.name))
         except:
             app.logger.error("Skipping errored feed %s", feed.name)
 
@@ -76,91 +76,59 @@ def sync_all_feeds():
             continue
 
 
-def sync_feed(feed):
-    if feed.type == models.Feed.TYPE_RSS:
-        return sync_rss_feed(feed.name)
-    elif feed.type in [models.Feed.TYPE_MASTODON_ACCOUNT,
-                       models.Feed.TYPE_MASTODON_NOTIFICATIONS]:
-        return sync_mastodon_feed(feed.name)
-    elif feed.type == models.Feed.TYPE_CUSTOM:
-        return sync_custom_feed(feed.name)
-    else:
-        raise ValueError("unknown feed type %s", feed.type)
-
-
-# FIXME there's duplication here, some of it could be handled by moving stuff to the base parser
 @huey_task()
-def sync_custom_feed(feed_name):
-    db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
-
-    parser_cls = parsers.custom.get_best_parser(db_feed.url)
-    parser = parser_cls(db_feed.name, db_feed.url)
-    app.logger.debug('fetching custom %s %s %s', db_feed.name, db_feed.url, parser)
-
-    feed_data, feed_items = parser.fetch()
-
-    if feed_data:
-        db_feed.raw_data = json.dumps(feed_data)
-
-    db_feed.last_fetch = datetime.datetime.utcnow()
-    db.session.merge(db_feed)
-    db.session.commit()
-
-    upsert_entries(db_feed.id, feed_items)
-
-
-@huey_task()
-def sync_mastodon_feed(feed_name):
-    db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
-    latest_entry = db_feed.entries.order_by(models.Entry.remote_updated.desc()).first()
-    args = dict(server_url=db_feed.url, access_token=db_feed.access_token)
-    if latest_entry:
-        # there's some entry on db, this is not the first time we're syncing
-        # get all toots since the last seen one
-        args['newer_than'] = latest_entry.remote_id
-    else:
-        # if there isn't any entry yet, get the "first page" of toots from the timeline
-        args['limit'] = app.config['MASTODON_FETCH_LIMIT']
-
-    if db_feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
-        values = parsers.mastodon.fetch_toots(**args)
-    elif db_feed.type == models.Feed.TYPE_MASTODON_NOTIFICATIONS:
-        values = parsers.mastodon.fetch_notifications(**args)
-    else:
-        raise ValueError('unknown mastodon feed type %s', db_feed.type)
-
-    db_feed.last_fetch = datetime.datetime.utcnow()
-    db.session.merge(db_feed)
-    db.session.commit()
-    upsert_entries(db_feed.id, values)
-
-
-# TODO this could eventually be turned into a generic sync feed, not rss only
-@huey_task()
-def sync_rss_feed(feed_name):
+def sync_feed(feed_name):
     db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     utcnow = datetime.datetime.utcnow()
 
-    # TODO maybe this should be removed or applied to all feed types
     if db_feed.last_fetch and utcnow - db_feed.last_fetch < datetime.timedelta(minutes=app.config['SKIP_RECENTLY_UPDATED_MINUTES']):
         app.logger.info('skipping recently synced feed %s', db_feed.name)
         return
 
-    skip_older_than = utcnow - datetime.timedelta(days=app.config['RSS_SKIP_OLDER_THAN_DAYS'])
-    parser_cls = parsers.rss.get_best_parser(db_feed.url)
-    parser = parser_cls(db_feed.name, db_feed.url,
-                        skip_older_than,
-                        app.config['RSS_MINIMUM_ENTRY_AMOUNT'])
-    app.logger.debug('fetching rss %s %s %s', db_feed.name, db_feed.url, parser)
+    feed_data = None
+    entries = []
 
-    feed_data, entries, etag, modified = parser.fetch(db_feed.last_fetch,
-                                                      db_feed.etag,
-                                                      db_feed.modified_header,
-                                                      db_feed.filters)
+    if db_feed.type == models.Feed.TYPE_RSS:
+        skip_older_than = utcnow - datetime.timedelta(days=app.config['RSS_SKIP_OLDER_THAN_DAYS'])
+        parser_cls = parsers.rss.get_best_parser(db_feed.url)
+        parser = parser_cls(db_feed.name, db_feed.url,
+                            skip_older_than,
+                            app.config['RSS_MINIMUM_ENTRY_AMOUNT'])
+        feed_data, entries, etag, modified = parser.fetch(db_feed.last_fetch,
+                                                          db_feed.etag,
+                                                          db_feed.modified_header,
+                                                          db_feed.filters)
+
+        db_feed.etag = etag
+        db_feed.modified_header = modified
+
+    elif db_feed.type == models.Feed.TYPE_CUSTOM:
+        parser_cls = parsers.custom.get_best_parser(db_feed.url)
+        parser = parser_cls(db_feed.name, db_feed.url)
+
+        feed_data, entries = parser.fetch()
+
+    elif db_feed.type in [models.Feed.TYPE_MASTODON_ACCOUNT,
+                          models.Feed.TYPE_MASTODON_NOTIFICATIONS]:
+        latest_entry = db_feed.entries.order_by(models.Entry.remote_updated.desc()).first()
+        args = dict(server_url=db_feed.url, access_token=db_feed.access_token)
+        if latest_entry:
+            # there's some entry on db, this is not the first time we're syncing
+            # get all toots since the last seen one
+            args['newer_than'] = latest_entry.remote_id
+        else:
+            # if there isn't any entry yet, get the "first page" of toots from the timeline
+            args['limit'] = app.config['MASTODON_FETCH_LIMIT']
+
+        if db_feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
+            entries = parsers.mastodon.fetch_toots(**args)
+        elif db_feed.type == models.Feed.TYPE_MASTODON_NOTIFICATIONS:
+            entries = parsers.mastodon.fetch_notifications(**args)
+
+    else:
+        raise ValueError("unknown feed type %s", db_feed.type)
 
     db_feed.last_fetch = utcnow
-    db_feed.etag = etag
-    db_feed.modified_header = modified
     if feed_data:
         db_feed.raw_data = json.dumps(feed_data)
 

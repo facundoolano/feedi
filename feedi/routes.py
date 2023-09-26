@@ -241,7 +241,7 @@ def feed_add_submit():
 
     # trigger a sync of this feed to fetch its entries.
     # making it blocking with .get() so we have entries to show on the redirect
-    tasks.sync_feed(feed).get()
+    tasks.sync_feed(feed.name).get()
 
     # NOTE it would be better to redirect to the feed itself, but since we load it async
     # we'd have to show a spinner or something and poll until it finishes loading
@@ -296,7 +296,7 @@ def feed_sync(feed_name):
     if not feed:
         flask.abort(404, "Feed not found")
 
-    task = tasks.sync_feed(feed)
+    task = tasks.sync_feed(feed.name)
     task.get()
 
     response = flask.make_response()
