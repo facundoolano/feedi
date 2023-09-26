@@ -21,15 +21,6 @@ class CustomParser(BaseParser):
     def is_compatible(cls, feed_url):
         return cls.BASE_URL in feed_url
 
-    def parse_entry_url(self, entry):
-        return self.parse_content_url(entry)
-
-    def parse_remote_updated(self, entry):
-        return self.parse_remote_created(entry)
-
-    def parse_avatar_url(self, entry):
-        return None
-
 
 class AgendaBAParser(CustomParser):
     BASE_URL = 'https://laagenda.buenosaires.gob.ar'
@@ -38,28 +29,25 @@ class AgendaBAParser(CustomParser):
         api_url = f'{self.BASE_URL}/currentChannel.json'
         response = requests.get(api_url)
         items = response.json()['firstElements'][0]['items']['data']
-        return None, items
 
-    def parse_remote_id(self, entry):
-        return entry['id']
+        entry_values = []
+        for item in items:
+            created = datetime.datetime.fromisoformat(item['created_at'])
+            content_url = '{self.BASE_URL}?contenido={entry["id"]}'
+            entry_values.append({
+                'remote_id': item['id'],
+                'title': item['name'],
+                'username': item['additions'].split(';')[0].split('Por ')[-1],
+                'remote_created': created,
+                'remote_updated': created,
+                'body': item['synopsis'],
+                'media_url': item['image']['url'],
+                'content_url': content_url,
+                'entry_url': content_url,
+                'raw_data': json.dumps(item)
+            })
 
-    def parse_title(self, entry):
-        return entry['name']
-
-    def parse_username(self, entry):
-        return entry['additions'].split(';')[0].split('Por ')[-1]
-
-    def parse_remote_created(self, entry):
-        return datetime.datetime.fromisoformat(entry['created_at'])
-
-    def parse_body(self, entry):
-        return entry['synopsis']
-
-    def parse_media_url(self, entry):
-        return entry['image']['url']
-
-    def parse_content_url(self, entry):
-        return f'{self.BASE_URL}?contenido={entry["id"]}'
+        return None, entry_values
 
 
 class RevistaLenguaParser(CustomParser):
@@ -70,42 +58,27 @@ class RevistaLenguaParser(CustomParser):
         response = requests.get(url)
         soup = BeautifulSoup(response.content, 'lxml')
 
-        items = []
+        entry_values = []
         for a in soup.select('.post-title a'):
             article_html = self.request(a['href'])
             article_soup = BeautifulSoup(article_html, 'lxml')
             script = article_soup.find_all('script', type="application/ld+json")[1]
-            spec = json.loads(script.text)
-            del spec['articleBody']
-            items.append(spec)
+            item = json.loads(script.text)
+            del item['articleBody']
 
-        return None, items
+            entry_values.append({
+                'raw_data': json.dumps(item),
+                'remote_id': item['url'],
+                'title': item['headline'],
+                'username': item['editor'],
+                'remote_created': datetime.datetime.fromisoformat(item['dateCreated']),
+                'remote_updated': datetime.datetime.fromisoformat(item['dateModified']),
+                'body': item['description'],
+                'media_url': item['image'],
+                'entry_url': item['url'],
+                # this website does very funky things with the html
+                # can't really make them work on the reader
+                'content_url': None,
+            })
 
-    def parse_remote_id(self, entry):
-        return entry['url']
-
-    def parse_title(self, entry):
-        return entry['headline']
-
-    def parse_username(self, entry):
-        return entry['editor']
-
-    def parse_remote_created(self, entry):
-        return datetime.datetime.fromisoformat(entry['dateCreated'])
-
-    def parse_remote_updated(self, entry):
-        return datetime.datetime.fromisoformat(entry['dateModified'])
-
-    def parse_body(self, entry):
-        return entry['description']
-
-    def parse_media_url(self, entry):
-        return entry['image']
-
-    def parse_entry_url(self, entry):
-        return entry['url']
-
-    def parse_content_url(self, entry):
-        # this website does very funky things with the html
-        # can't really make them work on the reader
-        return None
+        return None, entry_values

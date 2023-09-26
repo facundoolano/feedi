@@ -99,20 +99,13 @@ def sync_custom_feed(feed_name):
 
     feed_data, feed_items = parser.fetch()
 
-    entries = []
-    for item in feed_items:
-        entry = parser.parse(item, None, None)
-        if entry:
-            entry['raw_data'] = json.dumps(item)
-            entries.append(entry)
-
     if feed_data:
         db_feed.raw_data = json.dumps(feed_data)
 
     db.session.merge(db_feed)
     db.session.commit()
 
-    upsert_entries(db_feed.id, entries)
+    upsert_entries(db_feed.id, feed_items)
 
 
 @huey_task()

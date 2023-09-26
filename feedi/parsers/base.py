@@ -43,13 +43,14 @@ class BaseParser:
         self.url = url
         self.response_cache = {}
 
-    def fetch(self):
+    def fetch(self, **_kwargs):
         """
         To be implemented by subclasses, fetch the feed entries from the given url
         and return a (feed_metadata, [item_data]) tuple.
         """
         raise NotImplementedError
 
+    # FIXME move this logic to rss parser
     def parse(self, entry, previous_fetch, skip_older_than):
         """
         Given an entry raw data (as produced by the `fetch` method) and parse
