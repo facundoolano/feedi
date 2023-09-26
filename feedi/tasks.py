@@ -102,6 +102,7 @@ def sync_custom_feed(feed_name):
     if feed_data:
         db_feed.raw_data = json.dumps(feed_data)
 
+    db_feed.last_fetch = datetime.datetime.utcnow()
     db.session.merge(db_feed)
     db.session.commit()
 
@@ -127,6 +128,10 @@ def sync_mastodon_feed(feed_name):
         values = parsers.mastodon.fetch_notifications(**args)
     else:
         raise ValueError('unknown mastodon feed type %s', db_feed.type)
+
+    db_feed.last_fetch = datetime.datetime.utcnow()
+    db.session.merge(db_feed)
+    db.session.commit()
     upsert_entries(db_feed.id, values)
 
 
