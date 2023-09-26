@@ -143,7 +143,8 @@ def sync_rss_feed(feed_name):
     db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     utcnow = datetime.datetime.utcnow()
 
-    if db_feed.last_fetch and utcnow - db_feed.last_fetch < datetime.timedelta(minutes=app.config['RSS_SKIP_RECENTLY_UPDATED_MINUTES']):
+    # TODO maybe this should be removed or applied to all feed types
+    if db_feed.last_fetch and utcnow - db_feed.last_fetch < datetime.timedelta(minutes=app.config['SKIP_RECENTLY_UPDATED_MINUTES']):
         app.logger.info('skipping recently synced feed %s', db_feed.name)
         return
 
