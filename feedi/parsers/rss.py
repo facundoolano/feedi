@@ -54,7 +54,6 @@ class RSSParser(BaseParser):
         self.skip_older_than = skip_older_than
         self.min_amount = min_amount
 
-    # FIXME move etag and metadata to generic fetch data?
     def fetch(self, previous_fetch, etag, modified, filters=None):
         """
         FIXME

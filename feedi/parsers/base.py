@@ -41,13 +41,6 @@ class BaseParser:
         self.url = url
         self.response_cache = {}
 
-    def fetch(self, **_kwargs):
-        """
-        To be implemented by subclasses, fetch the feed entries from the given url
-        and return a (feed_metadata, [item_data]) tuple.
-        """
-        raise NotImplementedError
-
     # TODO make this a proper cache of any sort of request, and cache all.
     def request(self, url):
         """

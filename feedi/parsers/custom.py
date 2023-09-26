@@ -46,7 +46,7 @@ class AgendaBAParser(CustomParser):
                 'raw_data': json.dumps(item)
             })
 
-        return None, entry_values
+        return entry_values
 
 
 class RevistaLenguaParser(CustomParser):
@@ -80,4 +80,4 @@ class RevistaLenguaParser(CustomParser):
                 'content_url': None,
             })
 
-        return None, entry_values
+        return entry_values

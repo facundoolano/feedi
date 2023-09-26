@@ -1,9 +1,13 @@
 # coding: utf-8
 
 import datetime
+import json
 
 import sqlalchemy as sa
+import sqlalchemy.dialects.sqlite as sqlite
 from flask_sqlalchemy import SQLAlchemy
+
+import feedi.parsers as parsers
 
 # TODO consider adding explicit support for url columns
 
@@ -64,6 +68,7 @@ class Feed(db.Model):
     def __repr__(self):
         return f'<Feed {self.name}>'
 
+    # TODO can this be avoided?
     @classmethod
     def resolve(cls, type):
         subclasses = {
@@ -77,6 +82,40 @@ class Feed(db.Model):
         if not subcls:
             raise ValueError(f'unknown type {type}')
         return subcls
+
+    def sync_with_remote(self):
+        "TODO"
+        from flask import current_app as app
+        utcnow = datetime.datetime.utcnow()
+
+        cooldown_minutes = datetime.timedelta(minutes=app.config['SKIP_RECENTLY_UPDATED_MINUTES'])
+        if self.last_fetch and (utcnow - self.last_fetch < cooldown_minutes):
+            app.logger.info('skipping recently synced feed %s', self.name)
+            return
+
+        entries = self.fetch_entry_data()
+        self.last_fetch = utcnow
+
+        # TODO can this commit be removed?
+        db.session.commit()
+        for values in entries:
+            # upsert to handle already seen entries.
+            # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
+            values['updated'] = utcnow
+            values['feed_id'] = self.id
+            db.session.execute(
+                sqlite.insert(Entry).
+                values(**values).
+                on_conflict_do_update(("feed_id", "remote_id"), set_=values)
+            )
+
+            # TODO can this commit be removed?
+            # inline commit to avoid sqlite locking when fetching parallel feeds
+            db.session.commit()
+
+    def fetch_entry_data(self):
+        "TODO"
+        raise NotImplementedError
 
     @classmethod
     def frequency_rank_query(cls):
@@ -120,34 +159,74 @@ class Feed(db.Model):
 
 
 class RssFeed(Feed):
-    # FIXME remove
     etag = sa.Column(
         sa.String, doc="Etag received on last parsed rss, to prevent re-fetching if it hasn't changed.")
-    # FIXME remove
     modified_header = sa.Column(
         sa.String, doc="Last-modified received on last parsed rss, to prevent re-fetching if it hasn't changed.")
 
-    # TODO move up
     filters = sa.Column(
         sa.String, doc="a comma separated list of conditions that feed source entries need to meet to be included in the feed.")
 
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_RSS}
 
+    def fetch_entry_data(self):
+        from flask import current_app as app
+        skip_older_than = datetime.datetime.utcnow() - \
+            datetime.timedelta(days=app.config['RSS_SKIP_OLDER_THAN_DAYS'])
+        parser_cls = parsers.rss.get_best_parser(self.url)
+        parser = parser_cls(self.name, self.url,
+                            skip_older_than,
+                            app.config['RSS_MINIMUM_ENTRY_AMOUNT'])
+        feed_data, entries, etag, modified = parser.fetch(self.last_fetch,
+                                                          self.etag,
+                                                          self.modified_header,
+                                                          self.filters)
+
+        self.etag = etag
+        self.modified_header = modified
+        if feed_data:
+            self.raw_data = json.dumps(feed_data)
+        return entries
+
 
 class MastodonAccount(Feed):
-    # TODO this could be a fk to a separate table with client/secret
-    # to share the feedi app across accounts of that same server
     access_token = sa.Column(sa.String)
+
+    def _api_args(self):
+        from flask import current_app as app
+        latest_entry = self.entries.order_by(Entry.remote_updated.desc()).first()
+        args = dict(server_url=self.url, access_token=self.access_token)
+        if latest_entry:
+            # there's some entry on db, this is not the first time we're syncing
+            # get all toots since the last seen one
+            args['newer_than'] = latest_entry.remote_id
+        else:
+            # if there isn't any entry yet, get the "first page" of toots from the timeline
+            args['limit'] = app.config['MASTODON_FETCH_LIMIT']
+        return args
+
+    def fetch_entry_data(self):
+        return parsers.mastodon.fetch_toots(**self._api_args())
 
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_ACCOUNT}
 
 
 class MastodonNotifications(MastodonAccount):
+
+    def fetch_entry_data(self):
+        return parsers.mastodon.fetch_notifications(**self._api_args())
+
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_NOTIFICATIONS}
 
 
 class CustomFeed(Feed):
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_CUSTOM}
+
+    def fetch_entry_data(self):
+        parser_cls = parsers.custom.get_best_parser(self.url)
+        parser = parser_cls(self.name, self.url)
+
+        return parser.fetch()
 
 
 class Entry(db.Model):

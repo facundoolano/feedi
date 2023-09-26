@@ -6,13 +6,11 @@ This module contains tasks that can be scheduled by huey and/or run as flask cli
 
 import csv
 import datetime
-import json
 from functools import wraps
 
 import click
 import flask
 import sqlalchemy as sa
-import sqlalchemy.dialects.sqlite as sqlite
 from flask import current_app as app
 from huey import crontab
 from huey.contrib.mini import MiniHuey
@@ -78,86 +76,9 @@ def sync_all_feeds():
 
 @huey_task()
 def sync_feed(feed_name):
+    # TODO change to db.session.get ?
     db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
-    utcnow = datetime.datetime.utcnow()
-
-    if db_feed.last_fetch and utcnow - db_feed.last_fetch < datetime.timedelta(minutes=app.config['SKIP_RECENTLY_UPDATED_MINUTES']):
-        app.logger.info('skipping recently synced feed %s', db_feed.name)
-        return
-
-    feed_data = None
-    entries = []
-
-    if db_feed.type == models.Feed.TYPE_RSS:
-        skip_older_than = utcnow - datetime.timedelta(days=app.config['RSS_SKIP_OLDER_THAN_DAYS'])
-        parser_cls = parsers.rss.get_best_parser(db_feed.url)
-        parser = parser_cls(db_feed.name, db_feed.url,
-                            skip_older_than,
-                            app.config['RSS_MINIMUM_ENTRY_AMOUNT'])
-        feed_data, entries, etag, modified = parser.fetch(db_feed.last_fetch,
-                                                          db_feed.etag,
-                                                          db_feed.modified_header,
-                                                          db_feed.filters)
-
-        db_feed.etag = etag
-        db_feed.modified_header = modified
-
-    elif db_feed.type == models.Feed.TYPE_CUSTOM:
-        parser_cls = parsers.custom.get_best_parser(db_feed.url)
-        parser = parser_cls(db_feed.name, db_feed.url)
-
-        feed_data, entries = parser.fetch()
-
-    elif db_feed.type in [models.Feed.TYPE_MASTODON_ACCOUNT,
-                          models.Feed.TYPE_MASTODON_NOTIFICATIONS]:
-        latest_entry = db_feed.entries.order_by(models.Entry.remote_updated.desc()).first()
-        args = dict(server_url=db_feed.url, access_token=db_feed.access_token)
-        if latest_entry:
-            # there's some entry on db, this is not the first time we're syncing
-            # get all toots since the last seen one
-            args['newer_than'] = latest_entry.remote_id
-        else:
-            # if there isn't any entry yet, get the "first page" of toots from the timeline
-            args['limit'] = app.config['MASTODON_FETCH_LIMIT']
-
-        if db_feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
-            entries = parsers.mastodon.fetch_toots(**args)
-        elif db_feed.type == models.Feed.TYPE_MASTODON_NOTIFICATIONS:
-            entries = parsers.mastodon.fetch_notifications(**args)
-
-    else:
-        raise ValueError("unknown feed type %s", db_feed.type)
-
-    db_feed.last_fetch = utcnow
-    if feed_data:
-        db_feed.raw_data = json.dumps(feed_data)
-
-    db.session.merge(db_feed)
-    db.session.commit()
-
-    upsert_entries(db_feed.id, entries)
-
-
-# NOTE most of this code should probably live in a db related module eg models
-def upsert_entries(feed_id, entries_values):
-    """
-    Insert or update the given feed's entries based on the values in the list.
-    An insert and commit is emitted for each entry.
-    """
-    utcnow = datetime.datetime.utcnow()
-    for values in entries_values:
-        # upsert to handle already seen entries.
-        # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
-        values['updated'] = utcnow
-        values['feed_id'] = feed_id
-        db.session.execute(
-            sqlite.insert(models.Entry).
-            values(**values).
-            on_conflict_do_update(("feed_id", "remote_id"), set_=values)
-        )
-
-        # inline commit to avoid sqlite locking when fetching parallel feeds
-        db.session.commit()
+    db_feed.sync_with_remote()
 
 
 @feed_cli.command('purge')
