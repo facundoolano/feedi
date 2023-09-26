@@ -218,8 +218,6 @@ def feed_add():
 
 @app.post("/feeds/new")
 def feed_add_submit():
-    # Assume we only explicitly create RSS feeds for now. Mastodon would have a login flow, not a form
-
     # TODO handle errors, eg required fields, duplicate name
     values = dict(**flask.request.form)
 
