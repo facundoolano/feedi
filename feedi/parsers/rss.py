@@ -47,9 +47,14 @@ class RSSParser(BaseParser):
             return icon_url
 
         # if not found default to favicon from url domain
-
         return BaseParser.detect_feed_icon(url)
 
+    def __init__(self, feed_name, url, skip_older_than, min_amount):
+        super().__init__(feed_name, url)
+        self.skip_older_than = skip_older_than
+        self.min_amount = min_amount
+
+    # FIXME move etag and metadata to generic fetch data?
     def fetch(self, previous_fetch, etag, modified, filters=None):
         """
         FIXME
@@ -73,23 +78,25 @@ class RSSParser(BaseParser):
         entries = []
         is_first_load = previous_fetch is None
         for item in feed['items']:
-            # FIXME remove app usage from here, prefer config as arguments
-            # TODO skip_older than should be a date built outside of here
-            from flask import current_app as app
 
-            # we don't want to load old entries that are present in the feed, unless
-            # it's the first time we're loading it, in which case we prefer to show old stuff
-            # instead of showing nothing
-            if is_first_load and len(entries) < app.config['RSS_MINIMUM_ENTRY_AMOUNT']:
-                skip_older_than = None
-            else:
-                skip_older_than = app.config['RSS_SKIP_OLDER_THAN_DAYS']
+            # don't try to process stuff that hasn't changed recently
+            updated = item.get('updated_parsed', item.get('published_parsed'))
+            if updated and previous_fetch and to_datetime(updated) < previous_fetch:
+                logger.debug('skipping up to date entry %s', item.get('link'))
+                continue
+
+            # or that's too old
+            published = item.get('published_parsed', item.get('updated_parsed'))
+            if (self.skip_older_than and published and to_datetime(published) < self.skip_older_than):
+                # unless it's the first time we're loading it, in which case we prefer to show old stuff
+                # to showing nothing
+                if not is_first_load or not self.min_amount or len(entries) >= self.min_amount:
+                    continue
 
             if filters and not self._matches(item, filters):
                 continue
 
-            entry = self.parse(item, previous_fetch,
-                               skip_older_than)
+            entry = self.parse(item)
             if entry:
                 entry['raw_data'] = json.dumps(item)
                 entries.append(entry)
@@ -113,35 +120,11 @@ class RSSParser(BaseParser):
 
         return True
 
-    def parse(self, entry, previous_fetch, skip_older_than):
+    def parse(self, entry):
         """
         FIXME
         """
         result = {}
-
-        try:
-            url = self.parse_entry_url(entry)
-            published = self.parse_remote_created(entry)
-            updated = self.parse_remote_updated(entry)
-        except Exception as error:
-            exc_desc_lines = traceback.format_exception_only(type(error), error)
-            exc_desc = ''.join(exc_desc_lines).rstrip()
-            logger.error("skipping errored entry %s %s",
-                         self.feed_name, exc_desc)
-            return
-
-        # FIXME these skip checks should go up with the others
-
-        # don't try to process stuff that hasn't changed recently
-        if previous_fetch and updated < previous_fetch:
-            logger.debug('skipping up to date entry %s', entry.get('link'))
-            return
-
-        # or that is too old
-        if (skip_older_than and published and
-                datetime.datetime.utcnow() - published > datetime.timedelta(days=skip_older_than)):
-            logger.debug('skipping old entry %s %s', self.feed_name, url)
-            return
 
         for field in self.FIELDS:
             method = 'parse_' + field
@@ -152,7 +135,7 @@ class RSSParser(BaseParser):
                 exc_desc = ''.join(exc_desc_lines).rstrip()
                 logger.error("skipping errored entry %s %s %s",
                              self.feed_name,
-                             url,
+                             entry.get('link'),
                              exc_desc)
                 return
 

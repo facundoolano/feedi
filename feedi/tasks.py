@@ -146,8 +146,11 @@ def sync_rss_feed(feed_name):
         app.logger.info('skipping recently synced feed %s', db_feed.name)
         return
 
+    skip_older_than = utcnow - datetime.timedelta(days=app.config['RSS_SKIP_OLDER_THAN_DAYS'])
     parser_cls = parsers.rss.get_best_parser(db_feed.url)
-    parser = parser_cls(db_feed.name, db_feed.url)
+    parser = parser_cls(db_feed.name, db_feed.url,
+                        skip_older_than,
+                        app.config['RSS_MINIMUM_ENTRY_AMOUNT'])
     app.logger.debug('fetching rss %s %s %s', db_feed.name, db_feed.url, parser)
 
     feed_data, entries, etag, modified = parser.fetch(db_feed.last_fetch,
