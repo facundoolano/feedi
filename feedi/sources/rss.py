@@ -151,25 +151,6 @@ class RSSParser(BaseParser):
             raise ValueError("publication date is in the future")
         return dt
 
-    # FIXME make this a proper cache of any sort of request, and cache all.
-    def request(self, url):
-        if url in self.response_cache:
-            logger.debug("using cached response %s", url)
-            return self.response_cache[url]
-
-        logger.debug("making request %s", url)
-        content = requests.get(url).content
-        self.response_cache[url] = content
-        return content
-
-    def fetch_meta(self, url, tag):
-        """
-        GET the body of the url (which could be already cached) and extract the content of the given meta tag.
-        """
-        # TODO try accepting a series of tags to try in turn
-        soup = BeautifulSoup(self.request(url), 'lxml')
-        return extract_meta(soup, tag)
-
 
 # FIXME reduce duplication between aggregators
 class RedditParser(RSSParser):
