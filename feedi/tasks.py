@@ -145,28 +145,10 @@ def sync_rss_feed(feed_name):
     parser = parser_cls(db_feed.name, db_feed.url)
     app.logger.debug('fetching rss %s %s %s', db_feed.name, db_feed.url, parser)
 
-    feed_data, feed_items, etag, modified = parser.fetch(db_feed.last_fetch,
-                                                         db_feed.etag,
-                                                         db_feed.modified_header,
-                                                         db_feed.filters)
-
-    # FIXME move this checks inside the fetch method?
-    entries = []
-    is_first_load = db_feed.last_fetch is None
-    for item in feed_items:
-        # we don't want to load old entries that are present in the feed, unless
-        # it's the first time we're loading it, in which case we prefer to show old stuff
-        # instead of showing nothing
-        if is_first_load and len(entries) < app.config['RSS_MINIMUM_ENTRY_AMOUNT']:
-            skip_older_than = None
-        else:
-            skip_older_than = app.config['RSS_SKIP_OLDER_THAN_DAYS']
-
-        entry = parser.parse(item, db_feed.last_fetch,
-                             skip_older_than)
-        if entry:
-            entry['raw_data'] = json.dumps(item)
-            entries.append(entry)
+    feed_data, entries, etag, modified = parser.fetch(db_feed.last_fetch,
+                                                      db_feed.etag,
+                                                      db_feed.modified_header,
+                                                      db_feed.filters)
 
     db_feed.last_fetch = utcnow
     db_feed.etag = etag

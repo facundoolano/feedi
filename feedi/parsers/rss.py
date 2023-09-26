@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 import pprint
 import time
@@ -50,6 +51,9 @@ class RSSParser(BaseParser):
         return BaseParser.detect_feed_icon(url)
 
     def fetch(self, previous_fetch, etag, modified, filters=None):
+        """
+        FIXME
+        """
         # using standard feed headers to prevent re-fetching unchanged feeds
         # https://feedparser.readthedocs.io/en/latest/http-etag.html
         feed = feedparser.parse(self.url, etag=etag, modified=modified)
@@ -65,8 +69,32 @@ class RSSParser(BaseParser):
 
         etag = getattr(feed, 'etag', None)
         modified = getattr(feed, 'modified', None)
-        items = [i for i in feed['items'] if self._matches(i, filters)]
-        return feed['feed'], items, etag, modified
+
+        entries = []
+        is_first_load = previous_fetch is None
+        for item in feed['items']:
+            # FIXME remove app usage from here, prefer config as arguments
+            # TODO skip_older than should be a date built outside of here
+            from flask import current_app as app
+
+            # we don't want to load old entries that are present in the feed, unless
+            # it's the first time we're loading it, in which case we prefer to show old stuff
+            # instead of showing nothing
+            if is_first_load and len(entries) < app.config['RSS_MINIMUM_ENTRY_AMOUNT']:
+                skip_older_than = None
+            else:
+                skip_older_than = app.config['RSS_SKIP_OLDER_THAN_DAYS']
+
+            if filters and not self._matches(item, filters):
+                continue
+
+            entry = self.parse(item, previous_fetch,
+                               skip_older_than)
+            if entry:
+                entry['raw_data'] = json.dumps(item)
+                entries.append(entry)
+
+        return feed['feed'], entries, etag, modified
 
     @staticmethod
     def _matches(entry, filters):
@@ -74,8 +102,6 @@ class RSSParser(BaseParser):
         Check a filter expression (e.g. "author=John Doe") against the parsed entry and return whether it matches the condition.
         """
         # this is very brittle and ad hoc but gets the job done
-        if not filters:
-            return True
         filters = filters.split(',')
         for filter in filters:
             field, value = filter.strip().split('=')
@@ -89,9 +115,7 @@ class RSSParser(BaseParser):
 
     def parse(self, entry, previous_fetch, skip_older_than):
         """
-        Given an entry raw data (as produced by the `fetch` method) and parse
-        into a dictionary by using parse_* methods on each of the `cls.FIELDS`
-        names.
+        FIXME
         """
         result = {}
 
@@ -105,6 +129,8 @@ class RSSParser(BaseParser):
             logger.error("skipping errored entry %s %s",
                          self.feed_name, exc_desc)
             return
+
+        # FIXME these skip checks should go up with the others
 
         # don't try to process stuff that hasn't changed recently
         if previous_fetch and updated < previous_fetch:
