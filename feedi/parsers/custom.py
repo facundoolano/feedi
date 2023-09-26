@@ -7,7 +7,6 @@ from feedi.requests import requests
 
 
 def get_best_parser(url):
-    # Try with all the customized parsers, and if none is compatible default to the generic RSS parsing.
     for cls in CustomParser.__subclasses__():
         if cls.is_compatible(url):
             return cls
