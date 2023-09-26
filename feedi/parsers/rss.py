@@ -2,6 +2,7 @@ import datetime
 import logging
 import pprint
 import time
+import traceback
 import urllib
 
 import feedparser
@@ -85,6 +86,51 @@ class RSSParser(BaseParser):
                 return False
 
         return True
+
+    def parse(self, entry, previous_fetch, skip_older_than):
+        """
+        Given an entry raw data (as produced by the `fetch` method) and parse
+        into a dictionary by using parse_* methods on each of the `cls.FIELDS`
+        names.
+        """
+        result = {}
+
+        try:
+            url = self.parse_entry_url(entry)
+            published = self.parse_remote_created(entry)
+            updated = self.parse_remote_updated(entry)
+        except Exception as error:
+            exc_desc_lines = traceback.format_exception_only(type(error), error)
+            exc_desc = ''.join(exc_desc_lines).rstrip()
+            logger.error("skipping errored entry %s %s",
+                         self.feed_name, exc_desc)
+            return
+
+        # don't try to process stuff that hasn't changed recently
+        if previous_fetch and updated < previous_fetch:
+            logger.debug('skipping up to date entry %s', entry.get('link'))
+            return
+
+        # or that is too old
+        if (skip_older_than and published and
+                datetime.datetime.utcnow() - published > datetime.timedelta(days=skip_older_than)):
+            logger.debug('skipping old entry %s %s', self.feed_name, url)
+            return
+
+        for field in self.FIELDS:
+            method = 'parse_' + field
+            try:
+                result[field] = getattr(self, method)(entry)
+            except Exception as error:
+                exc_desc_lines = traceback.format_exception_only(type(error), error)
+                exc_desc = ''.join(exc_desc_lines).rstrip()
+                logger.error("skipping errored entry %s %s %s",
+                             self.feed_name,
+                             url,
+                             exc_desc)
+                return
+
+        return result
 
     def parse_title(self, entry):
         return entry['title']

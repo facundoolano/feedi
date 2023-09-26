@@ -150,6 +150,7 @@ def sync_rss_feed(feed_name):
                                                          db_feed.modified_header,
                                                          db_feed.filters)
 
+    # FIXME move this checks inside the fetch method?
     entries = []
     is_first_load = db_feed.last_fetch is None
     for item in feed_items:
