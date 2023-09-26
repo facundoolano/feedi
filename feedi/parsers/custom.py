@@ -35,11 +35,7 @@ class CustomParser(BaseParser):
 class AgendaBAParser(CustomParser):
     BASE_URL = 'https://laagenda.buenosaires.gob.ar'
 
-    @classmethod
-    def is_compatible(cls, feed_url):
-        return cls.BASE_URL in feed_url
-
-    def fetch(self, _url):
+    def fetch(self):
         api_url = f'{self.BASE_URL}/currentChannel.json'
         response = requests.get(api_url)
         items = response.json()['firstElements'][0]['items']['data']
@@ -70,7 +66,7 @@ class AgendaBAParser(CustomParser):
 class RevistaLenguaParser(CustomParser):
     BASE_URL = 'https://www.penguinlibros.com'
 
-    def fetch(self, _url):
+    def fetch(self):
         url = f'{self.BASE_URL}/es/revista-lengua/entradas'
         response = requests.get(url)
         soup = BeautifulSoup(response.content, 'lxml')

@@ -38,11 +38,12 @@ class BaseParser:
 
         return icon_url
 
-    def __init__(self, feed_name):
+    def __init__(self, feed_name, url):
         self.feed_name = feed_name
+        self.url = url
         self.response_cache = {}
 
-    def fetch(self, _feed_url):
+    def fetch(self):
         """
         To be implemented by subclasses, fetch the feed entries from the given url
         and return a (feed_metadata, [item_data]) tuple.
