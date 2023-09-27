@@ -8,6 +8,7 @@ import sqlalchemy.dialects.sqlite as sqlite
 from flask_sqlalchemy import SQLAlchemy
 
 import feedi.parsers as parsers
+from feedi.requests import get_favicon
 
 # TODO consider adding explicit support for url columns
 
@@ -117,6 +118,9 @@ class Feed(db.Model):
         "TODO"
         raise NotImplementedError
 
+    def load_icon(self):
+        self.icon = get_favicon(self.url)
+
     @classmethod
     def frequency_rank_query(cls):
         """
@@ -189,6 +193,9 @@ class RssFeed(Feed):
             self.raw_data = json.dumps(feed_data)
         return entries
 
+    def load_icon(self):
+        self.icon = parsers.rss.fetch_icon(self.url) or get_favicon(self.url)
+
 
 class MastodonAccount(Feed):
     access_token = sa.Column(sa.String)
@@ -208,6 +215,9 @@ class MastodonAccount(Feed):
 
     def fetch_entry_data(self):
         return parsers.mastodon.fetch_toots(**self._api_args())
+
+    def load_icon(self):
+        self.icon = parsers.mastodon.fetch_avatar(self.url, self.access_token)
 
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_ACCOUNT}
 

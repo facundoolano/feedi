@@ -218,24 +218,14 @@ def feed_add():
 
 @app.post("/feeds/new")
 def feed_add_submit():
-    # TODO handle errors, eg required fields, duplicate name
-    values = dict(**flask.request.form)
-
-    # FIXME this is hacky
-    if values['type'] == models.Feed.TYPE_RSS:
-        values['icon_url'] = rss.RSSParser.detect_feed_icon(values['url'])
-    else:
-        values['icon_url'] = rss.BaseParser.detect_feed_icon(values['url'])
-
-    # TODO use a proper form library instead of this hack
+    # FIXME use a forms lib for validations, type coercion, etc
+    values = {k: v for k, v in flask.request.form.items() if v}
     values['javascript_enabled'] = bool(values.get('javascript_enabled'))
 
-    # FIXME all of this is hacky
     feed_cls = models.Feed.resolve(values['type'])
-    # skip blanks, prevents unsupported fields in subclasses
-    values = {k: v for k, v in values.items() if v}
     feed = feed_cls(**values)
 
+    feed.load_icon()
     db.session.add(feed)
     db.session.commit()
 

@@ -29,6 +29,15 @@ def fetch(feed_name, url, skip_older_than, min_amount,
     return parser.fetch(previous_fetch, etag, modified, filters)
 
 
+def fetch_icon(url):
+    # try to get the icon from an rss field
+    feed = feedparser.parse(url)
+    icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
+    if icon_url and requests.head(icon_url).ok:
+        logger.debug("using feed icon: %s", icon_url)
+        return icon_url
+
+
 class RSSParser(BaseParser):
     """
     A generic parser for RSS articles.
@@ -41,18 +50,6 @@ class RSSParser(BaseParser):
         class is suited to parse the source at the given url.
         """
         raise NotImplementedError
-
-    @staticmethod
-    def detect_feed_icon(url):
-        # try to get the icon from an rss field
-        feed = feedparser.parse(url)
-        icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
-        if icon_url and requests.head(icon_url).ok:
-            logger.debug("using feed icon: %s", icon_url)
-            return icon_url
-
-        # if not found default to favicon from url domain
-        return BaseParser.detect_feed_icon(url)
 
     def __init__(self, feed_name, url, skip_older_than, min_amount):
         super().__init__(feed_name, url)

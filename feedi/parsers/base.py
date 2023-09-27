@@ -17,25 +17,6 @@ class BaseParser:
     FIELDS = ['title', 'avatar_url', 'username', 'body',
               'media_url', 'remote_id', 'remote_created', 'remote_updated', 'entry_url', 'content_url']
 
-    @staticmethod
-    def detect_feed_icon(url):
-        # strip path
-        url_parts = urllib.parse.urlparse(url)
-        url = f'{url_parts.scheme}://{url_parts.netloc}'
-        try:
-            favicons = favicon.get(url)
-        except:
-            logger.exception("error fetching favicon: %s", url)
-            return
-        favicons = [f for f in favicons if f.height == f.width]
-        if not favicons:
-            logger.debug("no feed icon found: %s", favicons)
-            return
-        icon_url = favicons[0].url
-        logger.debug('using favicon %s', icon_url)
-
-        return icon_url
-
     def __init__(self, feed_name, url):
         self.feed_name = feed_name
         self.url = url
