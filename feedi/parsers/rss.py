@@ -20,7 +20,7 @@ def fetch(feed_name, url, skip_older_than, min_amount,
     parser_cls = RSSParser
     for cls in RSSParser.__subclasses__():
         if cls.is_compatible(url):
-            return cls
+            parser_cls = cls
 
     # TODO these arg distribution between constructor and method probably
     # doesn't make sense anymore
