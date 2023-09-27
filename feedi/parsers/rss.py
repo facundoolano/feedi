@@ -16,12 +16,17 @@ logger = logging.getLogger(__name__)
 feedparser.USER_AGENT = USER_AGENT
 
 
-def get_best_parser(url):
-    # Try with all the customized parsers, and if none is compatible default to the generic RSS parsing.
+def fetch(feed_name, url, skip_older_than, min_amount,
+          previous_fetch, etag, modified, filters):
+    parser_cls = RSSParser
     for cls in RSSParser.__subclasses__():
         if cls.is_compatible(url):
             return cls
-    return RSSParser
+
+    # TODO these arg distribution between constructor and method probably
+    # doesn't make sense anymore
+    parser = parser_cls(feed_name, url, skip_older_than, min_amount)
+    return parser.fetch(previous_fetch, etag, modified, filters)
 
 
 class RSSParser(BaseParser):

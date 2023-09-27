@@ -6,11 +6,16 @@ from feedi.parsers.base import BaseParser
 from feedi.requests import requests
 
 
-def get_best_parser(url):
+def fetch(feed_name, url):
+    parser = None
     for cls in CustomParser.__subclasses__():
         if cls.is_compatible(url):
-            return cls
-    raise ValueError("no custom parser for %s", url)
+            parser = cls(feed_name, url)
+
+    if not parser:
+        raise ValueError("no custom parser for %s", url)
+
+    return parser.fetch()
 
 
 class CustomParser(BaseParser):
@@ -19,6 +24,9 @@ class CustomParser(BaseParser):
     @classmethod
     def is_compatible(cls, feed_url):
         return cls.BASE_URL in feed_url
+
+    def fetch(self):
+        raise NotImplementedError
 
 
 class AgendaBAParser(CustomParser):

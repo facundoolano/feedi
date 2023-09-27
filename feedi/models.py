@@ -173,14 +173,15 @@ class RssFeed(Feed):
         from flask import current_app as app
         skip_older_than = datetime.datetime.utcnow() - \
             datetime.timedelta(days=app.config['RSS_SKIP_OLDER_THAN_DAYS'])
-        parser_cls = parsers.rss.get_best_parser(self.url)
-        parser = parser_cls(self.name, self.url,
-                            skip_older_than,
-                            app.config['RSS_MINIMUM_ENTRY_AMOUNT'])
-        feed_data, entries, etag, modified = parser.fetch(self.last_fetch,
-                                                          self.etag,
-                                                          self.modified_header,
-                                                          self.filters)
+
+        feed_data, entries, etag, modified = parsers.rss.fetch(
+            self.name, self.url,
+            skip_older_than,
+            app.config['RSS_MINIMUM_ENTRY_AMOUNT'],
+            self.last_fetch,
+            self.etag,
+            self.modified_header,
+            self.filters)
 
         self.etag = etag
         self.modified_header = modified
@@ -223,10 +224,7 @@ class CustomFeed(Feed):
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_CUSTOM}
 
     def fetch_entry_data(self):
-        parser_cls = parsers.custom.get_best_parser(self.url)
-        parser = parser_cls(self.name, self.url)
-
-        return parser.fetch()
+        return parsers.custom.fetch(self.name, self.url)
 
 
 class Entry(db.Model):
