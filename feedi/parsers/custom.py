@@ -2,8 +2,7 @@ import datetime
 import json
 
 from bs4 import BeautifulSoup
-from feedi.parsers.base import BaseParser
-from feedi.requests import requests
+from feedi.requests import CachingRequestsMixin, requests
 
 
 def fetch(feed_name, url):
@@ -18,8 +17,13 @@ def fetch(feed_name, url):
     return parser.fetch()
 
 
-class CustomParser(BaseParser):
+class CustomParser(CachingRequestsMixin):
     BASE_URL = 'TODO override'
+
+    def __init__(self, feed_name, url):
+        super().__init__()
+        self.feed_name = feed_name
+        self.url = url
 
     @classmethod
     def is_compatible(cls, feed_url):

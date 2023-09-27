@@ -8,8 +8,7 @@ import urllib
 
 import feedparser
 from bs4 import BeautifulSoup
-from feedi.parsers.base import BaseParser
-from feedi.requests import USER_AGENT, requests
+from feedi.requests import USER_AGENT, CachingRequestsMixin, requests
 
 logger = logging.getLogger(__name__)
 
@@ -38,10 +37,13 @@ def fetch_icon(url):
         return icon_url
 
 
-class RSSParser(BaseParser):
+class RSSParser(CachingRequestsMixin):
     """
     A generic parser for RSS articles.
     """
+
+    FIELDS = ['title', 'avatar_url', 'username', 'body', 'media_url', 'remote_id',
+              'remote_created', 'remote_updated', 'entry_url', 'content_url', 'header']
 
     @staticmethod
     def is_compatible(_feed_url):
@@ -52,7 +54,9 @@ class RSSParser(BaseParser):
         raise NotImplementedError
 
     def __init__(self, feed_name, url, skip_older_than, min_amount):
-        super().__init__(feed_name, url)
+        super().__init__()
+        self.feed_name = feed_name
+        self.url = url
         self.skip_older_than = skip_older_than
         self.min_amount = min_amount
 
@@ -206,6 +210,9 @@ class RSSParser(BaseParser):
         if dt > datetime.datetime.utcnow():
             raise ValueError("publication date is in the future")
         return dt
+
+    def parse_header(self, entry):
+        return None
 
 
 # FIXME reduce duplication between aggregators
