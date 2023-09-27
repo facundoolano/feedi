@@ -69,9 +69,9 @@ class Feed(db.Model):
     def __repr__(self):
         return f'<Feed {self.name}>'
 
-    # TODO can this be avoided?
     @classmethod
     def resolve(cls, type):
+        "Return the Feed model subclass for the given feed type."
         subclasses = {
             cls.TYPE_RSS: RssFeed,
             cls.TYPE_MASTODON_ACCOUNT: MastodonAccount,
@@ -85,7 +85,11 @@ class Feed(db.Model):
         return subcls
 
     def sync_with_remote(self):
-        "TODO"
+        """
+        Fetch this feed entries from its remote sources, saving them to the database and updating
+        the feed metadata. The specific fetching logic is implemented by subclasses through the
+        `fetch_entry_data` method.
+        """
         from flask import current_app as app
         utcnow = datetime.datetime.utcnow()
 
@@ -115,10 +119,14 @@ class Feed(db.Model):
             db.session.commit()
 
     def fetch_entry_data(self):
-        "TODO"
+        """
+        To be implemented by subclasses, this should contact the remote feed source, parse any new entries
+        and return a list of values for each one.
+        """
         raise NotImplementedError
 
     def load_icon(self):
+        ""
         self.icon = get_favicon(self.url)
 
     @classmethod
