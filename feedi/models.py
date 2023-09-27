@@ -101,8 +101,6 @@ class Feed(db.Model):
         entries = self.fetch_entry_data()
         self.last_fetch = utcnow
 
-        # TODO can this commit be removed?
-        db.session.commit()
         for values in entries:
             # upsert to handle already seen entries.
             # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
@@ -113,10 +111,6 @@ class Feed(db.Model):
                 values(**values).
                 on_conflict_do_update(("feed_id", "remote_id"), set_=values)
             )
-
-            # TODO can this commit be removed?
-            # inline commit to avoid sqlite locking when fetching parallel feeds
-            db.session.commit()
 
     def fetch_entry_data(self):
         """

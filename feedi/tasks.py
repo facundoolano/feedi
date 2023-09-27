@@ -76,9 +76,9 @@ def sync_all_feeds():
 
 @huey_task()
 def sync_feed(feed_name):
-    # TODO change to db.session.get ?
     db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     db_feed.sync_with_remote()
+    db.session.commit()
 
 
 @feed_cli.command('purge')
