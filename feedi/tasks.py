@@ -6,19 +6,17 @@ This module contains tasks that can be scheduled by huey and/or run as flask cli
 
 import csv
 import datetime
-import json
 from functools import wraps
 
 import click
 import flask
 import sqlalchemy as sa
-import sqlalchemy.dialects.sqlite as sqlite
 from flask import current_app as app
 from huey import crontab
 from huey.contrib.mini import MiniHuey
 
 import feedi.models as models
-import feedi.sources as sources
+import feedi.parsers as parsers
 from feedi.app import create_huey_app
 from feedi.models import db
 
@@ -63,7 +61,7 @@ def sync_all_feeds():
     tasks = []
     for feed in feeds:
         try:
-            tasks.append(sync_feed(feed))
+            tasks.append(sync_feed(feed.name))
         except:
             app.logger.error("Skipping errored feed %s", feed.name)
 
@@ -76,136 +74,11 @@ def sync_all_feeds():
             continue
 
 
-def sync_feed(feed):
-    if feed.type == models.Feed.TYPE_RSS:
-        return sync_rss_feed(feed.name)
-    elif feed.type in [models.Feed.TYPE_MASTODON_ACCOUNT,
-                       models.Feed.TYPE_MASTODON_NOTIFICATIONS]:
-        return sync_mastodon_feed(feed.name)
-    elif feed.type == models.Feed.TYPE_CUSTOM:
-        return sync_custom_feed(feed.name)
-    else:
-        raise ValueError("unknown feed type %s", feed.type)
-
-
-# FIXME there's duplication here, some of it could be handled by moving stuff to the base parser
 @huey_task()
-def sync_custom_feed(feed_name):
+def sync_feed(feed_name):
     db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
-
-    parser_cls = sources.custom.get_best_parser(db_feed.url)
-    parser = parser_cls(db_feed.name)
-    app.logger.debug('fetching custom %s %s %s', db_feed.name, db_feed.url, parser)
-
-    feed_data, feed_items = parser.fetch(db_feed.url)
-
-    entries = []
-    for item in feed_items:
-        entry = parser.parse(item, None, None)
-        if entry:
-            entry['raw_data'] = json.dumps(item)
-            entries.append(entry)
-
-    if feed_data:
-        db_feed.raw_data = json.dumps(feed_data)
-
-    db.session.merge(db_feed)
+    db_feed.sync_with_remote()
     db.session.commit()
-
-    upsert_entries(db_feed.id, entries)
-
-
-@huey_task()
-def sync_mastodon_feed(feed_name):
-    db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
-    latest_entry = db_feed.entries.order_by(models.Entry.remote_updated.desc()).first()
-    args = dict(server_url=db_feed.url, access_token=db_feed.access_token)
-    if latest_entry:
-        # there's some entry on db, this is not the first time we're syncing
-        # get all toots since the last seen one
-        args['newer_than'] = latest_entry.remote_id
-    else:
-        # if there isn't any entry yet, get the "first page" of toots from the timeline
-        args['limit'] = app.config['MASTODON_FETCH_LIMIT']
-
-    if db_feed.type == models.Feed.TYPE_MASTODON_ACCOUNT:
-        values = sources.mastodon.fetch_toots(**args)
-    elif db_feed.type == models.Feed.TYPE_MASTODON_NOTIFICATIONS:
-        values = sources.mastodon.fetch_notifications(**args)
-    else:
-        raise ValueError('unknown mastodon feed type %s', db_feed.type)
-    upsert_entries(db_feed.id, values)
-
-
-# TODO this could eventually be turned into a generic sync feed, not rss only
-@huey_task()
-def sync_rss_feed(feed_name, force=False):
-    db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
-    utcnow = datetime.datetime.utcnow()
-
-    if not force and db_feed.last_fetch and utcnow - db_feed.last_fetch < datetime.timedelta(minutes=app.config['RSS_SKIP_RECENTLY_UPDATED_MINUTES']):
-        app.logger.info('skipping recently synced feed %s', db_feed.name)
-        return
-
-    parser_cls = sources.rss.get_best_parser(db_feed.url)
-    parser = parser_cls(db_feed.name)
-    app.logger.debug('fetching rss %s %s %s', db_feed.name, db_feed.url, parser)
-
-    feed_data, feed_items, etag, modified = parser.fetch(db_feed.url,
-                                                         db_feed.last_fetch,
-                                                         db_feed.etag,
-                                                         db_feed.modified_header,
-                                                         db_feed.filters)
-
-    entries = []
-    is_first_load = db_feed.last_fetch is None
-    for item in feed_items:
-        # we don't want to load old entries that are present in the feed, unless
-        # it's the first time we're loading it, in which case we prefer to show old stuff
-        # instead of showing nothing
-        if is_first_load and len(entries) < app.config['RSS_MINIMUM_ENTRY_AMOUNT']:
-            skip_older_than = None
-        else:
-            skip_older_than = app.config['RSS_SKIP_OLDER_THAN_DAYS']
-
-        entry = parser.parse(item, db_feed.last_fetch,
-                             skip_older_than)
-        if entry:
-            entry['raw_data'] = json.dumps(item)
-            entries.append(entry)
-
-    db_feed.last_fetch = utcnow
-    db_feed.etag = etag
-    db_feed.modified_header = modified
-    if feed_data:
-        db_feed.raw_data = json.dumps(feed_data)
-
-    db.session.merge(db_feed)
-    db.session.commit()
-
-    upsert_entries(db_feed.id, entries)
-
-
-# NOTE most of this code should probably live in a db related module eg models
-def upsert_entries(feed_id, entries_values):
-    """
-    Insert or update the given feed's entries based on the values in the list.
-    An insert and commit is emitted for each entry.
-    """
-    utcnow = datetime.datetime.utcnow()
-    for values in entries_values:
-        # upsert to handle already seen entries.
-        # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
-        values['updated'] = utcnow
-        values['feed_id'] = feed_id
-        db.session.execute(
-            sqlite.insert(models.Entry).
-            values(**values).
-            on_conflict_do_update(("feed_id", "remote_id"), set_=values)
-        )
-
-        # inline commit to avoid sqlite locking when fetching parallel feeds
-        db.session.commit()
 
 
 @feed_cli.command('purge')
@@ -262,9 +135,11 @@ def delete_old_entries():
 @feed_cli.command('debug')
 @click.argument('url')
 def debug_feed(url):
-    sources.rss.pretty_print(url)
+    parsers.rss.pretty_print(url)
 
 
+# TODO this needs to be updated to new feed types and support folders
+# we should also add csv exporting and opml import/export
 @feed_cli.command('load')
 @click.argument("file")
 def create_test_feeds(file):
@@ -283,8 +158,7 @@ def create_test_feeds(file):
             if feed_type == models.Feed.TYPE_RSS:
                 url = attrs[2]
                 db_feed = models.RssFeed(name=feed_name,
-                                         url=url,
-                                         icon_url=sources.rss.RSSParser.detect_feed_icon(url))
+                                         url=url)
 
             elif feed_type == models.Feed.TYPE_MASTODON_ACCOUNT:
                 server_url = attrs[2]
@@ -292,13 +166,13 @@ def create_test_feeds(file):
 
                 db_feed = models.MastodonAccount(name=feed_name,
                                                  url=server_url,
-                                                 access_token=access_token,
-                                                 icon_url=sources.mastodon.fetch_avatar(server_url, access_token))
+                                                 access_token=access_token)
 
             else:
                 app.logger.error("unknown feed type %s", attrs[0])
                 continue
 
+            db_feed.load_icon()
             db.session.add(db_feed)
             app.logger.info('added %s', db_feed)
 

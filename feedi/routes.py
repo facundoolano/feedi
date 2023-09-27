@@ -15,8 +15,8 @@ from flask import current_app as app
 import feedi.models as models
 import feedi.tasks as tasks
 from feedi.models import db
+from feedi.parsers import rss
 from feedi.requests import requests
-from feedi.sources import rss
 
 
 @app.route("/users/<username>")
@@ -218,30 +218,20 @@ def feed_add():
 
 @app.post("/feeds/new")
 def feed_add_submit():
-    # TODO handle errors, eg required fields, duplicate name
-    values = dict(**flask.request.form)
-
-    # FIXME this is hacky
-    if values['type'] == models.Feed.TYPE_RSS:
-        values['icon_url'] = rss.RSSParser.detect_feed_icon(values['url'])
-    else:
-        values['icon_url'] = rss.BaseParser.detect_feed_icon(values['url'])
-
-    # TODO use a proper form library instead of this hack
+    # FIXME use a forms lib for validations, type coercion, etc
+    values = {k: v for k, v in flask.request.form.items() if v}
     values['javascript_enabled'] = bool(values.get('javascript_enabled'))
 
-    # FIXME all of this is hacky
     feed_cls = models.Feed.resolve(values['type'])
-    # skip blanks, prevents unsupported fields in subclasses
-    values = {k: v for k, v in values.items() if v}
     feed = feed_cls(**values)
 
+    feed.load_icon()
     db.session.add(feed)
     db.session.commit()
 
     # trigger a sync of this feed to fetch its entries.
     # making it blocking with .get() so we have entries to show on the redirect
-    tasks.sync_feed(feed).get()
+    tasks.sync_feed(feed.name).get()
 
     # NOTE it would be better to redirect to the feed itself, but since we load it async
     # we'd have to show a spinner or something and poll until it finishes loading
@@ -296,7 +286,7 @@ def feed_sync(feed_name):
     if not feed:
         flask.abort(404, "Feed not found")
 
-    task = tasks.sync_feed(feed)
+    task = tasks.sync_feed(feed.name)
     task.get()
 
     response = flask.make_response()

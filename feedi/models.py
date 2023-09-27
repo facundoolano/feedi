@@ -1,9 +1,14 @@
 # coding: utf-8
 
 import datetime
+import json
 
 import sqlalchemy as sa
+import sqlalchemy.dialects.sqlite as sqlite
 from flask_sqlalchemy import SQLAlchemy
+
+import feedi.parsers as parsers
+from feedi.requests import get_favicon
 
 # TODO consider adding explicit support for url columns
 
@@ -47,6 +52,7 @@ class Feed(db.Model):
     created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
     updated = sa.Column(sa.TIMESTAMP, nullable=False,
                         default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    last_fetch = sa.Column(sa.TIMESTAMP)
 
     entries = sa.orm.relationship("Entry", back_populates="feed",
                                   cascade="all, delete-orphan", lazy='dynamic')
@@ -65,6 +71,7 @@ class Feed(db.Model):
 
     @classmethod
     def resolve(cls, type):
+        "Return the Feed model subclass for the given feed type."
         subclasses = {
             cls.TYPE_RSS: RssFeed,
             cls.TYPE_MASTODON_ACCOUNT: MastodonAccount,
@@ -76,6 +83,45 @@ class Feed(db.Model):
         if not subcls:
             raise ValueError(f'unknown type {type}')
         return subcls
+
+    def sync_with_remote(self):
+        """
+        Fetch this feed entries from its remote sources, saving them to the database and updating
+        the feed metadata. The specific fetching logic is implemented by subclasses through the
+        `fetch_entry_data` method.
+        """
+        from flask import current_app as app
+        utcnow = datetime.datetime.utcnow()
+
+        cooldown_minutes = datetime.timedelta(minutes=app.config['SKIP_RECENTLY_UPDATED_MINUTES'])
+        if self.last_fetch and (utcnow - self.last_fetch < cooldown_minutes):
+            app.logger.info('skipping recently synced feed %s', self.name)
+            return
+
+        entries = self.fetch_entry_data()
+        self.last_fetch = utcnow
+
+        for values in entries:
+            # upsert to handle already seen entries.
+            # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
+            values['updated'] = utcnow
+            values['feed_id'] = self.id
+            db.session.execute(
+                sqlite.insert(Entry).
+                values(**values).
+                on_conflict_do_update(("feed_id", "remote_id"), set_=values)
+            )
+
+    def fetch_entry_data(self):
+        """
+        To be implemented by subclasses, this should contact the remote feed source, parse any new entries
+        and return a list of values for each one.
+        """
+        raise NotImplementedError
+
+    def load_icon(self):
+        ""
+        self.icon = get_favicon(self.url)
 
     @classmethod
     def frequency_rank_query(cls):
@@ -119,8 +165,6 @@ class Feed(db.Model):
 
 
 class RssFeed(Feed):
-    last_fetch = sa.Column(sa.TIMESTAMP)
-
     etag = sa.Column(
         sa.String, doc="Etag received on last parsed rss, to prevent re-fetching if it hasn't changed.")
     modified_header = sa.Column(
@@ -131,21 +175,68 @@ class RssFeed(Feed):
 
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_RSS}
 
+    def fetch_entry_data(self):
+        from flask import current_app as app
+        skip_older_than = datetime.datetime.utcnow() - \
+            datetime.timedelta(days=app.config['RSS_SKIP_OLDER_THAN_DAYS'])
+
+        feed_data, entries, etag, modified = parsers.rss.fetch(
+            self.name, self.url,
+            skip_older_than,
+            app.config['RSS_MINIMUM_ENTRY_AMOUNT'],
+            self.last_fetch,
+            self.etag,
+            self.modified_header,
+            self.filters)
+
+        self.etag = etag
+        self.modified_header = modified
+        if feed_data:
+            self.raw_data = json.dumps(feed_data)
+        return entries
+
+    def load_icon(self):
+        self.icon = parsers.rss.fetch_icon(self.url) or get_favicon(self.url)
+
 
 class MastodonAccount(Feed):
-    # TODO this could be a fk to a separate table with client/secret
-    # to share the feedi app across accounts of that same server
     access_token = sa.Column(sa.String)
+
+    def _api_args(self):
+        from flask import current_app as app
+        latest_entry = self.entries.order_by(Entry.remote_updated.desc()).first()
+        args = dict(server_url=self.url, access_token=self.access_token)
+        if latest_entry:
+            # there's some entry on db, this is not the first time we're syncing
+            # get all toots since the last seen one
+            args['newer_than'] = latest_entry.remote_id
+        else:
+            # if there isn't any entry yet, get the "first page" of toots from the timeline
+            args['limit'] = app.config['MASTODON_FETCH_LIMIT']
+        return args
+
+    def fetch_entry_data(self):
+        return parsers.mastodon.fetch_toots(**self._api_args())
+
+    def load_icon(self):
+        self.icon = parsers.mastodon.fetch_avatar(self.url, self.access_token)
 
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_ACCOUNT}
 
 
 class MastodonNotifications(MastodonAccount):
+
+    def fetch_entry_data(self):
+        return parsers.mastodon.fetch_notifications(**self._api_args())
+
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_NOTIFICATIONS}
 
 
 class CustomFeed(Feed):
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_CUSTOM}
+
+    def fetch_entry_data(self):
+        return parsers.custom.fetch(self.name, self.url)
 
 
 class Entry(db.Model):

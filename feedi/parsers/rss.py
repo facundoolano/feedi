@@ -1,31 +1,51 @@
 import datetime
+import json
 import logging
 import pprint
 import time
+import traceback
 import urllib
 
 import feedparser
 from bs4 import BeautifulSoup
-from feedi.requests import USER_AGENT, requests
-from feedi.sources.base import BaseParser
+from feedi.requests import USER_AGENT, CachingRequestsMixin, requests
 
 logger = logging.getLogger(__name__)
 
 feedparser.USER_AGENT = USER_AGENT
 
 
-def get_best_parser(url):
-    # Try with all the customized parsers, and if none is compatible default to the generic RSS parsing.
+def fetch(feed_name, url, skip_older_than, min_amount,
+          previous_fetch, etag, modified, filters):
+    parser_cls = RSSParser
     for cls in RSSParser.__subclasses__():
         if cls.is_compatible(url):
-            return cls
-    return RSSParser
+            parser_cls = cls
+
+    # TODO these arg distribution between constructor and method probably
+    # doesn't make sense anymore
+    parser = parser_cls(feed_name, url, skip_older_than, min_amount)
+    return parser.fetch(previous_fetch, etag, modified, filters)
 
 
-class RSSParser(BaseParser):
+def fetch_icon(url):
+    # try to get the icon from an rss field
+    feed = feedparser.parse(url)
+    icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
+    if icon_url and requests.head(icon_url).ok:
+        logger.debug("using feed icon: %s", icon_url)
+        return icon_url
+
+
+class RSSParser(CachingRequestsMixin):
     """
     A generic parser for RSS articles.
+    Implements reasonable defaults to parse each entry field, which can be overridden by subclasses
+    for custom feed presentation.
     """
+
+    FIELDS = ['title', 'avatar_url', 'username', 'body', 'media_url', 'remote_id',
+              'remote_created', 'remote_updated', 'entry_url', 'content_url', 'header']
 
     @staticmethod
     def is_compatible(_feed_url):
@@ -35,37 +55,61 @@ class RSSParser(BaseParser):
         """
         raise NotImplementedError
 
-    @staticmethod
-    def detect_feed_icon(url):
-        # try to get the icon from an rss field
-        feed = feedparser.parse(url)
-        icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
-        if icon_url and requests.head(icon_url).ok:
-            logger.debug("using feed icon: %s", icon_url)
-            return icon_url
+    def __init__(self, feed_name, url, skip_older_than, min_amount):
+        super().__init__()
+        self.feed_name = feed_name
+        self.url = url
+        self.skip_older_than = skip_older_than
+        self.min_amount = min_amount
 
-        # if not found default to favicon from url domain
-
-        return BaseParser.detect_feed_icon(url)
-
-    def fetch(self, feed_url, previous_fetch, etag, modified, filters=None):
+    def fetch(self, previous_fetch, etag, modified, filters=None):
+        """
+        Requests the RSS/Atom feed and, if it has changed, parses recent entries which
+        are returned as a list of value dicts.
+        """
         # using standard feed headers to prevent re-fetching unchanged feeds
         # https://feedparser.readthedocs.io/en/latest/http-etag.html
-        feed = feedparser.parse(feed_url, etag=etag, modified=modified)
+        feed = feedparser.parse(self.url, etag=etag, modified=modified)
 
         if not feed['feed']:
-            logger.info('skipping empty feed %s %s', feed_url, feed.get('debug_message'))
+            logger.info('skipping empty feed %s %s', self.url, feed.get('debug_message'))
             return None, [], None, None
 
         # also checking with the internal updated field in case feed doesn't support the standard headers
         if previous_fetch and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) <= previous_fetch:
-            logger.info('skipping up to date feed %s', feed_url)
+            logger.info('skipping up to date feed %s', self.url)
             return None, [], None, None
 
         etag = getattr(feed, 'etag', None)
         modified = getattr(feed, 'modified', None)
-        items = [i for i in feed['items'] if self._matches(i, filters)]
-        return feed['feed'], items, etag, modified
+
+        entries = []
+        is_first_load = previous_fetch is None
+        for item in feed['items']:
+
+            # don't try to process stuff that hasn't changed recently
+            updated = item.get('updated_parsed', item.get('published_parsed'))
+            if updated and previous_fetch and to_datetime(updated) < previous_fetch:
+                logger.debug('skipping up to date entry %s', item.get('link'))
+                continue
+
+            # or that's too old
+            published = item.get('published_parsed', item.get('updated_parsed'))
+            if (self.skip_older_than and published and to_datetime(published) < self.skip_older_than):
+                # unless it's the first time we're loading it, in which case we prefer to show old stuff
+                # to showing nothing
+                if not is_first_load or not self.min_amount or len(entries) >= self.min_amount:
+                    continue
+
+            if filters and not self._matches(item, filters):
+                continue
+
+            entry = self.parse(item)
+            if entry:
+                entry['raw_data'] = json.dumps(item)
+                entries.append(entry)
+
+        return feed['feed'], entries, etag, modified
 
     @staticmethod
     def _matches(entry, filters):
@@ -73,8 +117,6 @@ class RSSParser(BaseParser):
         Check a filter expression (e.g. "author=John Doe") against the parsed entry and return whether it matches the condition.
         """
         # this is very brittle and ad hoc but gets the job done
-        if not filters:
-            return True
         filters = filters.split(',')
         for filter in filters:
             field, value = filter.strip().split('=')
@@ -85,6 +127,28 @@ class RSSParser(BaseParser):
                 return False
 
         return True
+
+    def parse(self, entry):
+        """
+        Pass the given raw entry data to each of the field parsers to produce an
+        entry values dict.
+        """
+        result = {}
+
+        for field in self.FIELDS:
+            method = 'parse_' + field
+            try:
+                result[field] = getattr(self, method)(entry)
+            except Exception as error:
+                exc_desc_lines = traceback.format_exception_only(type(error), error)
+                exc_desc = ''.join(exc_desc_lines).rstrip()
+                logger.error("skipping errored entry %s %s %s",
+                             self.feed_name,
+                             entry.get('link'),
+                             exc_desc)
+                return
+
+        return result
 
     def parse_title(self, entry):
         return entry['title']
@@ -151,8 +215,10 @@ class RSSParser(BaseParser):
             raise ValueError("publication date is in the future")
         return dt
 
+    def parse_header(self, entry):
+        return None
 
-# FIXME reduce duplication between aggregators
+
 class RedditParser(RSSParser):
     @staticmethod
     def is_compatible(feed_url):
