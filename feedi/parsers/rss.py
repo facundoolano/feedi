@@ -40,6 +40,8 @@ def fetch_icon(url):
 class RSSParser(CachingRequestsMixin):
     """
     A generic parser for RSS articles.
+    Implements reasonable defaults to parse each entry field, which can be overridden by subclasses
+    for custom feed presentation.
     """
 
     FIELDS = ['title', 'avatar_url', 'username', 'body', 'media_url', 'remote_id',
@@ -62,7 +64,8 @@ class RSSParser(CachingRequestsMixin):
 
     def fetch(self, previous_fetch, etag, modified, filters=None):
         """
-        FIXME
+        Requests the RSS/Atom feed and, if it has changed, parses recent entries which
+        are returned as a list of value dicts.
         """
         # using standard feed headers to prevent re-fetching unchanged feeds
         # https://feedparser.readthedocs.io/en/latest/http-etag.html
@@ -127,7 +130,8 @@ class RSSParser(CachingRequestsMixin):
 
     def parse(self, entry):
         """
-        FIXME
+        Pass the given raw entry data to each of the field parsers to produce an
+        entry values dict.
         """
         result = {}
 
@@ -215,7 +219,6 @@ class RSSParser(CachingRequestsMixin):
         return None
 
 
-# FIXME reduce duplication between aggregators
 class RedditParser(RSSParser):
     @staticmethod
     def is_compatible(feed_url):

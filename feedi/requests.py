@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # TODO review if this module is a good place for this kind of utilities
 def get_favicon(url):
-    # strip path
+    "Return the best favicon from the given url, or None."
     url_parts = urllib.parse.urlparse(url)
     url = f'{url_parts.scheme}://{url_parts.netloc}'
     try:
@@ -36,8 +36,7 @@ def get_favicon(url):
 
 class CachingRequestsMixin:
     """
-    Abstract class with base parsing logic to produce a list of entry values from a
-    remote resource. The actual fetching and field parsing is to be defined by subclasses.
+    Exposes a request method that caches the response contents for subsequent requests.
     """
 
     def __init__(self):
