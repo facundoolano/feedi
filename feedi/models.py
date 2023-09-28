@@ -262,8 +262,11 @@ class Entry(db.Model):
     remote_id = sa.Column(sa.String, nullable=False,
                           doc="The identifier of this entry in its source feed.")
 
-    title = sa.Column(sa.String, nullable=False)
+    title = sa.Column(sa.String)
     username = sa.Column(sa.String, index=True)
+    user_url = sa.Column(sa.String)
+    display_name = sa.Column(
+        sa.String, doc="For cases, like mastodon, where there's a full display name in addition to username.")
 
     avatar_url = sa.Column(
         sa.String, doc="The url of the avatar image to be displayed for the entry.")
