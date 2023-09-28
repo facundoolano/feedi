@@ -4,19 +4,21 @@
             {% include "entry_avatar.html" %}
         </div>
         <p>
-            <small>
             <b>
                 <span>
                     {% if entry.avatar_url %}
                     <!-- FIXME title is just a hack here. we should add a display name field separate from username -->
-                    {{ entry.title or entry.username }}
+                    <a href="{{ url_for('entry_list', username=entry.username ) }}">
+                        {{ entry.title or entry.username }}
+                    </a>
                     {% else %}
-                    {{ entry.feed.name}}
+                    <a href="{{ url_for('entry_list', feed_name=entry.feed.name ) }}">
+                        {{ entry.feed.name}}
+                    </a>
                     {% endif %}
                 </span>
             </b>
-            <span class="has-text-grey-light"> &nbsp; {% if entry.username %}{{ entry.username}} · {%endif%}{%if entry.content_url and entry.content_url != entry.entry_url %}{{ entry.content_url | url_domain}} · {% endif %}<span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span></span>
-            </small>
+            <small><span class="has-text-grey-light"> &nbsp; {% if entry.username %}{{ entry.username}} · {%endif%}{%if entry.content_url and entry.content_url != entry.entry_url %}{{ entry.content_url | url_domain}} · {% endif %}<span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span></small>
         </p>
     </div>
     <div class="level-right is-hidden-touch">
@@ -46,10 +48,5 @@
                 <div class="dropdown-content">{% include "entry_commands.html" %}</div>
             </div>
         </div>
-    </div>
-</div>
-<div class="level feed-title is-mobile">
-    <div class="level-left">
-        {% include "embed_title.html" %}
     </div>
 </div>
