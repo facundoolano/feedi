@@ -297,7 +297,13 @@ class GithubFeedParser(RSSParser):
     def is_compatible(feed_url):
         return 'github.com' in feed_url and 'private.atom' in feed_url
 
-    def parse_body(self, _entry):
+    def parse_body(self, entry):
+        return entry['title']
+
+    def parse_username(self, entry):
+        return entry['authors'][0]['name']
+
+    def parse_title(self, _entry):
         return None
 
     def parse_avatar_url(self, entry):
@@ -322,7 +328,10 @@ class GoodreadsFeedParser(RSSParser):
     def is_compatible(feed_url):
         return 'goodreads.com' in feed_url and '/home/index_rss' in feed_url
 
-    def parse_body(self, _entry):
+    def parse_body(self, entry):
+        return entry['title']
+
+    def parse_title(self, entry):
         return None
 
     def parse_media_url(self, _entry):
