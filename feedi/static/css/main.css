@@ -50,8 +50,6 @@ but we only want it for mobile*/
     }
 }
 
-
-
 .feed-header .level-left {
     /* wrap for title to prevent icons overflow */
     flex-shrink: 1!important;
@@ -65,7 +63,7 @@ but we only want it for mobile*/
     margin-bottom: 0!important;
 }
 
-.feed-title {
+.feed-title:not(:last-child) {
     margin-bottom: .5em!important;
 }
 .feed-title a {
