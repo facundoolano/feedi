@@ -64,11 +64,7 @@ but we only want it for mobile*/
 }
 
 .feed-title {
-    margin-top: .5em!important;
-    margin-bottom: 0em!important;
-}
-
-.feed-title:last-child {
+    margin-top: 0!important;
     margin-bottom: .5em!important;
 }
 
