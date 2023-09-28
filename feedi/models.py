@@ -121,7 +121,7 @@ class Feed(db.Model):
 
     def load_icon(self):
         ""
-        self.icon = get_favicon(self.url)
+        self.icon_url = get_favicon(self.url)
 
     @classmethod
     def frequency_rank_query(cls):
@@ -196,7 +196,7 @@ class RssFeed(Feed):
         return entries
 
     def load_icon(self):
-        self.icon = parsers.rss.fetch_icon(self.url) or get_favicon(self.url)
+        self.icon_url = parsers.rss.fetch_icon(self.url) or get_favicon(self.url)
 
 
 class MastodonAccount(Feed):
@@ -219,7 +219,7 @@ class MastodonAccount(Feed):
         return parsers.mastodon.fetch_toots(**self._api_args())
 
     def load_icon(self):
-        self.icon = parsers.mastodon.fetch_avatar(self.url, self.access_token)
+        self.icon_url = parsers.mastodon.fetch_avatar(self.url, self.access_token)
 
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_ACCOUNT}
 
