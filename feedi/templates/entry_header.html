@@ -9,7 +9,7 @@
                     {% if entry.avatar_url %}
                     <!-- FIXME title is just a hack here. we should add a display name field separate from username -->
                     <a href="{{ url_for('entry_list', username=entry.username ) }}">
-                        {{ entry.title or entry.username }}
+                        {{ entry.title | safe or entry.username }}
                     </a>
                     {% else %}
                     <a href="{{ url_for('entry_list', feed_name=entry.feed.name ) }}">
