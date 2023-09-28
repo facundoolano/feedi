@@ -1,4 +1,4 @@
-{% if entry.content_url %}
+<div class="feed-title">
 <p>
     <b>
 <a _="
@@ -10,4 +10,4 @@ then on click[metaKey and shiftKey] go to url '{{ url_for("entry_view", id=entry
 href="{{ url_for('entry_view', id=entry.id )}}">{{ entry.title | safe }}</a>
     </b>
 </p>
-{% endif %}
+</div>

@@ -63,11 +63,17 @@ but we only want it for mobile*/
     margin-bottom: 0!important;
 }
 
-.feed-title:not(:last-child) {
+.feed-title {
+    margin-top: .5em!important;
+    margin-bottom: 0em!important;
+}
+
+.feed-title:last-child {
     margin-bottom: .5em!important;
 }
+
 .feed-title a {
-    font-size: 1.1em;
+    font-size: 1.15em!important;
     color: #4a4a4a
 }
 
