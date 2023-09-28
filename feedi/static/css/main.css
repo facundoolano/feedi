@@ -65,12 +65,21 @@ but we only want it for mobile*/
 
 .feed-title {
     margin-top: 0!important;
+}
+
+.feed-title:not(:last-child) {
     margin-bottom: .5em!important;
 }
 
 .feed-title a {
-    font-size: 1.15em!important;
+    font-size: 1.15em;
     color: #4a4a4a
+}
+
+@media screen and (max-width: 768px) {
+    .feed-title a {
+        font-size: 1.35em;
+    }
 }
 
 .feed-header .level-right, .feed-header.level {
