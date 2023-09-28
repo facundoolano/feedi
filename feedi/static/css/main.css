@@ -52,7 +52,7 @@ but we only want it for mobile*/
 
 
 
-.feed-header .level-left {
+.feed-header .level-left, .feed-title .level-left {
     /* wrap for title to prevent icons overflow */
     flex-shrink: 1!important;
 }
@@ -63,6 +63,12 @@ but we only want it for mobile*/
 
 .feed-header {
     margin-bottom: 0!important;
+}
+
+.feed-title {
+    margin-bottom: 0!important;
+    margin-top: .25rem!important;
+    font-size: 1.1em;
 }
 
 .feed-header .level-right, .feed-header.level {

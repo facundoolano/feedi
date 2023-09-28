@@ -1,0 +1,11 @@
+<b>
+{% if entry.content_url %}
+<a _="
+on keydown[key is 'Enter' and metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id, redirect="content") }}' in new window then halt
+on keydown[key is 'Enter' and metaKey and not shiftKey] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id )}}' in new window then halt
+on keydown[key is 'Enter' and not metaKey and not shiftKey] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id )}}'
+then on click[metaKey and shiftKey] go to url '{{ url_for("entry_view", id=entry.id, redirect="content") }}' in new window then halt"
+
+href="{{ url_for('entry_view', id=entry.id )}}">{{ entry.title | safe }}</a>
+{% endif %}
+</b>
