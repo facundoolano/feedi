@@ -42,6 +42,11 @@
            _="on click toggle .toggled
                      then on keyup[key is 'f'] from the closest .feed-entry trigger click on me"
         ><i class="fas fa-star"></i></a>
+        {% if entry.entry_url and entry.content_url != entry.entry_url %}
+        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="Comment"
+           href="{{entry.entry_url}}" target="_blank">
+            <i class="fas fa-comment-alt"></i></a>
+        {% endif %}
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
            hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
            hx-target="#pinned-entry-list"
