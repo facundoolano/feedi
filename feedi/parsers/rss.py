@@ -1,4 +1,5 @@
 import datetime
+import html
 import json
 import logging
 import pprint
@@ -329,7 +330,19 @@ class GoodreadsFeedParser(RSSParser):
         return 'goodreads.com' in feed_url and '/home/index_rss' in feed_url
 
     def parse_body(self, entry):
-        return entry['title']
+        # some updates come with escaped html entities
+        summary = html.unescape(entry['summary'])
+        soup = BeautifulSoup(summary, 'lxml')
+
+        # inline images don't look good
+        for img in soup('img'):
+            img.decompose()
+
+        # some links are relative
+        for a in soup('a'):
+            a['href'] = urllib.parse.urljoin('https://www.goodreads.com', a['href'])
+
+        return str(soup)
 
     def parse_title(self, entry):
         return None
