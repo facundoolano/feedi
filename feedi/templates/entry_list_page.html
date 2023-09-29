@@ -26,7 +26,11 @@
                  <div class="columns body-container">
                      {% if entry.media_url %}
                      <div class="column is-one-quarter media-url-container">
-                         <figure class="image media-url is-5by3 is-clickable" tabindex="-1"
+                         <figure class="image media-url is-hidden-mobile is-5by3 is-clickable" tabindex="-1"
+                                 _="on click add .is-active to the next .modal then halt">
+                             <img src="{{ entry.media_url }}" alt="article preview" onerror='this.parentNode.parentNode.style.display = "none"'>
+                         </figure>
+                         <figure class="image media-url is-hidden-tablet is-2by1 is-square is-clickable" tabindex="-1"
                                  _="on click add .is-active to the next .modal then halt">
                              <img src="{{ entry.media_url }}" alt="article preview" onerror='this.parentNode.parentNode.style.display = "none"'>
                          </figure>
