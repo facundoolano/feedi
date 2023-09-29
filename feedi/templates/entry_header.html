@@ -26,6 +26,14 @@
             <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.content_url %}· {{ entry.content_url | url_domain}}{% endif %}</small>
         </p>
     </div>
+    <div class="is-hidden-desktop mobile-top-align">
+        <a tabindex="-1" class="level-item is-pulled-right icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
+           hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
+           hx-target="#pinned-entry-list"
+           _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />
+                     then toggle .is-hidden on < [data-id='{{entry.id}}'] />">
+            <i class="fas fa-thumbtack"></i></a>
+    </div>
     <div class="level-right is-hidden-touch">
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite"
            hx-put="{{ url_for('entry_favorite', id=entry.id )}}"
