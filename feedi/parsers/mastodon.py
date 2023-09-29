@@ -33,9 +33,9 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
             entry['header'] = f'<i class="fas fa-retweet"></i> { reblogged_by } boosted'
             toot = toot['reblog']
 
-        entry['title'] = display_name(toot)
         entry['avatar_url'] = toot['account']['avatar']
         entry['username'] = toot['account']['acct']
+        entry['display_name'] = display_name(toot)
         entry['body'] = toot['content']
         entry['remote_id'] = toot['id']
         entry['remote_created'] = toot['created_at']
@@ -81,7 +81,7 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
             continue
 
         (icon, phrase) = NOTIFICATION_PHRASES[notification["type"]]
-        title = f'<i class="fas {icon}"></i> {display_name(notification)} {phrase}'
+        body = f'<i class="fas {icon}"></i> {display_name(notification)} {phrase}'
 
         entry = {
             'remote_id': notification['id'],
@@ -90,7 +90,8 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
             'raw_data': json.dumps(notification, default=str),
             'avatar_url': notification['account']['avatar'],
             'username': notification['account']['acct'],
-            'title': title}
+            'display_name': display_name(notification),
+            'body': body}
 
         # NOTE: we could attempt to render the source toot in the body as the mastodon web ui does,
         # but I'm guessing that more often than not that would result in useless messages spamming the feed.

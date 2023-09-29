@@ -1,4 +1,5 @@
 import datetime
+import html
 import json
 import logging
 import pprint
@@ -297,7 +298,13 @@ class GithubFeedParser(RSSParser):
     def is_compatible(feed_url):
         return 'github.com' in feed_url and 'private.atom' in feed_url
 
-    def parse_body(self, _entry):
+    def parse_body(self, entry):
+        return entry['title']
+
+    def parse_username(self, entry):
+        return entry['authors'][0]['name']
+
+    def parse_title(self, _entry):
         return None
 
     def parse_avatar_url(self, entry):
@@ -322,7 +329,22 @@ class GoodreadsFeedParser(RSSParser):
     def is_compatible(feed_url):
         return 'goodreads.com' in feed_url and '/home/index_rss' in feed_url
 
-    def parse_body(self, _entry):
+    def parse_body(self, entry):
+        # some updates come with escaped html entities
+        summary = html.unescape(entry['summary'])
+        soup = BeautifulSoup(summary, 'lxml')
+
+        # inline images don't look good
+        for img in soup('img'):
+            img.decompose()
+
+        # some links are relative
+        for a in soup('a'):
+            a['href'] = urllib.parse.urljoin('https://www.goodreads.com', a['href'])
+
+        return str(soup)
+
+    def parse_title(self, _entry):
         return None
 
     def parse_media_url(self, _entry):
