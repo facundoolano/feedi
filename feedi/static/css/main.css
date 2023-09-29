@@ -73,6 +73,10 @@ but we only want it for mobile*/
     padding-right: .25rem!important;
 }
 
+.avatar-column figure {
+    margin-bottom: .5rem;
+}
+
 /* alt fallback style for when feed.icon is broken or missing  */
 .feed-avatar::before {
     border-radius: 9999px;
