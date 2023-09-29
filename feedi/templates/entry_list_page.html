@@ -63,11 +63,23 @@
          </div>
      </div>
      <div class="level is-mobile is-hidden-desktop entry-mobile-footer">
-         <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite entry"
+         <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite"
             hx-put="{{ url_for('entry_favorite', id=entry.id )}}"
             _="on click toggle .toggled"
          ><i class="fas fa-star"></i></a>
 
+        {% if entry.entry_url and entry.content_url != entry.entry_url %}
+        <a class="icon is-white is-rounded level-item" title="Comment"
+           href="{{ entry.entry_url}}" target="_blank">
+            <i class="fas fa-comment-alt"></i>
+        </a>
+        {% endif %}
+        <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin"
+           hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
+           hx-target="#pinned-entry-list"
+           _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />
+                     then toggle .is-hidden on < [data-id='{{entry.id}}'] />">
+            <i class="fas fa-thumbtack"></i></a>
         <a class="icon is-white is-rounded level-item"
            tabindex="-1"
            _="on click toggle .is-active on the next .dropdown then
@@ -79,12 +91,6 @@
                 <div class="dropdown-content">{% include "entry_commands.html" %}</div>
             </div>
         </div>
-        <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
-           hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
-           hx-target="#pinned-entry-list"
-           _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />
-                     then toggle .is-hidden on < [data-id='{{entry.id}}'] />">
-            <i class="fas fa-thumbtack"></i></a>
      </div>
 </div>
  {% if loop.last and next_page %}
