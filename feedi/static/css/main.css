@@ -61,6 +61,8 @@ but we only want it for mobile*/
 
 .feed-header {
     margin-bottom: 0!important;
+    /* set to 32 to align with the 32x32 avatar on the left */
+    min-height: 32px;
 }
 
 .feed-title {
@@ -80,10 +82,6 @@ but we only want it for mobile*/
     .feed-title a {
         font-size: 1.35em;
     }
-}
-
-.feed-header .level-right, .feed-header.level {
-    align-items: unset!important;
 }
 
 .avatar-column {

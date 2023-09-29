@@ -17,7 +17,7 @@
                     {% endif %}
                 </span>
             </b>
-            <small><span class="has-text-grey-light"> &nbsp; {% if (entry.avatar_url and entry.display_name) or (not entry.avatar_url and entry.username)%}{{ entry.username}} · {%endif%}{%if entry.content_url and entry.content_url != entry.entry_url %}{{ entry.content_url | url_domain}} · {% endif %}<span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span></small>
+            <small><span class="has-text-grey-light"> &nbsp; {% if (entry.avatar_url and entry.display_name) or (not entry.avatar_url and entry.username)%}{{ entry.username}} · {%endif%}{%if entry.content_url and entry.content_url != entry.entry_url %}{{ entry.content_url | url_domain}} · {% endif %}<span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span></span></small>
         </p>
     </div>
     <div class="level-right is-hidden-touch">
