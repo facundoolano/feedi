@@ -65,6 +65,10 @@ but we only want it for mobile*/
     min-height: 32px;
 }
 
+.mobile-feed-title {
+    padding-bottom: 0!important;
+}
+
 .feed-title {
     margin-top: 0!important;
 }
