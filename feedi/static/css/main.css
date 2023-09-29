@@ -73,6 +73,10 @@ but we only want it for mobile*/
     margin-bottom: .5em!important;
 }
 
+.feed-header .level-right a, .feed-header.level {
+    align-items: unset!important;
+}
+
 .feed-title a {
     font-size: 1.15em;
     color: #4a4a4a

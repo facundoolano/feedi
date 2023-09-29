@@ -82,23 +82,21 @@
             _="on click toggle .toggled"
          ><i class="fas fa-star"></i></a>
 
-        <a class="icon is-white is-rounded level-item"
-           tabindex="-1"
-           _="on click toggle .is-active on the next .dropdown then
-                  on click elsewhere remove .is-active from the next .dropdown">
-            <i class="fas fa-ellipsis-h"></i>
-        </a>
-        <div class="dropdown is-right is-up">
+         <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
+         >
+             <i class="fas fa-comment-alt"></i></a>
+         <a class="icon is-white is-rounded level-item"
+            tabindex="-1"
+            _="on click toggle .is-active on the next .dropdown then
+                   on click elsewhere remove .is-active from the next .dropdown">
+             <i class="fas fa-ellipsis-h"></i>
+         </a>
+         <div class="dropdown is-right is-up">
             <div class="dropdown-menu" role="menu">
                 <div class="dropdown-content">{% include "entry_commands.html" %}</div>
             </div>
         </div>
-        <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
-           hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
-           hx-target="#pinned-entry-list"
-           _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />
-                     then toggle .is-hidden on < [data-id='{{entry.id}}'] />">
-            <i class="fas fa-thumbtack"></i></a>
+
      </div>
 </div>
  {% if loop.last and next_page %}
