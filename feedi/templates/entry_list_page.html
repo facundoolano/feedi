@@ -89,9 +89,12 @@
             _="on click toggle .toggled"
          ><i class="fas fa-star"></i></a>
 
-         <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
-         >
+         {% if entry.entry_url and entry.content_url != entry.entry_url%}
+         <a tabindex="-1" class="level-item icon is-white is-rounded" title="Comment"
+          href="{{entry.entry_url}}" target="_blank">
              <i class="fas fa-comment-alt"></i></a>
+         {% endif %}
+
          <a class="icon is-white is-rounded level-item"
             tabindex="-1"
             _="on click toggle .is-active on the next .dropdown then
