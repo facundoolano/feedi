@@ -1,35 +1,51 @@
 <div class="level feed-header is-mobile">
-    <div class="level-left">
-        <div class="level-item is-hidden-tablet">
+    <div class="level-left mobile-top-align">
+        <div class="level-item is-hidden-tablet mobile-top-align">
             {% include "entry_avatar.html" %}
         </div>
         <p>
             <b>
-                {% if entry.content_url %}
+                {% if entry.title and entry.content_url %}
                 <a _="
                       on keydown[key is 'Enter' and metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id, redirect="content") }}' in new window then halt
                    on keydown[key is 'Enter' and metaKey and not shiftKey] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id )}}' in new window then halt
                    on keydown[key is 'Enter' and not metaKey and not shiftKey] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id )}}'
                    then on click[metaKey and shiftKey] go to url '{{ url_for("entry_view", id=entry.id, redirect="content") }}' in new window then halt"
-
                    href="{{ url_for('entry_view', id=entry.id )}}">{{ entry.title | safe }}</a>
-                {% elif entry.entry_url %}
-                <a href="{{ url_for('entry_view', id=entry.id, redirect='entry') }}" target="_blank">{{ entry.title | safe }}</a>
+                {% elif entry.avatar_url %}
+                <a href="{{ url_for('entry_list', username=entry.username ) }}">
+                    {{ entry.display_name or entry.username }}
+                </a>
                 {% else %}
-                <span>{{ entry.title | safe }}</span>
+                <a href="{{ url_for('entry_list', feed_name=entry.feed.name ) }}">
+                    {{ entry.feed.name}}
+                </a>
                 {% endif %}
             </b>
             <br/>
             <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.content_url %}· {{ entry.content_url | url_domain}}{% endif %}</small>
         </p>
     </div>
+    <div class="is-hidden-desktop mobile-top-align">
+        <a tabindex="-1" class="level-item is-pulled-right icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
+           hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
+           hx-target="#pinned-entry-list"
+           _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />
+                     then toggle .is-hidden on < [data-id='{{entry.id}}'] />">
+            <i class="fas fa-thumbtack"></i></a>
+    </div>
     <div class="level-right is-hidden-touch">
-        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite entry"
+        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite"
            hx-put="{{ url_for('entry_favorite', id=entry.id )}}"
            _="on click toggle .toggled
                      then on keyup[key is 'f'] from the closest .feed-entry trigger click on me"
         ><i class="fas fa-star"></i></a>
-        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
+        {% if entry.entry_url and entry.content_url != entry.entry_url %}
+        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="Comment"
+           href="{{ entry.entry_url}}" target="_blank"
+        ><i class="fas fa-comment-alt"></i></a>
+        {% endif %}
+        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin"
            hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
            hx-target="#pinned-entry-list"
            _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />

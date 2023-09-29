@@ -69,8 +69,19 @@ but we only want it for mobile*/
     align-items: unset!important;
 }
 
+@media screen and (max-width: 768px) {
+    /* used so avatar in level isnt vertical centered */
+    .mobile-top-align {
+        align-items: unset!important;
+    }
+}
+
 .avatar-column {
     padding-right: .25rem!important;
+}
+
+.avatar-column figure {
+    margin-bottom: .5rem;
 }
 
 /* alt fallback style for when feed.icon is broken or missing  */
