@@ -77,8 +77,14 @@ but we only want it for mobile*/
     margin-bottom: .5em!important;
 }
 
-.feed-header .level-right a, .feed-header.level {
+.feed-header.level {
     align-items: unset!important;
+}
+
+@media screen and (max-width: 768px) {
+  .mobile-top-align {
+      align-items: unset!important;
+  }
 }
 
 .feed-title a {

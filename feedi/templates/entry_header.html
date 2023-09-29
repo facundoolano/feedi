@@ -1,9 +1,9 @@
 <div class="level feed-header is-mobile">
-    <div class="level-left">
-        <div class="level-item is-hidden-tablet">
+    <div class="level-left mobile-top-align">
+        <div class="level-item mobile-top-align is-hidden-tablet">
             {% include "entry_avatar.html" %}
         </div>
-        <p>
+        <p class="feed-username">
             <b>
                 <span>
                     {% if entry.avatar_url %}
@@ -28,7 +28,7 @@
 
         </p>
     </div>
-    <div class="level-right is-hidden-desktop">
+    <div class="is-hidden-desktop mobile-top-align">
         <a tabindex="-1" class="level-item is-pulled-right icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
            hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
            hx-target="#pinned-entry-list"
