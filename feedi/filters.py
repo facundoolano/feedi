@@ -27,7 +27,7 @@ def humanize_date(dt):
 @app.template_filter('url_domain')
 def feed_domain(url):
     parts = urllib.parse.urlparse(url)
-    return parts.netloc.strip('www.')
+    return parts.netloc.replace('www.', '')
 
 
 @app.template_filter('should_unfold_folder')
