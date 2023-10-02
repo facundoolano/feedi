@@ -100,9 +100,11 @@ class RSSParser(CachingRequestsMixin):
                 # unless it's the first time we're loading it, in which case we prefer to show old stuff
                 # to showing nothing
                 if not is_first_load or not self.min_amount or len(entries) >= self.min_amount:
+                    logger.debug('skipping old entry %s', item.get('link'))
                     continue
 
             if filters and not self._matches(item, filters):
+                logger.debug('skipping entry not matching filters %s %s', item.get('link'), filters)
                 continue
 
             entry = self.parse(item)
