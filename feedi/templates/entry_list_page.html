@@ -80,7 +80,9 @@
                   on click elsewhere remove .is-active from the next .dropdown">
             <i class="fas fa-ellipsis-h"></i>
         </a>
-        <div class="dropdown is-right is-up">
+        <div class="dropdown is-right is-up"
+             _="on intersection(intersecting) having margin '0px 0px -50% 0px'
+                    if intersecting remove .is-up else add .is-up -- show dropup up or dropdown depending position relative to middle of screen">
             <div class="dropdown-menu" role="menu">
                 <div class="dropdown-content">{% include "entry_commands.html" %}</div>
             </div>
