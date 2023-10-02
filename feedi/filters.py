@@ -64,3 +64,30 @@ def sanitize_content(html):
         soup.html.unwrap()
 
     return str(soup)
+
+
+# FIXME this wouldn't be necessary if I could figure out the proper CSS
+# to make the text hide on overflow
+@app.template_filter('entry_excerpt')
+def entry_excerpt(entry):
+    # FIXME this duplicates template logic, move to helper
+    if not entry.body:
+        return
+
+    if entry.title and entry.content_url:
+        title = entry.title
+    elif entry.avatar_url:
+        title = entry.display_name or entry.username
+    else:
+        title = entry.feed.name
+
+    body_text = BeautifulSoup(entry.body, 'lxml').text
+
+    # truncate according to display title length so all entries
+    # have aproximately the same length
+    max_length = 100
+    max_body_length = max(0, max_length - len(title))
+    if len(body_text) > max_body_length:
+        return body_text[:max_body_length] + '…'
+
+    return body_text
