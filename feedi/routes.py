@@ -261,10 +261,9 @@ def feed_edit_submit(feed_name):
     # setting values at the instance level instead of issuing an update on models.Feed
     # so we don't need to explicitly inspect the feed to figure out its subclass
     for (attr, value) in flask.request.form.items():
-        if attr == 'javascript_enabled':
-            # TODO use a proper form library instead of this hack
-            value = bool(value)
         setattr(feed, attr, value)
+    # FIXME use a proper form library instead of this hack
+    feed.javascript_enabled = 'javascript_enabled' in flask.request.form
     db.session.commit()
 
     return flask.redirect(flask.url_for('feed_list'))
