@@ -23,7 +23,7 @@
                 {% endif %}
             </b>
             <span class="entry-excerpt-metadata is-hidden">
-                <small class="has-text-grey-light">{{ entry.body | excerpt }}</small>
+                <small class="has-text-grey-light">{{ entry | entry_excerpt }}</small>
             </span>
             <span class="entry-metadata">
                 <br/>
@@ -31,14 +31,26 @@
             </span>
         </p>
     </div>
-    <div class="is-hidden-desktop mobile-top-align">
+    <div class="is-hidden compact-actions is-hidden">
+        {% if entry.entry_url and entry.content_url != entry.entry_url %}
+        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="Comment"
+           href="{{ entry.entry_url}}" target="_blank"
+        ><i class="fas fa-comment-alt"></i></a>
+        {% endif %}
+        <a tabindex="-1" class="level-item icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
+           hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
+           hx-target="#pinned-entry-list"
+           _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />">
+            <i class="fas fa-thumbtack"></i></a>
+    </div>
+    <div class="is-hidden-desktop mobile-top-align mobile-actions">
         <a tabindex="-1" class="level-item is-pulled-right icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
            hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
            hx-target="#pinned-entry-list"
            _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />">
             <i class="fas fa-thumbtack"></i></a>
     </div>
-    <div class="level-right is-hidden-touch">
+    <div class="level-right is-hidden-touch desktop-actions">
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite"
            hx-put="{{ url_for('entry_favorite', id=entry.id )}}"
            _="on click toggle .toggled

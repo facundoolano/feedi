@@ -105,9 +105,12 @@ but we only want it for mobile*/
 
 /* entry effects on hover  */
 
-.feed-entry .hover-icon:not(.toggled) {
-    visibility: hidden;
+@media (hover: hover) {
+    .feed-entry .hover-icon:not(.toggled) {
+        visibility: hidden;
+    }
 }
+
 
 /* style for favorite icon */
 .hover-icon.toggled .fa-star {
@@ -338,12 +341,17 @@ https://github.com/jgthms/bulma/issues/1561#issuecomment-535475428 */
 
 #pinned-entry-list, .feed-entry[data-view=compact]
 {
-    .body-container, .reblogged, .entry-metadata, .entry-mobile-footer {
+    .body-container, .reblogged, .entry-metadata, .entry-mobile-footer,
+    .desktop-actions, .mobile-actions {
         display: none;
     }
 
     .entry-excerpt-metadata {
-        display: inline!important;
+        display: unset!important;
+    }
+
+    .compact-actions {
+        display: flex!important;
     }
 }
 
