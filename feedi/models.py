@@ -380,7 +380,7 @@ class Entry(db.Model):
             # without excluding the rest --i.e. without truncating the feed after today's entries
             last_day = start_at - datetime.timedelta(hours=24)
             return query.join(Feed)\
-                        .join(subquery, subquery.c.id == Feed.id)\
+                        .join(subquery, Feed.id == subquery.c.id, isouter=True)\
                         .order_by(
                             cls.remote_updated < last_day,
                             subquery.c.rank,
