@@ -144,7 +144,8 @@ class Feed(db.Model):
             (sa.func.count(cls.id) / days_since_creation < 1 / 7, 1),  # once week or less
             (sa.func.count(cls.id) / days_since_creation < 1, 2),  # once a day or less
             (sa.func.count(cls.id) / days_since_creation < 5, 3),  # 5 times a day or less
-            else_=4  # more
+            (sa.func.count(cls.id) / days_since_creation < 25, 4),  # 25 times a day or less
+            else_=5  # more
         )
 
         return db.select(cls.id, rank_func.label('rank'))\
@@ -376,9 +377,15 @@ class Entry(db.Model):
             # frequency rank.
             subquery = Feed.frequency_rank_query()
 
+            # exhaust last n hours of all ranks before moving to older stuff
+            # if smaller delta, more chances to bury infrequent posts
+            # if bigger, more chances to bury recent stuff under old unseen infrequent posts
+            recency_bucket_date = datetime.datetime.utcnow() - datetime.timedelta(hours=48)
+
             return query.join(Feed)\
                         .join(subquery, Feed.id == subquery.c.id)\
                         .order_by(
+                            (cls.remote_updated >= recency_bucket_date).desc(),
                             subquery.c.rank,
                             cls.remote_updated.desc())
         else:
