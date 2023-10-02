@@ -376,13 +376,9 @@ class Entry(db.Model):
             # frequency rank.
             subquery = Feed.frequency_rank_query()
 
-            # by ordering with a "is it older than 24hs?" column we effectively get all entries from the last day first,
-            # without excluding the rest --i.e. without truncating the feed after today's entries
-            last_day = start_at - datetime.timedelta(hours=24)
             return query.join(Feed)\
-                        .join(subquery, Feed.id == subquery.c.id, isouter=True)\
+                        .join(subquery, Feed.id == subquery.c.id)\
                         .order_by(
-                            cls.remote_updated < last_day,
                             subquery.c.rank,
                             cls.remote_updated.desc())
         else:

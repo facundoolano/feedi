@@ -30,24 +30,18 @@ def entry_list(**filters):
     If accessed with a feed name or a pagination timestam, filter the resuls accordingly.
     If the request is an html AJAX request, respond only with the entry list HTML fragment.
     """
-    next_page = None
-
     page = flask.request.args.get('page')
+    hide_seen = flask.session.get('hide_seen', True)
     ordering = flask.session.get('ordering', models.Entry.ORDER_FREQUENCY)
+    is_mixed_feed_list = filters.get('folder') or flask.request.path == '/'
 
-    # already viewed entries should be skipped according to setting
-    # but only for views that mix multiple feeds(e.g. home page, folders).
-    # If a specific feed is beeing browsed, it makes sense to show all the entries.
-    hide_seen_setting = flask.session.get('hide_seen', True)
-    is_mixed_feed_view = filters.get('folder') or flask.request.path == '/'
-    hide_seen = hide_seen_setting and is_mixed_feed_view
-
-    filters = dict(hide_seen=hide_seen, **filters)
+    filters = dict(**filters)
     text = flask.request.args.get('q', '').strip()
     if text:
         filters['text'] = text
 
-    (entries, next_page) = fetch_entries_page(ordering, page=page, **filters)
+    (entries, next_page) = fetch_entries_page(page, ordering, hide_seen, is_mixed_feed_list,
+                                              **filters)
 
     if page:
         # if it's a paginated request, render a single page of the entry list
@@ -61,35 +55,45 @@ def entry_list(**filters):
                                  pinned=models.Entry.select_pinned(**filters),
                                  entries=entries,
                                  next_page=next_page,
-                                 is_mixed_feed_view=is_mixed_feed_view,
+                                 is_mixed_feed_view=is_mixed_feed_list,
                                  filters=filters)
 
 
-def fetch_entries_page(ordering, page=None, **kwargs):
+def fetch_entries_page(page_arg,
+                       ordering_setting,
+                       hide_seen_setting,
+                       is_mixed_feed_list, **filters):
     """
-    Fetch a `page` of entries from db, optionally filtered by feed_name, folder or username.
-    and according to the provided `ordering` criteria.
+    Fetch a page of entries from db, optionally applying query filters (text search, feed, folder, etc.).
+    The entry ordering depends on current filters and user session settings.
     The return value is a tuple with the page of resulting entries and a string to
     be passed to fetch the next page in a subsequent request.
 
     When pages other than the first are requested, the previous page of entries
     is marked as 'viewed'.
     """
-    ENTRY_PAGE_SIZE = 10
+    # already viewed entries should be skipped according to setting
+    # but only for views that mix multiple feeds(e.g. home page, folders).
+    # If a specific feed is beeing browsed, it makes sense to show all the entries.
+    filters['hide_seen'] = is_mixed_feed_list and hide_seen_setting
+
+    # we only want to try a special sorting when looking at a folder or the home timeline
+    # so, for instance, we get old entries when looking at a specific feeds
+    ordering = ordering_setting if is_mixed_feed_list else models.Entry.ORDER_RECENCY
 
     # pagination includes a start at timestamp so the entry set remains the same
     # even if new entries are added between requests
-    if page:
-        start_at, page = page.split(':')
-        page = int(page)
+    if page_arg:
+        start_at, page_num = page_arg.split(':')
+        page_num = int(page_num)
         start_at = datetime.datetime.fromtimestamp(float(start_at))
     else:
         start_at = datetime.datetime.utcnow()
-        page = 1
+        page_num = 1
 
-    query = models.Entry.sorted_by(ordering, start_at, **kwargs)
-    entry_page = db.paginate(query, per_page=ENTRY_PAGE_SIZE, page=page)
-    next_page = f'{start_at.timestamp()}:{page + 1}' if entry_page.has_next else None
+    query = models.Entry.sorted_by(ordering, start_at, **filters)
+    entry_page = db.paginate(query, per_page=app.config['ENTRY_PAGE_SIZE'], page=page_num)
+    next_page = f'{start_at.timestamp()}:{page_num + 1}' if entry_page.has_next else None
 
     if entry_page.has_prev:
         # mark the previous page as viewed. The rationale is that the user fetches
