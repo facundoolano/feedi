@@ -5,7 +5,7 @@
                    autocomplete="off"
                    name="q"
                    hx-get="{{ url_for('autocomplete') }}"
-                   hx-trigger="keyup[target.value.length > 3] changed delay:100ms, search, drop delay:50ms, paste changed delay:50ms"
+                   hx-trigger="keyup[target.value.length > 3] changed delay:100ms, search, drop delay:50ms, paste delay:50ms"
                    hx-target="next .autocomplete-items"
                    _="on keydown[key is '/'] elsewhere focus() me then halt
                           then on keydown[key is 'ArrowDown' or (key is 'n' and ctrlKey)] focus() on the next .autocomplete-item halt
@@ -21,6 +21,7 @@
              _="on keyup[target.value.length <= 3] from .search remove .is-active
                     then on keyup[target.value.length > 3] from .search add .is-active
                     then on drop from .search add .is-active
+                    then on paste from .search add .is-active
                     then on click elsewhere remove .is-active
                     then on keyup[key is 'Escape'] elsewhere remove .is-active"
         >
