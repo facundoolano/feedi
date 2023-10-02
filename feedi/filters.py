@@ -64,3 +64,12 @@ def sanitize_content(html):
         soup.html.unwrap()
 
     return str(soup)
+
+
+@app.template_filter('excerpt')
+def sanitize_content(html):
+    # poor man's line truncating: reduce the amount of characters and let bs4 fix the html
+    text = BeautifulSoup(html, 'lxml').text
+    if len(text) > 50:
+        text = text[:50] + '…'
+    return text

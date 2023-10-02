@@ -22,8 +22,13 @@
                 </a>
                 {% endif %}
             </b>
-            <br/>
-            <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.content_url %}· {{ entry.content_url | url_domain}}{% endif %}</small>
+            <span class="entry-excerpt-metadata is-hidden">
+                <small class="has-text-grey-light">{{ entry.body | excerpt }}</small>
+            </span>
+            <span class="entry-metadata">
+                <br/>
+                <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.content_url %}· {{ entry.content_url | url_domain}}{% endif %}</small>
+            </span>
         </p>
     </div>
     <div class="is-hidden-desktop mobile-top-align">
