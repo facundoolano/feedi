@@ -299,6 +299,28 @@ class Entry(db.Model):
     def __repr__(self):
         return f'<Entry {self.feed_id}/{self.remote_id}>'
 
+    def has_content(self):
+        """
+        Returns True if this entry has associated content (with a title and a remote url).
+        This would be the case for blogs, news sites, etc., but not for mastodon toots or
+        notification streams.
+        """
+        return self.title and self.content_url
+
+    def has_distinct_user(self):
+        """
+        Returns True if this entry has a recognizable author, particularly that
+        it has an avatar and a name that can be displayed instead of a generic feed icon.
+        """
+        return self.avatar_url and (self.display_name or self.username)
+
+    def has_comments_url(self):
+        """
+        Returns True if this entry has a distinct comments/discussion endpoint,
+        separate from the content site. (E.g. link agreggators and mastodon toots).
+        """
+        return self.entry_url and self.content_url != self.entry_url
+
     @classmethod
     def _filtered_query(cls, hide_seen=False, favorited=None,
                         feed_name=None, username=None, folder=None,

@@ -70,13 +70,12 @@ def sanitize_content(html):
 # to make the text hide on overflow
 @app.template_filter('entry_excerpt')
 def entry_excerpt(entry):
-    # FIXME this duplicates template logic, move to helper
     if not entry.body:
         return
 
-    if entry.title and entry.content_url:
+    if entry.has_content():
         title = entry.title
-    elif entry.avatar_url:
+    elif entry.has_distinct_user():
         title = entry.display_name or entry.username
     else:
         title = entry.feed.name

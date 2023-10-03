@@ -68,7 +68,7 @@
             _="on click toggle .toggled"
          ><i class="fas fa-star"></i></a>
 
-        {% if entry.entry_url and entry.content_url != entry.entry_url %}
+        {% if entry.has_comments_url() %}
         <a class="icon is-white is-rounded level-item" title="Comment"
            href="{{ entry.entry_url}}" target="_blank">
             <i class="fas fa-comment-alt"></i>

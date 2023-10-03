@@ -5,12 +5,12 @@
         </div>
         <p>
             <b>
-                {% if entry.title and entry.content_url %}
+                {% if entry.has_content() %}
                 <a _="on click[shiftKey and not metaKey] or keydown[key is 'Enter' and not metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' then halt
                    then on click[shiftKey and metaKey] or keydown[key is 'Enter' and metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' in new window then halt
                    then on keydown[key is 'Enter' and not metaKey and not shiftKey] from the closest .feed-entry go to url '{{ entry.content_url }}' in new window then halt"
                    href="{{ entry.content_url }}" target="_blank">{{ entry.title | safe }}</a>
-                {% elif entry.avatar_url %}
+                {% elif entry.has_distinct_user() %}
                 <a href="{{ url_for('entry_list', username=entry.username ) }}">
                     {{ entry.display_name or entry.username }}
                 </a>
@@ -30,7 +30,7 @@
         </p>
     </div>
     <div class="is-hidden compact-actions is-hidden">
-        {% if entry.entry_url and entry.content_url != entry.entry_url %}
+        {% if entry.has_comments_url() %}
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="Comment"
            href="{{ entry.entry_url}}" target="_blank"
         ><i class="fas fa-comment-alt"></i></a>
@@ -54,7 +54,7 @@
            _="on click toggle .toggled
                      then on keyup[key is 'f'] from the closest .feed-entry trigger click on me"
         ><i class="fas fa-star"></i></a>
-        {% if entry.entry_url and entry.content_url != entry.entry_url %}
+        {% if entry.has_comments_url() %}
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="Comment"
            href="{{ entry.entry_url}}" target="_blank"
         ><i class="fas fa-comment-alt"></i></a>
