@@ -61,8 +61,6 @@ class Feed(db.Model):
     score = sa.Column(sa.Integer, default=0, nullable=False,
                       doc="counts how many times articles of this feed have been interacted with. ")
 
-    javascript_enabled = sa.Column(sa.Boolean, default=False)
-
     __mapper_args__ = {'polymorphic_on': type,
                        'polymorphic_identity': 'feed'}
 
