@@ -164,7 +164,7 @@ class Feed(db.Model):
 
     @classmethod
     def averaged_score_query(cls):
-        return db.select(cls.id, (cls.score * 100.0 / sa.func.count(cls.id)).label('avg_score'))\
+        return db.select(cls.id, sa.func.round(cls.score * 100.0 / sa.func.count(cls.id)).label('avg_score'))\
             .join(Entry)\
             .group_by(cls)\
             .subquery()
