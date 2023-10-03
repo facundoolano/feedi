@@ -306,28 +306,21 @@ def entry_view(id):
         # this view can't work if no entry or content url
         return "Entry not readable", 400
 
-    # Handle the cases when we should redirect instead of trying to render locally.
-    # either because the UI requests it explicitly, or because the source content is not
-    # renderable locally (e.g. it's a pdf or a video)
-    redirect_url = None
-    redirect_arg = flask.request.args.get('redirect')
-    if redirect_arg == 'entry' and entry.entry_url:
-        redirect_url = entry.entry_url
-    elif redirect_arg == 'content' and entry.content_url:
-        redirect_url = entry.content_url
+    should_redirect = None
+    # TODO we could add support for more here
+    if 'youtube.com' in dest_url or 'vimeo.com' in dest_url:
+        should_redirect = True
     else:
         res = requests.head(dest_url)
-
-        # TODO we could handle urls known to be video here as well eg youtube, vimeo
-
         if not res.ok:
             app.logger.error("Can't open entry url", res)
             return "Can't open entry url", 500
         elif res.headers.get('Content-Type', '').startswith('application/'):
             # if the content type is application eg youtube video or pdf, don't try to render locally
-            redirect_url = dest_url
+            should_redirect = True
+            pass
 
-    if redirect_url:
+    if should_redirect:
         entry.feed.score += 1
         db.session.commit()
 
@@ -336,7 +329,7 @@ def entry_view(id):
             response.headers['HX-Redirect'] = dest_url
             return response
         else:
-            return flask.redirect(redirect_url)
+            return flask.redirect(dest_url)
 
     # When requested through htmx (ajax), this page loads layout first, then the content
     # on a separate request. The reason for this is that article fetching is slow, and we
