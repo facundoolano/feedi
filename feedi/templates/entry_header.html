@@ -7,11 +7,10 @@
             <b>
                 {% if entry.title and entry.content_url %}
                 <a _="
-                      on keydown[key is 'Enter' and metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id, redirect="content") }}' in new window then halt
-                   on keydown[key is 'Enter' and metaKey and not shiftKey] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id )}}' in new window then halt
+                      on keydown[key is 'Enter' and metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' in new window then halt
                    on keydown[key is 'Enter' and not metaKey and not shiftKey] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id )}}'
-                   then on click[metaKey and shiftKey] go to url '{{ url_for("entry_view", id=entry.id, redirect="content") }}' in new window then halt"
-                   href="{{ url_for('entry_view', id=entry.id )}}">{{ entry.title | safe }}</a>
+                   then on click[metaKey and shiftKey] go to url '{{ url_for("entry_view", id=entry.id) }}' in new window then halt"
+                   href="{{ entry.content_url }}">{{ entry.title | safe }}</a>
                 {% elif entry.avatar_url %}
                 <a href="{{ url_for('entry_list', username=entry.username ) }}">
                     {{ entry.display_name or entry.username }}

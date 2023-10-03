@@ -1,9 +1,7 @@
-{% if entry.content_url and entry.id %}
-<a href="{{ url_for('entry_view', id=entry.id, redirect='content') }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-external-link-alt"></i></span> Go to source</a>
-{% elif entry.content_url %}
-<a href="{{ entry.content_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-external-link-alt"></i></span> Go to source</a>
-{% endif %}
 {% if entry.content_url %}
+{% if entry.id %}
+<a href="{{ url_for('entry_view', id=entry.id) }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-book-reader"></i></span> View in reader</a>
+{% endif %}
 <a class="dropdown-item" _="on click writeText('{{ entry.content_url }}') into the navigator's clipboard"><span class="icon"><i class="fas fa-link"></i></span> Copy URL</a>
 <a class="dropdown-item" hx-post="{{ url_for('send_to_kindle', url=entry.content_url ) }}"
    _="on htmx:beforeRequest or htmx:afterRequest toggle .fa-spin on <i/> in me"
@@ -12,7 +10,9 @@
 {% if not entry.entry_url or entry.content_url != entry.entry_url %}
 <a href="{{ url_for('feed_add', discover=entry.content_url) }}" class="dropdown-item"><span class="icon"><i class="fas fa-rss"></i></span> Discover feed</a>
 {% endif %}
+
 <hr class="dropdown-divider">
+
 {% endif %}
 {% if entry.username %}
 <a class="dropdown-item" href="{{ url_for('entry_list', username=entry.username ) }}"><span class="icon"><i class="fas fa-user"></i></span> View {{ entry.username }}</a>
