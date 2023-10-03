@@ -43,6 +43,14 @@ def entry_list(**filters):
     (entries, next_page) = fetch_entries_page(page, ordering, hide_seen, is_mixed_feed_list,
                                               **filters)
 
+    if 'feed_name' in filters:
+        # increase score when viewing a feed
+        update = db.update(models.Feed)\
+                   .where(models.Feed.name == filters['feed_name'])\
+                   .values(score=models.Feed.score + 1)
+        db.session.execute(update)
+        db.session.commit()
+
     if page:
         # if it's a paginated request, render a single page of the entry list
         return flask.render_template('entry_list_page.html',

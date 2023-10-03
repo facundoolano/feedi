@@ -162,6 +162,20 @@ class Feed(db.Model):
                   .join(subquery, subquery.c.id == self.id)
         return db.session.scalar(query)
 
+    @classmethod
+    def averaged_score_query(cls):
+        return db.select(cls.id, sa.func.round(cls.score * 100.0 / sa.func.count(cls.id)).label('avg_score'))\
+            .join(Entry)\
+            .group_by(cls)\
+            .subquery()
+
+    def averaged_score(self):
+        subquery = self.averaged_score_query()
+        query = db.select(subquery.c.avg_score)\
+                  .select_from(Feed)\
+                  .join(subquery, subquery.c.id == self.id)
+        return db.session.scalar(query)
+
 
 class RssFeed(Feed):
     etag = sa.Column(
@@ -383,13 +397,16 @@ class Entry(db.Model):
             return query.order_by(cls.remote_updated.desc())
 
         elif ordering == cls.ORDER_SCORE:
-            # order by score but within 6 hour buckets, so we don't get everything from the top score feed
-            # first, then the 2nd, etc
+            subquery = Feed.averaged_score_query()
+
+            # order by score but within 8-hour buckets, so we don't get everything from the top score feed
+            # first, then the 2nd, etc.
             return query.join(Feed)\
+                        .join(subquery, Feed.id == subquery.c.id)\
                         .order_by(
                             sa.func.DATE(cls.remote_updated).desc(),
-                            sa.func.round(sa.func.extract('hour', cls.remote_updated) / 6).desc(),
-                            Feed.score.desc(),
+                            sa.func.round(sa.func.extract('hour', cls.remote_updated) / 8).desc(),
+                            subquery.c.avg_score.desc(),
                             cls.remote_updated.desc())
 
         elif ordering == cls.ORDER_FREQUENCY:
