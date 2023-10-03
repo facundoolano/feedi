@@ -186,7 +186,14 @@ but we only want it for mobile*/
     color: hsl(0, 0%, 86%)
 }
 
-.level-item.icon:not(.toggled):hover,  .level-item.icon.toggled {
+@media (hover: hover) {
+    .level-item.icon:not(.toggled):hover {
+        /* FIXME this should use SCSS variables */
+        color: hsl(0, 0%, 29%)
+    }
+}
+
+.level-item.icon.toggled {
     /* FIXME this should use SCSS variables */
     color: hsl(0, 0%, 29%)
 }
