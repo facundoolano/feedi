@@ -113,7 +113,7 @@ but we only want it for mobile*/
 
 
 /* style for favorite icon */
-.hover-icon.toggled .fa-star {
+.icon.toggled .fa-star {
     color: #ca8f04;
 }
 

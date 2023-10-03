@@ -64,7 +64,7 @@
      </div>
      <div class="level is-mobile is-hidden-desktop entry-mobile-footer">
          <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite"
-            hx-put="{{ url_for('entry_favorite', id=entry.id )}}"
+            hx-post="{{ url_for('entry_favorite', id=entry.id )}}"
             _="on click toggle .toggled"
          ><i class="fas fa-star"></i></a>
 
