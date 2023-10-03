@@ -224,7 +224,6 @@ def feed_add():
 def feed_add_submit():
     # FIXME use a forms lib for validations, type coercion, etc
     values = {k: v for k, v in flask.request.form.items() if v}
-    values['javascript_enabled'] = bool(values.get('javascript_enabled'))
 
     feed_cls = models.Feed.resolve(values['type'])
     feed = feed_cls(**values)
@@ -262,8 +261,6 @@ def feed_edit_submit(feed_name):
     # so we don't need to explicitly inspect the feed to figure out its subclass
     for (attr, value) in flask.request.form.items():
         setattr(feed, attr, value)
-    # FIXME use a proper form library instead of this hack
-    feed.javascript_enabled = 'javascript_enabled' in flask.request.form
     db.session.commit()
 
     return flask.redirect(flask.url_for('feed_list'))
@@ -354,7 +351,7 @@ def entry_view(id):
     else:
         # if full browser load or explicit content request, fetch the article synchronously
         content = extract_article(
-            entry.content_url, entry.feed.javascript_enabled)['content']
+            entry.content_url)['content']
         entry.feed.score += 1
         db.session.commit()
 
@@ -369,8 +366,7 @@ def preview_content():
     Preview an url content in the reader, as if it was an entry parsed from a feed.
     """
     url = flask.request.args['url']
-    js = 'js' in flask.request.args
-    article = extract_article(url, js)
+    article = extract_article(url)
     entry = {"content_url": url,
              "title": article['title'],
              "username": article['byline']}
@@ -397,8 +393,7 @@ def send_to_kindle():
         kindle_client = stkclient.Client.load(fp)
 
     url = flask.request.args['url']
-    js = 'js' in flask.request.args
-    article = extract_article(url, js)
+    article = extract_article(url)
 
     # a tempfile is necessary because the kindle client expects a local filepath to upload
     # the file contents are a zip including the article.html and its image assets
@@ -438,18 +433,12 @@ def compress_article(outfilename, article):
         zip.writestr('article.html', str(soup))
 
 
-def extract_article(url, javascript=False):
+def extract_article(url):
     # The mozilla/readability npm package shows better results at extracting the
     # article content than all the python libraries I've tried... even than the readabilipy
     # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
     # for parsing the article sadly this adds a dependency to node and a few npm pacakges
-    command = ["feedi/extract_article.js", url]
-    if javascript:
-        # pass a flag to use a headless browser to fetch the page source
-        command += ['--js', '--delay', str(app.config['JS_LOADING_DELAY_MS'])]
-
-    app.logger.info("Running subprocess: %s", ' '.join(command))
-    r = subprocess.run(command, capture_output=True, text=True)
+    r = subprocess.run(["feedi/extract_article.js", url], capture_output=True, text=True)
     article = json.loads(r.stdout)
 
     # load lazy images by replacing putting the data-src into src and stripping other attrs
