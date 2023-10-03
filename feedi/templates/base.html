@@ -134,14 +134,14 @@
                                <p class="menu-label">Ordering</p>
                                <input
                                    hx-post="{{ url_for('update_setting') }}" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
-                                   {% if session.ordering == "frequency" %} checked {% endif %}
+                                   {% if not session.ordering or session.ordering == "frequency" %} checked {% endif %}
                                    type="radio" name="ordering" value="frequency">
                                Least frequent
                            </label>
                            <label class="radio dropdown-item">
                                <input
                                    hx-post="{{ url_for('update_setting') }}" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
-                                   {% if not session.ordering or session.ordering == "recency" %} checked {% endif %}
+                                   {% if session.ordering == "recency" %} checked {% endif %}
                                    type="radio" name="ordering" value="recency">
                                Most recent
                            </label>
