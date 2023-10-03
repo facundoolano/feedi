@@ -54,20 +54,24 @@
              _="on load or change from <select[name='type']/> if (the value of the previous <select[name='type']/>) includes('mastodon') then add .is-hidden else remove .is-hidden end"
         >
             <label class="label">Filters</label>
-            <p class="help">A comma-separated list of field=value expressions to be used to filter items from the source when parsing the feed entries.</p>
             <div class="control">
                 <input class="input" name="filters" type="text" {% if feed and feed.filters %}value="{{ feed.filters }}" {% endif %}>
             </div>
+            <p class="help">A comma-separated list of field=value expressions to be used to filter items from the source when parsing the feed entries.</p>
         </div>
 
         {% if feed %}
-        <div class="field">
-            <label class="label">Score</label>
-            <p class="help">A count of views, pins, favorites and deletes of entries of this feed. It can be overridden to tweak the "best score" sorting.</p>
+        <div class="field is-grouped">
             <div class="control">
-                <input class="input" name="score" type="text" {% if feed and feed.folder %}value="{{ feed.score }}"{% endif %}>
+                <label class="label">Score</label>
+                <input class="input" name="score" type="text" value="{{ feed.score }}">
+            </div>
+            <div class="control">
+                <label class="label">Avg. score</label>
+                <input class="input" name="score" type="text" value="{{ feed.averaged_score() }}">
             </div>
         </div>
+        <p class="help">A count of views, pins, favorites and deletes of entries of this feed. It can be overridden to tweak the "best score" sorting.</p>
 
         <div class="field">
             <label class="label">Frequency rank</label>
