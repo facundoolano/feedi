@@ -184,10 +184,9 @@ def entry_pin(id):
                                  entries=pinned)
 
 
-@app.post("/favorites/<int:id>")
+@app.put("/favorites/<int:id>")
 def entry_favorite(id):
     "Toggle the favorite status of the given entry."
-    # for some reason put + 204 behaved weirdly with nginx. using post instead
     entry = db.get_or_404(models.Entry, id)
     if entry.favorited:
         entry.favorited = None

@@ -64,13 +64,13 @@
      </div>
      <div class="level is-mobile is-hidden-desktop entry-mobile-footer">
          <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite"
-            hx-post="{{ url_for('entry_favorite', id=entry.id )}}"
+            hx-put="{{ url_for('entry_favorite', id=entry.id )}}"
             _="on click toggle .toggled"
          ><i class="fas fa-star"></i></a>
 
         {% if entry.entry_url and entry.content_url != entry.entry_url %}
         <a class="icon is-white is-rounded level-item" title="Comment"
-           href="{{ entry.entry_url}}" target="_blank">
+           href="{{ entry.entry_url}}" target="_blank">route
             <i class="fas fa-comment-alt"></i>
         </a>
         {% endif %}
