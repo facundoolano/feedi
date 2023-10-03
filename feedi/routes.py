@@ -306,15 +306,21 @@ def entry_view(id):
         # this view can't work if no entry or content url
         return "Entry not readable", 400
 
-    redirect_url = None
-    res = requests.head(dest_url)
+    should_redirect = None
+    # TODO we could add support for more here
+    if 'youtube.com' in dest_url or 'vimeo.com' in dest_url:
+        should_redirect = True
+    else:
+        res = requests.head(dest_url)
+        if not res.ok:
+            app.logger.error("Can't open entry url", res)
+            return "Can't open entry url", 500
+        elif res.headers.get('Content-Type', '').startswith('application/'):
+            # if the content type is application eg youtube video or pdf, don't try to render locally
+            should_redirect = True
+            pass
 
-    if not res.ok:
-        app.logger.error("Can't open entry url", res)
-        return "Can't open entry url", 500
-    elif res.headers.get('Content-Type', '').startswith('application/'):
-        # if the content type is application eg youtube video or pdf, don't try to render locally
-        # TODO we could handle urls known to be video here as well eg youtube, vimeo
+    if should_redirect:
         entry.feed.score += 1
         db.session.commit()
 
