@@ -140,3 +140,23 @@ class RevistaCrisisParser(RSSParser):
 
     def parse_body(self, entry):
         return self.fetch_meta(entry['link'], 'og:description', 'description')
+
+
+class ACMQueueParser(RSSParser):
+    @staticmethod
+    def is_compatible(feed_url):
+        return 'queue.acm.org' in feed_url
+
+    def parse_body(self, entry):
+        content = self.request(entry['link'])
+        soup = BeautifulSoup(content, 'lxml')
+        title = soup.find('h1')
+        return str(title.find_next('p'))
+
+    def parse_username(self, entry):
+        content = self.request(entry['link'])
+        soup = BeautifulSoup(content, 'lxml')
+        title = soup.find('h1')
+        author = title.find_next('h3')
+        if author:
+            return author.text.split(',')[0]
