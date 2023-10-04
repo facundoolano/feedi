@@ -149,6 +149,7 @@ class RSSParser(CachingRequestsMixin):
                              self.feed_name,
                              entry.get('link'),
                              exc_desc)
+                logger.debug(traceback.format_exc())
                 return
 
         return result
@@ -181,11 +182,14 @@ class RSSParser(CachingRequestsMixin):
             return url
 
     def parse_body(self, entry):
-        if not 'summary' in entry:
-            # TODO could alternatively fetch and get summary from meta or the first paragraph
-            return None
+        summary = entry.get('summary')
+        if not summary:
+            url = self.parse_content_url(entry)
+            if not url:
+                return
+            summary = self.fetch_meta(url, 'og:description', 'description')
 
-        soup = BeautifulSoup(entry['summary'], 'lxml')
+        soup = BeautifulSoup(summary, 'lxml')
 
         # remove images in case there are any inside a paragraph
         for tag in soup('img'):
@@ -366,21 +370,6 @@ class GoodreadsFeedParser(RSSParser):
     def parse_content_url(self, _entry):
         # don't open this in the local reader
         return None
-
-
-class EconomistParser(RSSParser):
-    @staticmethod
-    def is_compatible(feed_url):
-        return 'economist.com' in feed_url
-
-    def parse_content_url(self, entry):
-        # the feed entry link is garbage, get it from the summary html
-        soup = BeautifulSoup(entry['summary'], 'lxml')
-        return soup.find("a", href=True)['href']
-
-    def parse_body(self, entry):
-        url = self.parse_content_url(entry)
-        return self.fetch_meta(url, 'og:description', 'description')
 
 
 # TODO unit test
