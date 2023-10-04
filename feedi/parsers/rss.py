@@ -89,6 +89,9 @@ class RSSParser(CachingRequestsMixin):
         is_first_load = previous_fetch is None
         for item in feed['items']:
 
+            if self.should_skip(item):
+                continue
+
             # don't try to process stuff that hasn't changed recently
             updated = item.get('updated_parsed', item.get('published_parsed'))
             if updated and previous_fetch and to_datetime(updated) < previous_fetch:
@@ -114,6 +117,11 @@ class RSSParser(CachingRequestsMixin):
                 entries.append(entry)
 
         return feed['feed'], entries, etag, modified
+
+    @staticmethod
+    def should_skip(_entry):
+        # hook for subclasses to apply ad hoc skipping logic
+        return False
 
     @staticmethod
     def _matches(entry, filters):
@@ -361,6 +369,19 @@ class GoodreadsFeedParser(RSSParser):
     def parse_content_url(self, _entry):
         # don't open this in the local reader
         return None
+
+
+class RevistaCrisisParser(RSSParser):
+    @staticmethod
+    def is_compatible(feed_url):
+        return 'revistacrisis.com.ar' in feed_url
+
+    @staticmethod
+    def should_skip(entry):
+        return 'publi' in entry['title'] or entry['title'].lower().startswith('crisis en el aire')
+
+    def parse_body(self, entry):
+        return self.fetch_meta(entry['link'], 'og:description', 'description')
 
 
 # TODO unit test
