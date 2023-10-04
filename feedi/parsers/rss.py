@@ -164,7 +164,15 @@ class RSSParser(CachingRequestsMixin):
 
     def parse_username(self, entry):
         # TODO if missing try to get from meta?
-        return entry.get('author')
+        author = entry.get('author', '')
+
+        if ',' in author:
+            author = author.split(',')[0]
+
+        if '(' in author:
+            author = author.split('(')[1].split(')')[0]
+
+        return author
 
     def parse_avatar_url(self, entry):
         url = entry.get('source', {}).get('icon')
