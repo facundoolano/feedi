@@ -340,6 +340,10 @@ https://github.com/jgthms/bulma/issues/1561#issuecomment-535475428 */
     padding: .35rem 0;
 }
 
+.feed-entry.viewed {
+    background-color: #f5f5f5;
+}
+
 #pinned-entry-list .feed-entry {
     background-color: #feefc3;
     border: solid 1px #ddcea2;

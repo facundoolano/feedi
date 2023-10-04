@@ -1,5 +1,5 @@
 {% for entry in entries %}
-<div class="card feed-entry is-radiusless" tabindex="0"
+<div class="card feed-entry is-radiusless {% if entry.viewed %}viewed{% endif %}" tabindex="0"
      _="on keydown[key is 'ArrowDown'] focus() the next <.feed-entry:not(.is-hidden)/> then go to top of me then halt
             then on keydown[key is 'ArrowUp'] focus() the previous <.feed-entry:not(.is-hidden)/> then go to middle of me then halt
             then on focus call window.getSelection().removeAllRanges()"
@@ -90,6 +90,8 @@
      </div>
 </div>
  {% if loop.last and next_page %}
- <div hx-get="{{ request.path }}?page={{ next_page }}{% if request.args.q %}&q={{request.args.q}}{% endif %}" hx-trigger="revealed" hx-swap="outerHTML"></div>
+<div _="on revealed">
+    <div hx-get="{{ request.path }}?page={{ next_page }}{% if request.args.q %}&q={{request.args.q}}{% endif %}" hx-trigger="revealed" hx-swap="outerHTML"
+    _="on htmx:beforeRequest add .viewed to .feed-entry"></div>
  {% endif %}
  {% endfor %}
