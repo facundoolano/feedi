@@ -56,7 +56,8 @@ class Feed(db.Model):
 
     entries = sa.orm.relationship("Entry", back_populates="feed",
                                   cascade="all, delete-orphan", lazy='dynamic')
-    raw_data = sa.Column(sa.String, doc="The original feed data received from the feed, as JSON")
+    raw_data = sa.orm.deferred(sa.Column(sa.String,
+                                         doc="The original feed data received from the feed, as JSON"))
     folder = sa.Column(sa.String, index=True)
     score = sa.Column(sa.Integer, default=0, nullable=False,
                       doc="counts how many times articles of this feed have been interacted with. ")
@@ -302,7 +303,8 @@ class Entry(db.Model):
     favorited = sa.Column(sa.TIMESTAMP, index=True)
     pinned = sa.Column(sa.TIMESTAMP, index=True)
 
-    raw_data = sa.Column(sa.String, doc="The original entry data received from the feed, as JSON")
+    raw_data = sa.orm.deferred(sa.Column(sa.String,
+                                         doc="The original entry data received from the feed, as JSON"))
 
     header = sa.Column(
         sa.String, doc="an html line to put above the title, such as 'user reblogged'.")

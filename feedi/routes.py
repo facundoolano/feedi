@@ -8,6 +8,7 @@ import zipfile
 from collections import defaultdict
 
 import flask
+import sqlalchemy as sa
 import stkclient
 from bs4 import BeautifulSoup
 from flask import current_app as app
@@ -460,7 +461,10 @@ def raw_feed(feed_name):
     """
     Shows a JSON dump of the feed data as received from the source.
     """
-    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
+    feed = db.session.scalar(
+        db.select(models.Feed).filter_by(name=feed_name)
+        .options(sa.orm.undefer(models.Feed.raw_data))
+    )
     if not feed:
         flask.abort(404, "Feed not found")
 
@@ -476,7 +480,9 @@ def raw_entry(id):
     """
     Shows a JSON dump of the entry data as received from the source.
     """
-    entry = db.get_or_404(models.Entry, id)
+    entry = db.get_or_404(models.Entry, id,
+                          options=[sa.orm.undefer(models.Entry.raw_data)])
+
     return app.response_class(
         response=entry.raw_data,
         status=200,
