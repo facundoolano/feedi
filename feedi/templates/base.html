@@ -15,7 +15,10 @@
     <nav class="navbar is-hidden-tablet is-fixed-top is-light" role="navigation" aria-label="main navigation">
         <div class="navbar-brand">
             <a class="navbar-item"
-               _="on click if document.documentElement.scrollTop go to top of body smoothly then halt else go to url {{ url_for('entry_list') }}"
+               hx-get="{{ url_for('entry_list', **filters) }}"
+               hx-select="#entry-list"
+               hx-target="#entry-list"
+               _="on click if document.documentElement.scrollTop go to top of body smoothly else go to url {{ url_for('entry_list') }}"
             >
                 <h1 class="title is-4">feedi</h1>
             </a>
