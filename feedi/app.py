@@ -1,6 +1,9 @@
 # coding: utf-8
 
-from gevent import monkey; monkey.patch_all()
+
+from gevent import monkey
+
+monkey.patch_all()  # nopep8
 import logging
 
 import flask
