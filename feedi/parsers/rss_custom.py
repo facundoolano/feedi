@@ -160,3 +160,29 @@ class ACMQueueParser(RSSParser):
         author = title.find_next('h3')
         if author:
             return author.text.split(',')[0]
+
+
+class WikiFeaturedParser(RSSParser):
+    @staticmethod
+    def is_compatible(feed_url):
+        return 'wikipedia.org' in feed_url and 'featuredfeed' in feed_url
+
+    def parse_body(self, entry):
+        soup = BeautifulSoup(entry['summary'], 'lxml')
+        return str(soup.find('p'))
+
+    def parse_title(self, entry):
+        soup = BeautifulSoup(entry['summary'], 'lxml')
+        return soup.find('p').find('a').text
+
+
+class IndieBlogParser(RSSParser):
+    @staticmethod
+    def is_compatible(_feed_url):
+        return 'indieblog.page' in _feed_url
+
+    def parse_body(self, entry):
+        soup = BeautifulSoup(entry['summary'], 'lxml')
+        body = soup.blockquote
+        body.name = 'p'
+        return str(body)
