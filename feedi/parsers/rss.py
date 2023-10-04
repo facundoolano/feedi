@@ -161,7 +161,7 @@ class RSSParser(CachingRequestsMixin):
         return entry['link']
 
     def parse_entry_url(self, entry):
-        return self.parse_content_url(entry)
+        return entry.get('comments') or self.parse_content_url(entry)
 
     def parse_username(self, entry):
         # TODO if missing try to get from meta?
@@ -276,12 +276,6 @@ class LobstersParser(RSSParser):
             return self.fetch_meta(url, 'og:description', 'description')
         return entry['summary']
 
-    def parse_entry_url(self, entry):
-        if 'Comments' in entry['summary']:
-            soup = BeautifulSoup(entry['summary'], 'lxml')
-            return soup.find("a", string="Comments")['href']
-        return entry['link']
-
     def parse_username(self, entry):
         username = super().parse_username(entry)
         return username.split('@')[0]
@@ -298,10 +292,6 @@ class HackerNewsParser(RSSParser):
             url = self.parse_content_url(entry)
             return self.fetch_meta(url, 'og:description', 'description')
         return entry['summary']
-
-    def parse_entry_url(self, entry):
-        soup = BeautifulSoup(entry['summary'], 'lxml')
-        return soup.find(lambda tag: tag.name == 'p' and 'Comments URL' in tag.text).a['href']
 
 
 class GithubFeedParser(RSSParser):
