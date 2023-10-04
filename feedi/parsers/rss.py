@@ -9,7 +9,8 @@ import urllib
 
 import feedparser
 from bs4 import BeautifulSoup
-from feedi.requests import USER_AGENT, CachingRequestsMixin, requests
+from feedi.requests import (USER_AGENT, CachingRequestsMixin, extract_meta,
+                            requests)
 
 logger = logging.getLogger(__name__)
 
@@ -407,12 +408,6 @@ def discover_feed(url):
             break
 
     return feed_url, title
-
-
-def extract_meta(soup, tag):
-    meta_tag = soup.find("meta", property=tag, content=True)
-    if meta_tag:
-        return meta_tag['content']
 
 
 def make_absolute(url, path):

@@ -62,7 +62,12 @@ class CachingRequestsMixin:
         GET the body of the url (which could be already cached) and extract the content of the given meta tag.
         """
         soup = BeautifulSoup(self.request(url), 'lxml')
-        for tag in tags:
-            meta_tag = soup.find("meta", property=tag, content=True)
+        return extract_meta(soup, *tags)
+
+
+def extract_meta(soup, *tags):
+    for tag in tags:
+        for attr in ['property', 'name', 'itemprop']:
+            meta_tag = soup.find("meta", {attr: tag}, content=True)
             if meta_tag:
                 return meta_tag['content']
