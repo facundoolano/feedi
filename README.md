@@ -73,6 +73,8 @@ class LobstersParser(BaseParser):
         return entry['link']
 ```
 
+You can see several custom RSS parsers in [this module](https://github.com/facundoolano/feedi/blob/main/feedi/parsers/rss_custom.py).
+
 #### Custom feeds
 
 Other than RSS and Mastodon feeds, the app can ingest arbitrary sources with custom parsers. This is useful for scraping websites that don't provide feeds or consuming JSON APIs directly.
