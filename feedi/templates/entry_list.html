@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
+<div hx-boost="true">
   {% with entries = pinned, next_page = None, is_pinned_list = True%}
     <div id="pinned-entry-list">
         {% include "entry_list_page.html" %}
     </div>
   {% endwith %}
-  {% include "entry_list_page.html" %}
+    {% include "entry_list_page.html" %}
+</div>
 {% endblock %}
