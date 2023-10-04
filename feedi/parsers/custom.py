@@ -93,3 +93,39 @@ class RevistaLenguaParser(CustomParser):
             })
 
         return entry_values
+
+
+class PioneerWorksParser(CustomParser):
+    BASE_URL = 'https://pioneerworks.org/'
+
+    def fetch(self):
+        url = f'{self.BASE_URL}/broadcast/directory'
+        response = requests.get(url)
+        script = BeautifulSoup(response.content, 'lxml').find(id='__NEXT_DATA__').text
+        directory = json.loads(script)['props']['pageProps']['directory']
+
+        entry_values = []
+        for article in directory:
+            if not article.get('pubDate') or article.get('_type') != 'article':
+                continue
+            pub_date = datetime.datetime.fromisoformat(article.get('pubDate').split('Z')[0])
+
+            # FIXME we should add support for skip older and min entries instead of this ad hoc check
+            if datetime.datetime.now() - pub_date > datetime.timedelta(days=30):
+                continue
+
+            article_url = f'{self.BASE_URL}/broadcast/{article["slug"]["current"]}'
+
+            entry_values.append({
+                'raw_data': json.dumps(article),
+                'remote_id': article['_id'],
+                'title': article['title'],
+                'username': article['byline'],
+                'remote_created': pub_date,
+                'remote_updated': pub_date,
+                'body': self.fetch_meta(article_url, 'og:description', 'description'),
+                'media_url': self.fetch_meta(article_url, 'og:image', 'twitter:image'),
+                'content_url': article_url,
+            })
+
+        return entry_values
