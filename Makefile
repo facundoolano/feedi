@@ -10,13 +10,13 @@ deps: venv
 	$(venv) pip install -r requirements.txt && npm install
 
 deps-dev: deps
-	$(venv) pip install ipython ipdb
+	$(venv) pip install ipython ipdb flask-shell-ipython
 
 dev:
 	$(flask) run --debug --reload
 
 shell:
-	$(venv) ipython
+	$(flask) shell
 
 dbshell:
 	sqlite3 -cmd ".open instance/feedi.db"
