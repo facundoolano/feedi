@@ -66,7 +66,7 @@ class Feed(db.Model):
                        'polymorphic_identity': 'feed'}
 
     def __repr__(self):
-        return f'<Feed {self.name}>'
+        return f'<{self.__class__.__name__} {self.name}>'
 
     @classmethod
     def resolve(cls, type):
@@ -210,7 +210,7 @@ class RssFeed(Feed):
         return entries
 
     def load_icon(self):
-        self.icon_url = parsers.rss.fetch_icon(self.url) or get_favicon(self.url)
+        self.icon_url = parsers.rss.fetch_icon(self.url)
 
 
 class MastodonAccount(Feed):

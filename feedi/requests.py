@@ -3,6 +3,7 @@ import urllib
 
 import favicon
 from bs4 import BeautifulSoup
+from PIL import Image
 
 import requests
 
@@ -17,21 +18,42 @@ logger = logging.getLogger(__name__)
 # TODO review if this module is a good place for this kind of utilities
 def get_favicon(url):
     "Return the best favicon from the given url, or None."
-    url_parts = urllib.parse.urlparse(url)
-    url = f'{url_parts.scheme}://{url_parts.netloc}'
     try:
         favicons = favicon.get(url)
     except:
         logger.exception("error fetching favicon: %s", url)
         return
-    favicons = [f for f in favicons if f.height == f.width]
-    if not favicons:
-        logger.debug("no feed icon found: %s", favicons)
-        return
-    icon_url = favicons[0].url
-    logger.debug('using favicon %s', icon_url)
 
-    return icon_url
+    # return the first of the results that is a square image
+    for icon in favicons:
+        if icon.format == 'svg' and icon.width == icon.height:
+            logger.debug('using svg favicon %s', icon.url)
+            return icon.url
+
+        dim = get_image_dimensions(icon.url)
+        if dim and dim[0] == dim[1]:
+            logger.debug('using favicon %s', icon.url)
+            return icon.url
+
+    logger.debug("no favicon found: %s", favicons)
+
+
+def get_image_dimensions(url):
+    try:
+        res = requests.get(url, stream=True)
+    except:
+        logger.exception("error loading image from %s", url)
+        return
+
+    if res.ok:
+        res.raw.decode_content = True
+        try:
+            img = Image.open(res.raw)
+            return img.width, img.height
+        except:
+            logger.exception("error loading image from %s", url)
+    else:
+        logger.warn("error fetching image %s", url)
 
 
 class CachingRequestsMixin:
