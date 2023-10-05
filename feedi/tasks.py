@@ -56,7 +56,7 @@ def huey_task(*huey_args):
 @feed_cli.command('sync')
 @huey_task(crontab(minute=app.config['SYNC_FEEDS_CRON_MINUTES']))
 def sync_all_feeds():
-    feeds = db.session.execute(db.select(models.Feed.name, models.Feed.type)).all()
+    feeds = db.session.execute(db.select(models.Feed.name)).all()
 
     tasks = []
     for feed in feeds:
@@ -78,6 +78,32 @@ def sync_all_feeds():
 def sync_feed(feed_name):
     db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     db_feed.sync_with_remote()
+    db.session.commit()
+
+
+@feed_cli.command('icons')
+def load_icons():
+    feeds = db.session.execute(db.select(models.Feed.name)).all()
+
+    tasks = []
+    for feed in feeds:
+        try:
+            tasks.append(load_feed_icon(feed.name))
+        except:
+            app.logger.error("Skipping errored feed %s", feed.name)
+
+    for task in tasks:
+        try:
+            task.get()
+        except:
+            app.logger.exception("failure during async task %s", task)
+            continue
+
+
+@huey_task()
+def load_feed_icon(feed_name):
+    db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
+    db_feed.load_icon()
     db.session.commit()
 
 
