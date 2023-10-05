@@ -3,7 +3,6 @@ import urllib
 
 import favicon
 from bs4 import BeautifulSoup
-from PIL import Image
 
 import requests
 
@@ -18,6 +17,9 @@ logger = logging.getLogger(__name__)
 # TODO review if this module is a good place for this kind of utilities
 def get_favicon(url):
     "Return the best favicon from the given url, or None."
+    url_parts = urllib.parse.urlparse(url)
+    url = f'{url_parts.scheme}://{url_parts.netloc}'
+
     try:
         favicons = favicon.get(url)
     except:
@@ -25,17 +27,15 @@ def get_favicon(url):
         return
 
     # return the first of the results that is a square image
-    for icon in favicons:
-        if icon.format == 'svg' and icon.width == icon.height:
-            logger.debug('using svg favicon %s', icon.url)
-            return icon.url
+    clean_favicons = [f for f in favicons if f.height == f.width and
+                      requests.head(f.url).ok]
+    if not clean_favicons:
+        logger.debug("no feed icon found: %s", favicons)
+        return
+    icon_url = clean_favicons[0].url
+    logger.debug('using favicon %s', icon_url)
 
-        dim = get_image_dimensions(icon.url)
-        if dim and dim[0] == dim[1]:
-            logger.debug('using favicon %s', icon.url)
-            return icon.url
-
-    logger.debug("no favicon found: %s", favicons)
+    return icon_url
 
 
 def get_image_dimensions(url):

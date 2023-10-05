@@ -12,4 +12,3 @@ huey==2.4.5
 alembic==1.11.2
 stkclient==0.1.1
 gunicorn==21.2.0
-pillow==10.0.1
