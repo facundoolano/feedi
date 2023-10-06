@@ -24,15 +24,7 @@
     <article class="media">
         <figure class="media-left">
             <p class="image is-64x64">
-                {% if entry.avatar_url %}
-                <a href="{{ url_for('entry_list', username=entry.username ) }}">
-          <img class="is-rounded" src="{{ entry.avatar_url }}" alt="{{ entry.username }}" title="{{ entry.username }}">
-      </a>
-      {% else %}
-      <a href="{{ url_for('entry_list', feed_name=entry.feed.name ) }}">
-          <img class="is-rounded" src="{{ entry.feed.icon_url }}" alt="{{ entry.feed.name}}" title="{{ entry.feed.name }}">
-      </a>
-      {% endif %}
+                {% include "entry_avatar.html" %}
             </p>
   </figure>
   <div class="media-content">

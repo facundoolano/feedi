@@ -103,6 +103,10 @@ but we only want it for mobile*/
     letter-spacing: 2rem;
 }
 
+.is-64x64 .feed-avatar::before {
+    font-size: 2em;
+}
+
 /* entry effects on hover  */
 
 @media (hover: hover) {
