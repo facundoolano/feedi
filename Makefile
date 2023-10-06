@@ -37,10 +37,12 @@ prod:
 	$(venv) gunicorn
 
 # FIXME this is hacky
+BRANCH ?= main
 prod-update:
 	git stash # because of prod config
-	git checkout main
-	git pull origin main --ff-only
+	git fetch
+	git checkout $(BRANCH)
+	git pull origin $(BRANCH) --ff-only
 	git stash apply
 	make deps
 	$(venv) alembic upgrade head
