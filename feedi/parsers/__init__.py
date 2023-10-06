@@ -1,1 +1,1 @@
-from . import custom, mastodon, rss, rss_custom
+from . import custom, mastodon, rss
