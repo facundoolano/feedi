@@ -16,7 +16,7 @@ dev:
 	$(flask) run --debug --reload
 
 shell:
-	$(flask) shell
+	DISABLE_CRON_TASKS=1 $(flask) shell
 
 dbshell:
 	sqlite3 -cmd ".open instance/feedi.db"

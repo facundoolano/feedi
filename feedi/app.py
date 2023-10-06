@@ -5,6 +5,7 @@ from gevent import monkey
 
 monkey.patch_all()  # nopep8
 import logging
+import os
 
 import flask
 from werkzeug.serving import is_running_from_reloader
@@ -24,12 +25,13 @@ def create_app():
 
         models.init_db(app)
 
-        if not is_running_from_reloader():
+        if not is_running_from_reloader() and not os.environ.get('DISABLE_CRON_TASKS'):
             # we want only one huey scheduler running, so we make sure
             # this isn't the dev server reloader process
 
             # btw this may not be the right place to put the huey startup
             # perhaps it should be in wsgi, but we wouldn't have it in dev server
+            app.logger.info("Starting Huey for periodic tasks")
             tasks.huey.start()
 
     @app.teardown_appcontext
