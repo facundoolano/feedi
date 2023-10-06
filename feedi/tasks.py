@@ -81,32 +81,6 @@ def sync_feed(feed_name):
     db.session.commit()
 
 
-@feed_cli.command('icons')
-def load_icons():
-    feeds = db.session.execute(db.select(models.Feed.name)).all()
-
-    tasks = []
-    for feed in feeds:
-        try:
-            tasks.append(load_feed_icon(feed.name))
-        except:
-            app.logger.error("Skipping errored feed %s", feed.name)
-
-    for task in tasks:
-        try:
-            task.get()
-        except:
-            app.logger.exception("failure during async task %s", task)
-            continue
-
-
-@huey_task()
-def load_feed_icon(feed_name):
-    db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
-    db_feed.load_icon()
-    db.session.commit()
-
-
 @feed_cli.command('purge')
 @huey_task(crontab(minute=app.config['DELETE_OLD_CRON_HOURS']))
 def delete_old_entries():
