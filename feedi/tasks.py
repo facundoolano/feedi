@@ -92,7 +92,7 @@ def sync_feed(feed_name):
 
 
 @feed_cli.command('purge')
-@huey_task(crontab(minute=app.config['DELETE_OLD_CRON_HOURS']))
+@huey_task(crontab(hour=app.config['DELETE_OLD_CRON_HOURS']))
 def delete_old_entries():
     """
     Delete entries that are older than DELETE_AFTER_DAYS but
