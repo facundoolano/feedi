@@ -28,7 +28,7 @@ def get_favicon(url):
 
     # return the first of the results that is a square image
     clean_favicons = [f for f in favicons if f.height == f.width and
-                      requests.head(f.url).ok]
+                      requests.get(f.url).ok]  # I'd prefer head but some urls return 405 for it
     if not clean_favicons:
         logger.debug("no feed icon found: %s", favicons)
         return
