@@ -73,7 +73,7 @@ class LobstersParser(BaseParser):
         return entry['link']
 ```
 
-You can see several custom RSS parsers in [this module](https://github.com/facundoolano/feedi/blob/main/feedi/parsers/rss_custom.py).
+You can see several custom RSS parsers in [this module](https://github.com/facundoolano/feedi/blob/main/feedi/parsers/rss.py).
 
 #### Custom feeds
 
