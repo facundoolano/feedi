@@ -14,7 +14,6 @@ requests.headers.update({'User-Agent': USER_AGENT})
 logger = logging.getLogger(__name__)
 
 
-# TODO review if this module is a good place for this kind of utilities
 def get_favicon(url):
     "Return the best favicon from the given url, or None."
     url_parts = urllib.parse.urlparse(url)
@@ -26,16 +25,14 @@ def get_favicon(url):
         logger.exception("error fetching favicon: %s", url)
         return
 
-    # return the first of the results that is a square image
-    clean_favicons = [f for f in favicons if f.height == f.width and
-                      requests.get(f.url).ok]  # I'd prefer head but some urls return 405 for it
-    if not clean_favicons:
-        logger.debug("no feed icon found: %s", favicons)
-        return
-    icon_url = clean_favicons[0].url
-    logger.debug('using favicon %s', icon_url)
+    # if there's an .ico one, prefer it since it's more likely to be
+    # a square icon rather than a banner
+    ico_format = [f for f in favicons if f.format == 'ico']
+    if ico_format:
+        return ico_format[0].url
 
-    return icon_url
+    # otherwise return the first
+    return favicons[0].url if favicons else None
 
 
 class CachingRequestsMixin:
