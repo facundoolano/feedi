@@ -341,7 +341,7 @@ https://github.com/jgthms/bulma/issues/1561#issuecomment-535475428 */
 }
 
 .feed-entry.viewed {
-    background-color: #fff7e1;
+    background-color: hsl(0, 0%, 98%);
 }
 
 #pinned-entry-list .feed-entry {
