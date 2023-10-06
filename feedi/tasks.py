@@ -44,6 +44,8 @@ def huey_task(*huey_args):
 
                 app.logger.info("STARTING %s %s %s", f.__name__, fargs, fkwargs)
 
+                # using a lock file to ensure a given task is not attempted to run in parallel
+                # so we can have multiple app worker processes without spamming rss sources with redundant requests
                 lock_path = f'{tempfile.gettempdir()}/{f.__name__}-{fargs}-{fkwargs}'.replace(' ', '-')
                 lock = filelock.FileLock(lock_path)
                 try:

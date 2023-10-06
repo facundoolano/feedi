@@ -3,3 +3,4 @@ worker_class = "gevent"
 wsgi_app = "feedi.app:create_app()"
 raw_env = ["FEEDI_CONFIG=feedi/config/prod.py"]
 preload = True
+workers = 4
