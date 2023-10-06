@@ -10,7 +10,7 @@ import urllib
 import feedparser
 from bs4 import BeautifulSoup
 from feedi.requests import (USER_AGENT, CachingRequestsMixin, extract_meta,
-                            get_favicon, get_image_dimensions, requests)
+                            get_favicon, requests)
 
 logger = logging.getLogger(__name__)
 

@@ -38,24 +38,6 @@ def get_favicon(url):
     return icon_url
 
 
-def get_image_dimensions(url):
-    try:
-        res = requests.get(url, stream=True)
-    except:
-        logger.exception("error loading image from %s", url)
-        return
-
-    if res.ok:
-        res.raw.decode_content = True
-        try:
-            img = Image.open(res.raw)
-            return img.width, img.height
-        except:
-            logger.exception("error loading image from %s", url)
-    else:
-        logger.warn("error fetching image %s", url)
-
-
 class CachingRequestsMixin:
     """
     Exposes a request method that caches the response contents for subsequent requests.
