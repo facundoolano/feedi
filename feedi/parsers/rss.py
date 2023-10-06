@@ -10,7 +10,7 @@ import urllib
 import feedparser
 from bs4 import BeautifulSoup
 from feedi.requests import (USER_AGENT, CachingRequestsMixin, extract_meta,
-                            requests)
+                            get_favicon, requests)
 
 logger = logging.getLogger(__name__)
 
@@ -31,12 +31,21 @@ def fetch(feed_name, url, skip_older_than, min_amount,
 
 
 def fetch_icon(url):
-    # try to get the icon from an rss field
+    # prefer link inside rss as the base url
     feed = feedparser.parse(url)
+    feed_link = feed['feed'].get('link', url)
+    icon_url = get_favicon(feed_link)
+    if icon_url:
+        logger.debug("using feed icon: %s", icon_url)
+        return icon_url
+
+    # otherwise try to get the icon from an explicit icon link
     icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
     if icon_url and requests.head(icon_url).ok:
         logger.debug("using feed icon: %s", icon_url)
         return icon_url
+
+    logger.debug("no feed icon found for %s", url)
 
 
 class RSSParser(CachingRequestsMixin):
