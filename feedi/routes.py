@@ -34,12 +34,14 @@ def entry_list(**filters):
     page = flask.request.args.get('page')
     hide_seen = flask.session.get('hide_seen', True)
     ordering = flask.session.get('ordering', models.Entry.ORDER_FREQUENCY)
-    is_mixed_feed_list = filters.get('folder') or flask.request.path == '/'
 
     filters = dict(**filters)
     text = flask.request.args.get('q', '').strip()
     if text:
         filters['text'] = text
+
+    is_mixed_feed_list = filters.get('folder') or (
+        flask.request.path == '/' and not filters.get('text'))
 
     (entries, next_page) = fetch_entries_page(page, ordering, hide_seen, is_mixed_feed_list,
                                               **filters)
