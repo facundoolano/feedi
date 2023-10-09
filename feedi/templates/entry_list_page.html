@@ -48,7 +48,11 @@
                      </div>
                      {% endif %}
                      {% if entry.body %}
-                     <div class="column">
+                     <div class="column {% if entry.has_content %}is-clickable{% endif %}"
+                          {% if entry.has_content %}
+                          _="on click go to url {{ url_for('entry_view', id=entry.id) }}"
+                          {% endif %}
+                     >
                          <div class="content" tabindex="-1">
                          {% if entry.feed.type == 'mastodon' %}
                          {{ entry.body | safe }}
