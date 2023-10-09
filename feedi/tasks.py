@@ -159,15 +159,7 @@ def csv_load(file):
 
             cls = models.Feed.resolve(values[0])
             feed = cls.from_valuelist(*values)
-
-            query = db.select(db.exists(models.Feed).where(models.Feed.name == feed.name))
-            if db.session.execute(query).scalar():
-                app.logger.info('skipping already existent %s', feed.name)
-                continue
-
-            feed.load_icon()
-            db.session.add(feed)
-            app.logger.info('added %s', feed)
+            add_if_not_exists(feed)
 
     db.session.commit()
 
@@ -187,7 +179,23 @@ def csv_dump(file):
 @feed_cli.command('load-opml')
 @click.argument("file")
 def opml_load(file):
-    pass
+    document = opml.OpmlDocument.load(file)
+
+    for outline in document.outlines:
+        if outline.outlines:
+            # it's a folder
+            folder = outline.text
+            for feed in outline.outlines:
+                add_if_not_exists(models.RssFeed(name=feed.title or feed.text,
+                                                 url=feed.xml_url,
+                                                 folder=folder))
+
+        else:
+            # it's a top-level feed
+            add_if_not_exists(models.RssFeed(name=feed.title or feed.text,
+                                             url=feed.xml_url))
+
+    db.session.commit()
 
 
 @feed_cli.command('dump-opml')
@@ -212,6 +220,17 @@ def opml_dump(file):
                        created=datetime.datetime.now())
 
     document.dump(file)
+
+
+def add_if_not_exists(feed):
+    query = db.select(db.exists(models.Feed).where(models.Feed.name == feed.name))
+    if db.session.execute(query).scalar():
+        app.logger.info('skipping already existent %s', feed.name)
+        return
+
+    feed.load_icon()
+    db.session.add(feed)
+    app.logger.info('added %s', feed)
 
 
 app.cli.add_command(feed_cli)
