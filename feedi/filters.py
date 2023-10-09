@@ -63,6 +63,10 @@ def sanitize_content(html):
             soup.html.body.unwrap()
         soup.html.unwrap()
 
+    for a in soup.find_all('a'):
+        # prevent link clicks triggering the container's click event
+        a['_'] = "on click halt the event's bubbling"
+
     return str(soup)
 
 
