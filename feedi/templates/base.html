@@ -110,52 +110,57 @@
                        <hr class="dropdown-divider is-hidden-mobile"/>
                        <form>
                            <label class="radio dropdown-item">
-                               <p class="menu-label">View style</p>
-                               <input
-                                   hx-post="{{ url_for('update_setting') }}" _="on click set .feed-entry@data-view to 'full'"
-                                   {% if not session.view or session.view == "full" %} checked {% endif %}
-                                   type="radio" name="view" value="full">
-                               Full preview
+                               <p class="menu-label">Display settings</p>
+                               <div class="buttons has-addons are-small view-settings-buttons">
+                                   <button class="button {% if not session.view or session.view == "full" %} is-selected is-info {% endif %}" title="Full preview"
+                                           hx-put="{{ url_for('update_setting', setting='view', value='full' ) }}"
+                                           _="on click set .feed-entry@data-view to 'full'
+                                                  then remove .is-selected from <.view-settings-buttons button/>
+                                                  then remove .is-info from <.view-settings-buttons button/>
+                                                  then add .is_selected then add .is-info">
+                                       <span class="icon"><i class="far fa-images fa-lg"></i></span>
+                                   </button>
+                                   <button class="button {% if session.view == "text" %} is-selected is-info {% endif %}" title="Text only"
+                                           hx-put="{{ url_for('update_setting', setting='view', value='text') }}"
+                                           _="on click set .feed-entry@data-view to 'text'
+                                                  then remove .is-selected from <.view-settings-buttons button/>
+                                                  then remove .is-info from <.view-settings-buttons button/>
+                                                  then add .is_selected then add .is-info">
+                                                  <span class="icon"><i class="fas fa-align-justify fa-lg"></i></span>
+                                   </button>
+                                   <button class="button {% if session.view == "compact" %} is-selected is-info {% endif %}" title="Compact"
+                                           hx-put="{{ url_for('update_setting', setting='view', value='compact') }}"
+                                           _="on click set .feed-entry@data-view to 'compact'
+                                                  then remove .is-selected from <.view-settings-buttons button/>
+                                                  then remove .is-info from <.view-settings-buttons button/>
+                                                  then add .is_selected then add .is-info">
+                                                  <span class="icon "><i class="fas fa-inbox fa-lg"></i></span>
+                                   </button>
+                               </div>
                            </label>
-                           <label class="radio dropdown-item">
-                               <input
-                                   hx-post="{{ url_for('update_setting') }}" _="on click set .feed-entry@data-view to 'text'"
-                                   {% if session.view == "text" %} checked {% endif %}
-                                   type="radio" name="view" value="text">
-                               Text only
-                           </label>
-                           <label class="radio dropdown-item">
-                               <input
-                                   hx-post="{{ url_for('update_setting') }}" _="on click set .feed-entry@data-view to 'compact'"
-                                   {% if session.view == "compact" %} checked {% endif %}
-                                   type="radio" name="view" value="compact">
-                               Compact
-                           </label>
+
                            {% if is_mixed_feed_view %}
                            <hr class="dropdown-divider"/>
                            <label class="radio dropdown-item">
-                               <p class="menu-label">Ordering</p>
-                               <input
-                                   hx-post="{{ url_for('update_setting') }}" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
-                                   {% if not session.ordering or session.ordering == "frequency" %} checked {% endif %}
-                                   type="radio" name="ordering" value="frequency">
-                               Least frequent
+                               <p class="menu-label">Feed settings</p>
+                               <div class="buttons has-addons are-small ordering-settings-buttons">
+                                   <button class="button {% if not session.ordering or session.ordering == "frequency" %} is-selected is-info {% endif %}" title="Least frequent"
+                                           hx-put="{{ url_for('update_setting', setting='ordering', value='frequency') }}"
+                                           _="on htmx:afterRequest go to the top of the body then reload() the location of the window">
+                                       <span class="icon"><i class="fas fa-history fa-lg"></i></span>
+                                   </button>
+                                   <button class="button {% if session.ordering == "recency" %} is-selected is-info {% endif %}" title="Most recent"
+                                           hx-put="{{ url_for('update_setting', setting='ordering', value='recency') }}"
+                                           _="on htmx:afterRequest go to the top of the body then reload() the location of the window">
+                                       <span class="icon"><i class="far fa-clock fa-lg"></i></span>
+                                   </button>
+                                   <button class="button {% if session.ordering == "score" %} is-selected is-info {% endif %}" title="Best score"
+                                           hx-put="{{ url_for('update_setting', setting='ordering', value='score') }}"
+                                           _="on htmx:afterRequest go to the top of the body then reload() the location of the window">
+                                       <span class="icon "><i class="far fa-thumbs-up fa-lg"></i></span>
+                                   </button>
+                               </div>
                            </label>
-                           <label class="radio dropdown-item">
-                               <input
-                                   hx-post="{{ url_for('update_setting') }}" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
-                                   {% if session.ordering == "recency" %} checked {% endif %}
-                                   type="radio" name="ordering" value="recency">
-                               Most recent
-                           </label>
-                           <label class="radio dropdown-item">
-                               <input hx-post="{{ url_for('update_setting') }}"
-                                      _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
-                                      {% if session.ordering == "score" %} checked {% endif %}
-                                      type="radio" name="ordering" value="score">
-                           Best score
-                       </label>
-                       <hr class="dropdown-divider"/>
                        <label class="checkbox dropdown-item">
                            <input
                                hx-post="{{ url_for('toggle_setting', setting='hide_seen') }}" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"

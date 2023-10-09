@@ -185,6 +185,11 @@ but we only want it for mobile*/
     margin:.25em!important;
 }
 
+.view-settings-buttons button, .ordering-settings-buttons button {
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
 .level-item.icon:not(.toggled) {
     /* FIXME this should use SCSS variables */
     color: hsl(0, 0%, 86%)
