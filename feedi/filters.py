@@ -75,7 +75,7 @@ def sanitize_content(html):
 @app.template_filter('entry_excerpt')
 def entry_excerpt(entry):
     if not entry.body:
-        return
+        return ''
 
     if entry.has_content():
         title = entry.title
