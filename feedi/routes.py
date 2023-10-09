@@ -493,10 +493,9 @@ def raw_entry(id):
 
 
 # TODO improve this views to accept only valid values
-@app.post("/session")
-def update_setting():
-    for (key, value) in flask.request.form.items():
-        flask.session[key] = value
+@app.put("/session/<setting>/<value>")
+def update_setting(setting, value):
+    flask.session[setting] = value
 
     return '', 204
 
