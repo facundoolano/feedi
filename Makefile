@@ -27,6 +27,9 @@ dbreset:
 feed-load:
 	$(flask) feed load feeds.csv
 
+feed-dump:
+	$(flask) feed dump feeds.csv
+
 feed-sync:
 	$(flask) feed sync
 

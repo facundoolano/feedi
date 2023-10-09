@@ -148,45 +148,39 @@ def debug_feed(url):
     parsers.rss.pretty_print(url)
 
 
-# TODO this needs to be updated to new feed types and support folders
-# we should also add csv exporting and opml import/export
 @feed_cli.command('load')
 @click.argument("file")
-def create_test_feeds(file):
+def csv_load(file):
     "Load feeds from a local csv file."
 
     with open(file) as csv_file:
-        for attrs in csv.reader(csv_file):
-            feed_type = attrs[0]
-            feed_name = attrs[1]
-            query = db.select(models.Feed).where(models.Feed.name == feed_name)
-            db_feed = db.session.execute(query).first()
-            if db_feed:
-                app.logger.info('skipping already existent %s', feed_name)
+        for values in csv.reader(csv_file):
+
+            cls = models.Feed.resolve(values[0])
+            feed = cls.from_valuelist(*values)
+
+            query = db.select(db.exists(models.Feed).where(models.Feed.name == feed.name))
+            if db.session.execute(query).scalar():
+                app.logger.info('skipping already existent %s', feed.name)
                 continue
 
-            if feed_type == models.Feed.TYPE_RSS:
-                url = attrs[2]
-                db_feed = models.RssFeed(name=feed_name,
-                                         url=url)
-
-            elif feed_type == models.Feed.TYPE_MASTODON_ACCOUNT:
-                server_url = attrs[2]
-                access_token = attrs[3]
-
-                db_feed = models.MastodonAccount(name=feed_name,
-                                                 url=server_url,
-                                                 access_token=access_token)
-
-            else:
-                app.logger.error("unknown feed type %s", attrs[0])
-                continue
-
-            db_feed.load_icon()
-            db.session.add(db_feed)
-            app.logger.info('added %s', db_feed)
+            feed.load_icon()
+            db.session.add(feed)
+            app.logger.info('added %s', feed)
 
     db.session.commit()
+
+
+@feed_cli.command('dump')
+@click.argument("file")
+def csv_dump(file):
+    "Dump feeds to a local csv file."
+
+    with open(file, 'w') as csv_file:
+        feed_writer = csv.writer(csv_file)
+        for feed in db.session.execute(db.select(models.Feed)).scalars():
+            feed_writer.writerow(feed.to_valuelist())
+            app.logger.info('written %s', feed)
 
 
 app.cli.add_command(feed_cli)

@@ -83,6 +83,13 @@ class Feed(db.Model):
             raise ValueError(f'unknown type {type}')
         return subcls
 
+    @classmethod
+    def from_valuelist(cls, type, name, url, folder):
+        return cls(**dict(type=type, name=name, url=url, folder=folder))
+
+    def to_valuelist(self):
+        return [self.type, self.name, self.url, self.folder]
+
     def sync_with_remote(self):
         """
         Fetch this feed entries from its remote sources, saving them to the database and updating
@@ -189,6 +196,13 @@ class RssFeed(Feed):
 
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_RSS}
 
+    @classmethod
+    def from_valuelist(cls, _type, name, url, folder, filters):
+        return cls(**dict(name=name, url=url, folder=folder, filters=filters))
+
+    def to_valuelist(self):
+        return [self.type, self.name, self.url, self.folder, self.filters]
+
     def fetch_entry_data(self):
         from flask import current_app as app
         skip_older_than = datetime.datetime.utcnow() - \
@@ -215,6 +229,13 @@ class RssFeed(Feed):
 
 class MastodonAccount(Feed):
     access_token = sa.Column(sa.String)
+
+    @classmethod
+    def from_valuelist(cls, _type, name, url, folder, access_token):
+        return cls(**dict(name=name, url=url, folder=folder, access_token=access_token))
+
+    def to_valuelist(self):
+        return [self.type, self.name, self.url, self.folder, self.access_token]
 
     def _api_args(self):
         from flask import current_app as app
