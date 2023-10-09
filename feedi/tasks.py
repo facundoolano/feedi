@@ -6,9 +6,11 @@ This module contains tasks that can be scheduled by huey and/or run as flask cli
 
 import csv
 import datetime
+import tempfile
 from functools import wraps
 
 import click
+import filelock
 import flask
 import sqlalchemy as sa
 from flask import current_app as app
@@ -39,11 +41,19 @@ def huey_task(*huey_args):
             with app.app_context():
                 fargs = ' '.join(args)
                 fkwargs = ' '.join([f'{k}={v}' for (k, v) in kwargs.items()])
+
                 app.logger.info("STARTING %s %s %s", f.__name__, fargs, fkwargs)
 
-                f(*args, **kwargs)
-
-                app.logger.info("FINISHED %s %s %s", f.__name__, fargs, fkwargs)
+                # using a lock file to ensure a given task is not attempted to run in parallel
+                # so we can have multiple app worker processes without spamming rss sources with redundant requests
+                lock_path = f'{tempfile.gettempdir()}/{f.__name__}-{fargs}-{fkwargs}'.replace(' ', '-')
+                lock = filelock.FileLock(lock_path)
+                try:
+                    with lock.acquire(blocking=False):
+                        f(*args, **kwargs)
+                        app.logger.info("FINISHED %s %s %s", f.__name__, fargs, fkwargs)
+                except filelock.Timeout:
+                    app.logger.info("SKIPPING locked task %s", lock_path)
 
         return decorator
 
@@ -82,7 +92,7 @@ def sync_feed(feed_name):
 
 
 @feed_cli.command('purge')
-@huey_task(crontab(minute=app.config['DELETE_OLD_CRON_HOURS']))
+@huey_task(crontab(hour=app.config['DELETE_OLD_CRON_HOURS']))
 def delete_old_entries():
     """
     Delete entries that are older than DELETE_AFTER_DAYS but
