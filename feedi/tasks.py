@@ -12,6 +12,7 @@ from functools import wraps
 import click
 import filelock
 import flask
+import opml
 import sqlalchemy as sa
 from flask import current_app as app
 from huey import crontab
@@ -148,45 +149,88 @@ def debug_feed(url):
     parsers.rss.pretty_print(url)
 
 
-# TODO this needs to be updated to new feed types and support folders
-# we should also add csv exporting and opml import/export
 @feed_cli.command('load')
 @click.argument("file")
-def create_test_feeds(file):
+def csv_load(file):
     "Load feeds from a local csv file."
 
     with open(file) as csv_file:
-        for attrs in csv.reader(csv_file):
-            feed_type = attrs[0]
-            feed_name = attrs[1]
-            query = db.select(models.Feed).where(models.Feed.name == feed_name)
-            db_feed = db.session.execute(query).first()
-            if db_feed:
-                app.logger.info('skipping already existent %s', feed_name)
-                continue
+        for values in csv.reader(csv_file):
 
-            if feed_type == models.Feed.TYPE_RSS:
-                url = attrs[2]
-                db_feed = models.RssFeed(name=feed_name,
-                                         url=url)
-
-            elif feed_type == models.Feed.TYPE_MASTODON_ACCOUNT:
-                server_url = attrs[2]
-                access_token = attrs[3]
-
-                db_feed = models.MastodonAccount(name=feed_name,
-                                                 url=server_url,
-                                                 access_token=access_token)
-
-            else:
-                app.logger.error("unknown feed type %s", attrs[0])
-                continue
-
-            db_feed.load_icon()
-            db.session.add(db_feed)
-            app.logger.info('added %s', db_feed)
+            cls = models.Feed.resolve(values[0])
+            feed = cls.from_valuelist(*values)
+            add_if_not_exists(feed)
 
     db.session.commit()
+
+
+@feed_cli.command('dump')
+@click.argument("file")
+def csv_dump(file):
+    "Dump feeds to a local csv file."
+
+    with open(file, 'w') as csv_file:
+        feed_writer = csv.writer(csv_file)
+        for feed in db.session.execute(db.select(models.Feed)).scalars():
+            feed_writer.writerow(feed.to_valuelist())
+            app.logger.info('written %s', feed)
+
+
+@feed_cli.command('load-opml')
+@click.argument("file")
+def opml_load(file):
+    document = opml.OpmlDocument.load(file)
+
+    for outline in document.outlines:
+        if outline.outlines:
+            # it's a folder
+            folder = outline.text
+            for feed in outline.outlines:
+                add_if_not_exists(models.RssFeed(name=feed.title or feed.text,
+                                                 url=feed.xml_url,
+                                                 folder=folder))
+
+        else:
+            # it's a top-level feed
+            add_if_not_exists(models.RssFeed(name=feed.title or feed.text,
+                                             url=feed.xml_url))
+
+    db.session.commit()
+
+
+@feed_cli.command('dump-opml')
+@click.argument("file")
+def opml_dump(file):
+    document = opml.OpmlDocument()
+    folder_outlines = {}
+    for feed in db.session.execute(db.select(models.RssFeed)).scalars():
+        if feed.folder:
+            # to represent folder structure we put the feed in nested outlines
+            if not feed.folder in folder_outlines:
+                folder_outlines[feed.folder] = document.add_outline(feed.folder)
+            target = folder_outlines[feed.folder]
+        else:
+            # if feed doesn't have a folder, put it in the top level doc
+            target = document
+
+        target.add_rss(feed.name,
+                       feed.url,
+                       title=feed.name,
+                       categories=[feed.folder] if feed.folder else [],
+                       created=datetime.datetime.now())
+
+    document.dump(file)
+
+
+def add_if_not_exists(feed):
+    query = db.select(db.exists(models.Feed).where(models.Feed.name == feed.name))
+    if db.session.execute(query).scalar():
+        app.logger.info('skipping already existent %s', feed.name)
+        return
+
+    feed.load_icon()
+    db.session.add(feed)
+    app.logger.info('added %s', feed)
 
 
 app.cli.add_command(feed_cli)

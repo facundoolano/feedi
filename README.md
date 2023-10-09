@@ -25,19 +25,14 @@ A production-like server can also be run at http://localhost:5000 with:
 
 
 ## Advanced usage
-### Bulk load feeds from csv
+### Bulk import/export feeds from csv and OPML files
 
-`make feed-load` will load feeds from a local `feeds.csv` file.
+`make feed-load` will load feeds from a local `feeds.csv` file. A [sample file](https://github.com/facundoolano/feedi/blob/HEAD/feeds.csv) is included in the repo
+in case you want to see some content right away.
 
-Example file (the $VARS are for illustration, they should be replaced before running the command):
+There's also a `make feed-load-opml` to import a list of RSS feeds from a `feeds.opml` file in the [OPML format](https://en.wikipedia.org/wiki/OPML).
 
-
-    rss,"Apuntes Inchequeables","https://facundoolano.github.io/feed.xml"
-    rss,"lobste.rs","https://lobste.rs/rss"
-    rss,"hackernews","https://hnrss.org/newest?points=100"
-    rss,"Github","https://github.com/$USERNAME.private.atom?token=$TOKEN"
-    rss,"Goodreads","https://www.goodreads.com/home/index_rss/$ID?key=$TOKEN
-    mastodon,$NAME,$SERVER,$ACCES_TOKEN
+There are analogous `make feed-dump` and `make feed-dump-opml` targets to export feed data from the app.
 
 ### Feed parsing
 
