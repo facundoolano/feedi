@@ -30,6 +30,12 @@ feed-load:
 feed-dump:
 	$(flask) feed dump feeds.csv
 
+feed-load-opml:
+	$(flask) feed load-opml feeds.opml
+
+feed-dump-opml:
+	$(flask) feed dump-opml feeds.opml
+
 feed-sync:
 	$(flask) feed sync
 

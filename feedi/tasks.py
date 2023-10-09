@@ -194,12 +194,23 @@ def opml_load(file):
 @click.argument("file")
 def opml_dump(file):
     document = opml.OpmlDocument()
+    folder_outlines = {}
     for feed in db.session.execute(db.select(models.RssFeed)).scalars():
-        document.add_rss(feed.name,
-                         feed.url,
-                         title=feed.name,
-                         categories=[feed.folder] if feed.folder else [],
-                         created=datetime.datetime.now())
+        if feed.folder:
+            # to represent folder structure we put the feed in nested outlines
+            if not feed.folder in folder_outlines:
+                folder_outlines[feed.folder] = document.add_outline(feed.folder)
+            target = folder_outlines[feed.folder]
+        else:
+            # if feed doesn't have a folder, put it in the top level doc
+            target = document
+
+        target.add_rss(feed.name,
+                       feed.url,
+                       title=feed.name,
+                       categories=[feed.folder] if feed.folder else [],
+                       created=datetime.datetime.now())
+
     document.dump(file)
 
 
