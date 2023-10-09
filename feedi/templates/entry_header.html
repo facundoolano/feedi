@@ -32,11 +32,21 @@
         </p>
     </div>
     <div class="is-hidden compact-actions is-hidden">
-        {% if entry.has_comments_url() %}
-        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="Comment"
-           href="{{ entry.entry_url}}" target="_blank"
-        ><i class="fas fa-comment-alt"></i></a>
-        {% endif %}
+        <div class="dropdown is-right"
+             _="on intersection(intersecting) having margin '0px 0px -50% 0px'
+                    if intersecting remove .is-up else add .is-up -- show dropup up or dropdown depending position relative to middle of screen">
+            <div class="dropdown-trigger">
+                <a class="icon hover-icon is-white is-rounded level-item"
+                   tabindex="-1"
+                   _="on click toggle .is-active on the closest .dropdown then
+                          on click elsewhere remove .is-active from the closest .dropdown">
+                    <i class="fas fa-ellipsis-v"></i>
+                </a>
+            </div>
+            <div class="dropdown-menu" role="menu">
+                <div class="dropdown-content">{% include "entry_commands.html" %}</div>
+            </div>
+        </div>
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
            hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
            hx-target="#pinned-entry-list"
@@ -61,26 +71,24 @@
            href="{{ entry.entry_url}}" target="_blank"
         ><i class="fas fa-comment-alt"></i></a>
         {% endif %}
+        <div class="dropdown is-right"
+             _="on intersection(intersecting) having margin '0px 0px -50% 0px'
+                    if intersecting remove .is-up else add .is-up -- show dropup up or dropdown depending position relative to middle of screen">
+            <a class="icon hover-icon is-white is-rounded level-item"
+               tabindex="-1"
+               _="on click toggle .is-active on the closest .dropdown then
+                      on click elsewhere remove .is-active from the closest .dropdown">
+                <i class="fas fa-ellipsis-v"></i>
+            </a>
+            <div class="dropdown-menu" role="menu">
+                <div class="dropdown-content">{% include "entry_commands.html" %}</div>
+            </div>
+        </div>
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin"
            hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
            hx-target="#pinned-entry-list"
            _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />
                      then on keyup[key is 'p'] from the closest .feed-entry trigger click on me">
             <i class="fas fa-thumbtack"></i></a>
-        <div class="dropdown is-right"
-             _="on intersection(intersecting) having margin '0px 0px -50% 0px'
-                    if intersecting remove .is-up else add .is-up -- show dropup up or dropdown depending position relative to middle of screen">
-            <div class="dropdown-trigger">
-                <a class="icon hover-icon is-white is-rounded level-item"
-                   tabindex="-1"
-                   _="on click toggle .is-active on the closest .dropdown then
-                          on click elsewhere remove .is-active from the closest .dropdown">
-                    <i class="fas fa-ellipsis-v"></i>
-                </a>
-            </div>
-            <div class="dropdown-menu" role="menu">
-                <div class="dropdown-content">{% include "entry_commands.html" %}</div>
-            </div>
-        </div>
     </div>
 </div>
