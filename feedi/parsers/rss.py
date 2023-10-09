@@ -206,6 +206,8 @@ class RSSParser(CachingRequestsMixin):
             if not url:
                 return
             summary = self.fetch_meta(url, 'og:description', 'description')
+            if not summary:
+                return
 
         soup = BeautifulSoup(summary, 'lxml')
 
