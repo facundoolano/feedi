@@ -12,6 +12,7 @@ from functools import wraps
 import click
 import filelock
 import flask
+import opml
 import sqlalchemy as sa
 from flask import current_app as app
 from huey import crontab
@@ -181,6 +182,25 @@ def csv_dump(file):
         for feed in db.session.execute(db.select(models.Feed)).scalars():
             feed_writer.writerow(feed.to_valuelist())
             app.logger.info('written %s', feed)
+
+
+@feed_cli.command('load-opml')
+@click.argument("file")
+def opml_load(file):
+    pass
+
+
+@feed_cli.command('dump-opml')
+@click.argument("file")
+def opml_dump(file):
+    document = opml.OpmlDocument()
+    for feed in db.session.execute(db.select(models.RssFeed)).scalars():
+        document.add_rss(feed.name,
+                         feed.url,
+                         title=feed.name,
+                         categories=[feed.folder] if feed.folder else [],
+                         created=datetime.datetime.now())
+    document.dump(file)
 
 
 app.cli.add_command(feed_cli)
