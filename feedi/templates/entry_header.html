@@ -22,7 +22,11 @@
                 </a>
                 {% endif %}
             </b>
-            <span class="entry-excerpt-metadata is-hidden">
+            <span class="entry-excerpt-metadata is-hidden {% if entry.has_content() %}is-clickable{% endif %}"
+                  {% if entry.has_content() %}
+                  _="on click go to url {{ url_for('entry_view', id=entry.id) }}"
+                  {% endif %}
+            >
                 <small>{{ entry | entry_excerpt }}</small>
             </span>
             <span class="entry-metadata">
