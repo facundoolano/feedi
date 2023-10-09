@@ -6,7 +6,7 @@
 {% endif %}
 {% if entry.content_url %}
 {% if entry.id and request.path != url_for('entry_view', id=entry.id) %}
-<a href="{{ url_for('entry_view', id=entry.id) }}" class="dropdown-item"><span class="icon"><i class="fas fa-book-reader"></i></span> View in reader</a>
+<a hx-boost="true" href="{{ url_for('entry_view', id=entry.id) }}" class="dropdown-item"><span class="icon"><i class="fas fa-book-reader"></i></span> View in reader</a>
 {% endif %}
 <a class="dropdown-item" _="on click writeText('{{ entry.content_url }}') into the navigator's clipboard"><span class="icon"><i class="fas fa-link"></i></span> Copy URL</a>
 

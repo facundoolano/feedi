@@ -50,9 +50,10 @@
                      {% if entry.body %}
                      <div class="column {% if entry.has_content() %}is-clickable{% endif %}"
                           {% if entry.has_content() %}
-                          _="on click go to url {{ url_for('entry_view', id=entry.id) }}"
-                          {% endif %}
-                     >
+                          hx-get="{{ url_for('entry_view', id=entry.id) }}"
+                          hx-trigger="click"
+                          hx-target="body"
+                          {% endif %}>
                          <div class="content" tabindex="-1">
                          {% if entry.feed.type == 'mastodon' %}
                          {{ entry.body | safe }}

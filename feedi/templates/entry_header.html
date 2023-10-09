@@ -24,7 +24,9 @@
             </b>
             <span class="entry-excerpt-metadata is-hidden {% if entry.has_content() %}is-clickable{% endif %}"
                   {% if entry.has_content() %}
-                  _="on click go to url {{ url_for('entry_view', id=entry.id) }}"
+                  hx-get="{{ url_for('entry_view', id=entry.id) }}"
+                  hx-trigger="click"
+                  hx-target="body"
                   {% endif %}
             >
                 <small>{{ entry | entry_excerpt }}</small>
