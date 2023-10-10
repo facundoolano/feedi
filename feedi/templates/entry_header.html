@@ -27,8 +27,8 @@
                   hx-get="{{ url_for('entry_view', id=entry.id) }}"
                   hx-trigger="click"
                   hx-target="body"
-                  {% endif %}
-            >
+                  hx-push-url="true"
+                  {% endif %}>
                 <small>{{ entry | entry_excerpt }}</small>
             </span>
             <span class="entry-metadata">

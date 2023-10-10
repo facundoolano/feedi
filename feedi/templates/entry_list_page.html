@@ -53,6 +53,7 @@
                           hx-get="{{ url_for('entry_view', id=entry.id) }}"
                           hx-trigger="click"
                           hx-target="body"
+                          hx-push-url="true"
                           {% endif %}>
                          <div class="content" tabindex="-1">
                          {% if entry.feed.type == 'mastodon' %}
