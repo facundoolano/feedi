@@ -117,7 +117,7 @@
 <li>
     <div class="level-left">
         <div class="level-item">
-            <a hx-post="{{ url_for('feed_list', feed_name=feed.name )}}"
+            <a class="dropdown-item" hx-post="{{ url_for('feed_list', feed_name=feed.name )}}"
                _="on htmx:beforeRequest add .fa-spin to <i/> in me"
             ><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{feed.name}}</a>
         </div>
