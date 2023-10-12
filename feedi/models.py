@@ -372,14 +372,14 @@ class Entry(db.Model):
         return self.entry_url and self.content_url != self.entry_url
 
     @classmethod
-    def _filtered_query(cls, hide_seen=False, favorited=None,
+    def _filtered_query(cls, user_id, hide_seen=False, favorited=None,
                         feed_name=None, username=None, folder=None,
                         older_than=None, text=None):
         """
         Return a base Entry query applying any combination of filters.
         """
 
-        query = db.select(cls)
+        query = db.select(cls).filter(cls.feed.has(user_id=user_id))
 
         if older_than:
             query = query.filter(cls.created < older_than)
@@ -412,21 +412,21 @@ class Entry(db.Model):
         return query
 
     @classmethod
-    def select_pinned(cls, **kwargs):
+    def select_pinned(cls, user_id, **kwargs):
         "Return the full list of pinned entries considering the optional filters."
-        query = cls._filtered_query(**kwargs)\
+        query = cls._filtered_query(user_id, **kwargs)\
                    .filter(cls.pinned.is_not(None))\
                    .order_by(cls.pinned.desc())
 
         return db.session.scalars(query).all()
 
     @classmethod
-    def sorted_by(cls, ordering, start_at, **filters):
+    def sorted_by(cls, user_id, ordering, start_at, **filters):
         """
         Return a query to filter entries added after the `start_at` datetime,
         sorted according to the specified `ordering` criteria and with optional filters.
         """
-        query = cls._filtered_query(older_than=start_at, **filters)
+        query = cls._filtered_query(user_id, older_than=start_at, **filters)
 
         if ordering == cls.ORDER_RECENCY:
             # reverse chronological order
