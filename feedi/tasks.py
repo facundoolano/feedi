@@ -40,7 +40,7 @@ def huey_task(*huey_args):
             # run the task inside an app context and log start and finish
             app = create_huey_app()
             with app.app_context():
-                fargs = ' '.join(args)
+                fargs = ' '.join([str(arg) for arg in args])
                 fkwargs = ' '.join([f'{k}={v}' for (k, v) in kwargs.items()])
 
                 app.logger.info("STARTING %s %s %s", f.__name__, fargs, fkwargs)
@@ -67,12 +67,12 @@ def huey_task(*huey_args):
 @feed_cli.command('sync')
 @huey_task(crontab(minute=app.config['SYNC_FEEDS_CRON_MINUTES']))
 def sync_all_feeds():
-    feeds = db.session.execute(db.select(models.Feed.name)).all()
+    feeds = db.session.execute(db.select(models.Feed.id, models.Feed.name)).all()
 
     tasks = []
     for feed in feeds:
         try:
-            tasks.append(sync_feed(feed.name))
+            tasks.append(sync_feed(feed.id, feed.name))
         except:
             app.logger.error("Skipping errored feed %s", feed.name)
 
@@ -86,8 +86,8 @@ def sync_all_feeds():
 
 
 @huey_task()
-def sync_feed(feed_name):
-    db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
+def sync_feed(feed_id, _feed_name):
+    db_feed = db.session.get(models.Feed, feed_id)
     db_feed.sync_with_remote()
     db.session.commit()
 
