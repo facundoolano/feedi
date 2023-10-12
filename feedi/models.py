@@ -20,9 +20,8 @@ def init_db(app):
 
     @sa.event.listens_for(db.engine, 'connect')
     def on_connect(dbapi_connection, _connection_record):
-        # if there's a lock for concurrent access, don't fail forever
-        # (TODO figure out how to prevent the lock in the first place?)
-        dbapi_connection.execute('pragma busy_timeout=5000')
+        # use WAL mode to prevent locks on concurrent writes
+        dbapi_connection.execute('pragma journal_mode=WAL')
 
         # experiment to try holding most of the db in memory
         # this should be ~200mb
