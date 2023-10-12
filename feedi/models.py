@@ -50,8 +50,10 @@ class Feed(db.Model):
     TYPE_MASTODON_NOTIFICATIONS = 'mastodon_notifications'
     TYPE_CUSTOM = 'custom'
 
-    url = sa.Column(sa.String, nullable=False)
     id = sa.Column(sa.Integer, primary_key=True)
+    user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False, index=True)
+
+    url = sa.Column(sa.String, nullable=False)
     type = sa.Column(sa.String, nullable=False)
 
     name = sa.Column(sa.String, unique=True, index=True)
