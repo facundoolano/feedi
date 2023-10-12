@@ -12,6 +12,7 @@ import sqlalchemy as sa
 import stkclient
 from bs4 import BeautifulSoup
 from flask import current_app as app
+from flask_login import login_required
 
 import feedi.models as models
 import feedi.tasks as tasks
@@ -25,6 +26,7 @@ from feedi.requests import requests
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
 @app.route("/")
+@login_required
 def entry_list(**filters):
     """
     Generic view to fetch a list of entries. By default renders the home timeline.
@@ -120,6 +122,7 @@ def fetch_entries_page(page_arg,
 
 
 @app.get("/autocomplete")
+@login_required
 def autocomplete():
     """
     Given a partial text input in the `q` query arg, render a list of commands matching
@@ -172,6 +175,7 @@ def autocomplete():
 
 
 @app.put("/pinned/<int:id>")
+@login_required
 def entry_pin(id):
     """
     Toggle the pinned status of the given entry and return the new list of pinned
@@ -196,6 +200,7 @@ def entry_pin(id):
 
 
 @app.put("/favorites/<int:id>")
+@login_required
 def entry_favorite(id):
     "Toggle the favorite status of the given entry."
     entry = db.get_or_404(models.Entry, id)
@@ -210,12 +215,14 @@ def entry_favorite(id):
 
 
 @app.route("/feeds")
+@login_required
 def feed_list():
     feeds = db.session.scalars(db.select(models.Feed)).all()
     return flask.render_template('feeds.html', feeds=feeds)
 
 
 @app.get("/feeds/new")
+@login_required
 def feed_add():
     url = flask.request.args.get('url')
     discover = flask.request.args.get('discover')
@@ -232,6 +239,7 @@ def feed_add():
 
 
 @app.post("/feeds/new")
+@login_required
 def feed_add_submit():
     # FIXME use a forms lib for validations, type coercion, etc
     values = {k: v for k, v in flask.request.form.items() if v}
@@ -254,6 +262,7 @@ def feed_add_submit():
 
 
 @app.get("/feeds/<feed_name>")
+@login_required
 def feed_edit(feed_name):
     feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     if not feed:
@@ -263,6 +272,7 @@ def feed_edit(feed_name):
 
 
 @app.post("/feeds/<feed_name>")
+@login_required
 def feed_edit_submit(feed_name):
     feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
     if not feed:
@@ -278,6 +288,7 @@ def feed_edit_submit(feed_name):
 
 
 @app.delete("/feeds/<feed_name>")
+@login_required
 def feed_delete(feed_name):
     "Remove a feed and its entries from the database."
     # FIXME this should probably do a "logic" delete and keep stuff around
@@ -291,6 +302,7 @@ def feed_delete(feed_name):
 
 
 @app.post("/feeds/<feed_name>/entries")
+@login_required
 def feed_sync(feed_name):
     "Force sync the given feed and redirect to the entry list for it."
     feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
@@ -307,6 +319,7 @@ def feed_sync(feed_name):
 
 # TODO unit test this view
 @app.get("/entries/<int:id>")
+@login_required
 def entry_view(id):
     """
     Fetch the entry content from the source and display it for reading locally.
@@ -365,6 +378,7 @@ def entry_view(id):
 # for now this is accesible dragging an url to the searchbox
 # later it will be an autocomplete command there
 @app.get("/entries/preview")
+@login_required
 def preview_content():
     """
     Preview an url content in the reader, as if it was an entry parsed from a feed.
@@ -379,6 +393,7 @@ def preview_content():
 
 
 @app.post("/entries/kindle")
+@login_required
 def send_to_kindle():
     """
     If there's a registered device, send the article in the given URL through kindle.
@@ -459,6 +474,7 @@ def extract_article(url):
 
 
 @app.route("/feeds/<feed_name>/debug")
+@login_required
 def raw_feed(feed_name):
     """
     Shows a JSON dump of the feed data as received from the source.
@@ -478,6 +494,7 @@ def raw_feed(feed_name):
 
 
 @app.route("/entries/<int:id>/debug")
+@login_required
 def raw_entry(id):
     """
     Shows a JSON dump of the entry data as received from the source.
@@ -494,6 +511,7 @@ def raw_entry(id):
 
 # TODO improve this views to accept only valid values
 @app.put("/session/<setting>/<value>")
+@login_required
 def update_setting(setting, value):
     flask.session[setting] = value
 
@@ -502,6 +520,7 @@ def update_setting(setting, value):
 
 # TODO improve this views to accept only valid values
 @app.post("/session/<setting>")
+@login_required
 def toggle_setting(setting):
     flask.session[setting] = not flask.session.get(setting, False)
     return '', 204
