@@ -21,9 +21,11 @@ def create_app():
     app.logger.setLevel(logging.INFO)
 
     with app.app_context():
-        from . import filters, routes, tasks
+        from . import auth, filters, routes, tasks
 
         models.init_db(app)
+
+        auth.init()
 
         if not is_running_from_reloader() and not os.environ.get('DISABLE_CRON_TASKS'):
             # we want only one huey scheduler running, so we make sure
