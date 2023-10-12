@@ -149,9 +149,26 @@ def debug_feed(url):
     parsers.rss.pretty_print(url)
 
 
+def load_user_arg(_ctx, _param, email):
+    """
+    CLI argument callback to load a user. If a user email is not provided explitly,
+    fallback to the DEFAULT_AUTH_USER from the settings, otherwise raise an error.
+    """
+    if not email:
+        email = app.config.get('DEFAULT_AUTH_USER')
+        if not email:
+            raise click.UsageError('No user provided and no DEFAULT_AUTH_USER set')
+
+    user = db.session.scalar(db.select(models.User).filter_by(email=email))
+    if not user:
+        raise click.UsageError(f'User {email} not found')
+    return user
+
+
 @feed_cli.command('load')
 @click.argument("file")
-def csv_load(file):
+@click.argument('user', required=False, callback=load_user_arg)
+def csv_load(file, user):
     "Load feeds from a local csv file."
 
     with open(file) as csv_file:
@@ -159,6 +176,7 @@ def csv_load(file):
 
             cls = models.Feed.resolve(values[0])
             feed = cls.from_valuelist(*values)
+            feed.user_id = user.id
             add_if_not_exists(feed)
 
     db.session.commit()
@@ -166,19 +184,22 @@ def csv_load(file):
 
 @feed_cli.command('dump')
 @click.argument("file")
-def csv_dump(file):
+@click.argument('user', required=False, callback=load_user_arg)
+def csv_dump(file, user):
     "Dump feeds to a local csv file."
 
     with open(file, 'w') as csv_file:
         feed_writer = csv.writer(csv_file)
-        for feed in db.session.execute(db.select(models.Feed)).scalars():
+        for feed in db.session.execute(db.select(models.Feed)
+                                       .filter_by(user_id=user.id)).scalars():
             feed_writer.writerow(feed.to_valuelist())
             app.logger.info('written %s', feed)
 
 
 @feed_cli.command('load-opml')
 @click.argument("file")
-def opml_load(file):
+@click.argument('user', required=False, callback=load_user_arg)
+def opml_load(file, user):
     document = opml.OpmlDocument.load(file)
 
     for outline in document.outlines:
@@ -187,12 +208,14 @@ def opml_load(file):
             folder = outline.text
             for feed in outline.outlines:
                 add_if_not_exists(models.RssFeed(name=feed.title or feed.text,
+                                                 user_id=user.id,
                                                  url=feed.xml_url,
                                                  folder=folder))
 
         else:
             # it's a top-level feed
             add_if_not_exists(models.RssFeed(name=feed.title or feed.text,
+                                             user_id=user.id,
                                              url=feed.xml_url))
 
     db.session.commit()
@@ -200,10 +223,13 @@ def opml_load(file):
 
 @feed_cli.command('dump-opml')
 @click.argument("file")
-def opml_dump(file):
+@click.argument('user', required=False, callback=load_user_arg)
+def opml_dump(file, user):
     document = opml.OpmlDocument()
     folder_outlines = {}
-    for feed in db.session.execute(db.select(models.RssFeed)).scalars():
+    for feed in db.session.execute(db.select(models.RssFeed)
+                                   .filter_by(user_id=user.id)
+                                   ).scalars():
         if feed.folder:
             # to represent folder structure we put the feed in nested outlines
             if not feed.folder in folder_outlines:
