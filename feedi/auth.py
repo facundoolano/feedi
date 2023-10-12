@@ -19,6 +19,7 @@ def init():
 
 @app.route("/login/")
 def login():
+    # TODO add support for autologin config
     return flask.render_template('login.html')
 
 

@@ -56,7 +56,7 @@ class Feed(db.Model):
     url = sa.Column(sa.String, nullable=False)
     type = sa.Column(sa.String, nullable=False)
 
-    name = sa.Column(sa.String, unique=True, index=True)
+    name = sa.Column(sa.String)
     icon_url = sa.Column(sa.String)
 
     created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
@@ -74,6 +74,9 @@ class Feed(db.Model):
 
     __mapper_args__ = {'polymorphic_on': type,
                        'polymorphic_identity': 'feed'}
+
+    __table_args__ = (sa.UniqueConstraint("user_id", "name"),
+                      sa.Index("ix_name_user", "user_id", "name"))
 
     def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
