@@ -5,6 +5,7 @@ import json
 
 import sqlalchemy as sa
 import sqlalchemy.dialects.sqlite as sqlite
+from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 
 import feedi.parsers as parsers
@@ -28,6 +29,14 @@ def init_db(app):
         dbapi_connection.execute('pragma cache_size = -195313')
 
     db.create_all()
+
+
+class User(UserMixin, db.Model):
+    __tablename__ = 'users'
+
+    id = sa.Column(sa.Integer, primary_key=True)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False)
 
 
 class Feed(db.Model):
