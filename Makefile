@@ -42,6 +42,12 @@ feed-sync:
 feed-debug:
 	$(flask) feed debug $(URL)
 
+user-add:
+	$(flask) user add $(EMAIL)
+
+user-del:
+	$(flask) user del $(EMAIL)
+
 prod:
 	$(venv) gunicorn
 

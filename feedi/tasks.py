@@ -17,6 +17,7 @@ import sqlalchemy as sa
 from flask import current_app as app
 from huey import crontab
 from huey.contrib.mini import MiniHuey
+from werkzeug.security import generate_password_hash
 
 import feedi.models as models
 import feedi.parsers as parsers
@@ -24,6 +25,10 @@ from feedi.app import create_huey_app
 from feedi.models import db
 
 feed_cli = flask.cli.AppGroup('feed')
+user_cli = flask.cli.AppGroup('user')
+
+app.cli.add_command(feed_cli)
+app.cli.add_command(user_cli)
 
 huey = MiniHuey()
 
@@ -259,4 +264,20 @@ def add_if_not_exists(feed):
     app.logger.info('added %s', feed)
 
 
-app.cli.add_command(feed_cli)
+@user_cli.command('add')
+@click.argument('email')
+@click.password_option()
+def user_add(email, password):
+    print(email, password)
+    user = models.User(email=email, password=generate_password_hash(password))
+    db.session.add(user)
+    db.session.commit()
+
+
+@user_cli.command('del')
+@click.argument('email')
+def user_delete(email):
+    stmt = db.delete(models.User)\
+        .where(models.User.email == email)
+    db.session.execute(stmt)
+    db.session.commit()
