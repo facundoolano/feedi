@@ -17,7 +17,7 @@ def init():
         return db.session.get(models.User, int(user_id))
 
 
-@app.route("/login/")
+@app.route("/login")
 def login():
     # TODO add support for autologin config
     return flask.render_template('login.html')
