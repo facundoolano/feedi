@@ -22,3 +22,6 @@ KINDLE_CREDENTIALS_PATH = 'kindle.creds'
 
 # how much to wait for the headless browser load a page when extracting js enabled articles
 JS_LOADING_DELAY_MS = 1000
+
+
+DEFAULT_AUTH_USER = 'admin@admin.com'

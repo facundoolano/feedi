@@ -19,7 +19,14 @@ def init():
 
 @app.route("/login")
 def login():
-    # TODO add support for autologin config
+    # if config has a default user it means auth is disabled
+    # just load the user so we know what to point feeds to in the DB
+    default_email = app.config.get('DEFAULT_AUTH_USER')
+    if default_email:
+        user = db.session.scalar(db.select(models.User).filter_by(email=default_email))
+        flask_login.login_user(user, remember=True)
+        return flask.redirect(flask.url_for('entry_list'))
+
     return flask.render_template('login.html')
 
 
