@@ -5,9 +5,9 @@ import json
 
 import sqlalchemy as sa
 import sqlalchemy.dialects.sqlite as sqlite
+import werkzeug.security as security
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash
 
 import feedi.parsers as parsers
 from feedi.requests import get_favicon
@@ -47,6 +47,16 @@ class User(UserMixin, db.Model):
     id = sa.Column(sa.Integer, primary_key=True)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
+
+    @staticmethod
+    def hash_password(raw_password):
+        return security.generate_password_hash(raw_password)
+
+    def set_password(self, raw_password):
+        self.password = security.generate_password_hash(raw_password)
+
+    def check_password(self, raw_password):
+        return security.check_password_hash(self.password, raw_password)
 
 
 class Feed(db.Model):

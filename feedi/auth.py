@@ -1,7 +1,6 @@
 import flask
 import flask_login
 from flask import current_app as app
-from werkzeug.security import check_password_hash
 
 import feedi.models as models
 from feedi.models import db
@@ -39,7 +38,7 @@ def login_post():
 
     user = db.session.scalar(db.select(models.User).filter_by(email=email))
 
-    if not user or not check_password_hash(user.password, password):
+    if not user or not user.check_password(password):
         return flask.render_template('login.html', error_msg="authentication failed")
 
     flask_login.login_user(user, remember=True)

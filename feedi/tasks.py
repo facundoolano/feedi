@@ -17,7 +17,6 @@ import sqlalchemy as sa
 from flask import current_app as app
 from huey import crontab
 from huey.contrib.mini import MiniHuey
-from werkzeug.security import generate_password_hash
 
 import feedi.models as models
 import feedi.parsers as parsers
@@ -269,7 +268,8 @@ def add_if_not_exists(feed):
 @click.password_option()
 def user_add(email, password):
     print(email, password)
-    user = models.User(email=email, password=generate_password_hash(password))
+    user = models.User(email=email)
+    user.set_password(password)
     db.session.add(user)
     db.session.commit()
 
