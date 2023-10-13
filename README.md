@@ -127,6 +127,23 @@ Then update [the config](https://github.com/facundoolano/feedi/blob/a7a0c6e8b13b
 
     KINDLE_CREDENTIALS_PATH = 'kindle.creds'
 
+### Non-local setup
+
+Not that I claim this to be production-ready, but there's a [setup script](./setup_server.sh) to run it as a service on a Debian Linux, which has been tested on a raspberry pi with Pi OS lite.
+
+### User management
+
+The default app configuration assumes a single-user unauthenticated setup, but authentication can be enabled in case security is necessary,
+for example to deploy the app on the internet or to support multiple accounts.
+
+To enable user authentication:
+
+1. Remove the `DEFAULT_AUTH_USER` setting from the [configuration](https://github.com/facundoolano/feedi/blob/HEAD/feedi/config/default.py).
+2. If you already have a DB created, reset it with `make dbreset`. Or, alternatively, remove the default user
+with `make user-del EMAIL=admin@admin.com`. Note that this will also remove feeds and entries associated to it in the DB.
+3. You can create new users by running `make user-add EMAIL=some@email.address`. The command will prompt for a password.
+
+Note that there's no open user registration functionality exposed to the front end, but it should be straightforward to add it if you need it. Check the [auth module](https://github.com/facundoolano/feedi/blob/HEAD/feedi/auth.py) and the [flask-login documentation](https://flask-login.readthedocs.io/en/latest/) for details.
 
 ### Keyboard shortcuts
 
@@ -145,11 +162,6 @@ Then update [the config](https://github.com/facundoolano/feedi/blob/a7a0c6e8b13b
 | p                                     | entry focused                | pin entry                           |
 | f                                     | entry focused                | favorite entry                      |
 | Escape                                | viewing entry content        | go back                             |
-
-
-### Non-local setup
-
-Not that I claim this to be production-ready, but there's a [setup script](./setup_server.sh) to run it as a service on a Debian Linux, which has been tested on a raspberry pi with Pi OS lite.
 
 ## Design and implementation notes
 

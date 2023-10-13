@@ -12,6 +12,7 @@ import sqlalchemy as sa
 import stkclient
 from bs4 import BeautifulSoup
 from flask import current_app as app
+from flask_login import current_user, login_required
 
 import feedi.models as models
 import feedi.tasks as tasks
@@ -25,6 +26,7 @@ from feedi.requests import requests
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
 @app.route("/")
+@login_required
 def entry_list(**filters):
     """
     Generic view to fetch a list of entries. By default renders the home timeline.
@@ -43,13 +45,14 @@ def entry_list(**filters):
     is_mixed_feed_list = filters.get('folder') or (
         flask.request.path == '/' and not filters.get('text'))
 
-    (entries, next_page) = fetch_entries_page(page, ordering, hide_seen, is_mixed_feed_list,
+    (entries, next_page) = fetch_entries_page(page, current_user.id, ordering, hide_seen, is_mixed_feed_list,
                                               **filters)
 
     if 'feed_name' in filters:
         # increase score when viewing a feed
         update = db.update(models.Feed)\
-                   .where(models.Feed.name == filters['feed_name'])\
+                   .where(models.Feed.user_id == current_user.id,
+                          models.Feed.name == filters['feed_name'])\
                    .values(score=models.Feed.score + 1)
         db.session.execute(update)
         db.session.commit()
@@ -63,7 +66,7 @@ def entry_list(**filters):
 
     # render home, including feeds sidebar
     return flask.render_template('entry_list.html',
-                                 pinned=models.Entry.select_pinned(**filters),
+                                 pinned=models.Entry.select_pinned(current_user.id, **filters),
                                  entries=entries,
                                  next_page=next_page,
                                  is_mixed_feed_view=is_mixed_feed_list,
@@ -71,6 +74,7 @@ def entry_list(**filters):
 
 
 def fetch_entries_page(page_arg,
+                       user_id,
                        ordering_setting,
                        hide_seen_setting,
                        is_mixed_feed_list, **filters):
@@ -102,7 +106,7 @@ def fetch_entries_page(page_arg,
         start_at = datetime.datetime.utcnow()
         page_num = 1
 
-    query = models.Entry.sorted_by(ordering, start_at, **filters)
+    query = models.Entry.sorted_by(user_id, ordering, start_at, **filters)
     entry_page = db.paginate(query, per_page=app.config['ENTRY_PAGE_SIZE'], page=page_num)
     next_page = f'{start_at.timestamp()}:{page_num + 1}' if entry_page.has_next else None
 
@@ -120,6 +124,7 @@ def fetch_entries_page(page_arg,
 
 
 @app.get("/autocomplete")
+@login_required
 def autocomplete():
     """
     Given a partial text input in the `q` query arg, render a list of commands matching
@@ -141,13 +146,18 @@ def autocomplete():
         ]
     else:
         folders = db.session.scalars(
-            db.select(models.Feed.folder).filter(models.Feed.folder.icontains(term)).distinct()
+            db.select(models.Feed.folder)
+            .filter(models.Feed.folder.icontains(term),
+                    models.Feed.user_id == current_user.id).distinct()
         ).all()
         options += [(f, flask.url_for('entry_list', folder=f), 'far fa-folder-open')
                     for f in folders]
 
         feed_names = db.session.scalars(
-            db.select(models.Feed.name).filter(models.Feed.name.icontains(term)).distinct()
+            db.select(models.Feed.name)
+            .filter(models.Feed.name.icontains(term),
+                    models.Feed.user_id == current_user.id
+                    ).distinct()
         ).all()
         options += [(f, flask.url_for('entry_list', feed_name=f), 'far fa-list-alt')
                     for f in feed_names]
@@ -172,12 +182,16 @@ def autocomplete():
 
 
 @app.put("/pinned/<int:id>")
+@login_required
 def entry_pin(id):
     """
     Toggle the pinned status of the given entry and return the new list of pinned
     entries, respecting the url filters.
     """
     entry = db.get_or_404(models.Entry, id)
+    if entry.feed.user_id != current_user.id:
+        flask.abort(404)
+
     if entry.pinned:
         entry.pinned = None
     else:
@@ -187,7 +201,7 @@ def entry_pin(id):
 
     # get the new list of pinned based on filters
     filters = dict(**flask.request.args)
-    pinned = models.Entry.select_pinned(**filters)
+    pinned = models.Entry.select_pinned(current_user.id, **filters)
 
     return flask.render_template("entry_list_page.html",
                                  is_pinned_list=True,
@@ -196,9 +210,13 @@ def entry_pin(id):
 
 
 @app.put("/favorites/<int:id>")
+@login_required
 def entry_favorite(id):
     "Toggle the favorite status of the given entry."
     entry = db.get_or_404(models.Entry, id)
+    if entry.feed.user_id != current_user.id:
+        flask.abort(404)
+
     if entry.favorited:
         entry.favorited = None
     else:
@@ -210,12 +228,15 @@ def entry_favorite(id):
 
 
 @app.route("/feeds")
+@login_required
 def feed_list():
-    feeds = db.session.scalars(db.select(models.Feed)).all()
+    feeds = db.session.scalars(db.select(models.Feed).filter(
+        models.Feed.user_id == current_user.id))
     return flask.render_template('feeds.html', feeds=feeds)
 
 
 @app.get("/feeds/new")
+@login_required
 def feed_add():
     url = flask.request.args.get('url')
     discover = flask.request.args.get('discover')
@@ -232,6 +253,7 @@ def feed_add():
 
 
 @app.post("/feeds/new")
+@login_required
 def feed_add_submit():
     # FIXME use a forms lib for validations, type coercion, etc
     values = {k: v for k, v in flask.request.form.items() if v}
@@ -245,7 +267,7 @@ def feed_add_submit():
 
     # trigger a sync of this feed to fetch its entries.
     # making it blocking with .get() so we have entries to show on the redirect
-    tasks.sync_feed(feed.name).get()
+    tasks.sync_feed(feed.id, feed.name).get()
 
     # NOTE it would be better to redirect to the feed itself, but since we load it async
     # we'd have to show a spinner or something and poll until it finishes loading
@@ -254,8 +276,10 @@ def feed_add_submit():
 
 
 @app.get("/feeds/<feed_name>")
+@login_required
 def feed_edit(feed_name):
-    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
+    feed = db.session.scalar(db.select(models.Feed).filter_by(
+        name=feed_name, user_id=current_user.id))
     if not feed:
         flask.abort(404, "Feed not found")
 
@@ -263,8 +287,10 @@ def feed_edit(feed_name):
 
 
 @app.post("/feeds/<feed_name>")
+@login_required
 def feed_edit_submit(feed_name):
-    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
+    feed = db.session.scalar(db.select(models.Feed).filter_by(
+        name=feed_name, user_id=current_user.id))
     if not feed:
         flask.abort(404, "Feed not found")
 
@@ -278,12 +304,14 @@ def feed_edit_submit(feed_name):
 
 
 @app.delete("/feeds/<feed_name>")
+@login_required
 def feed_delete(feed_name):
     "Remove a feed and its entries from the database."
     # FIXME this should probably do a "logic" delete and keep stuff around
     # especially considering that it will kill child entries as well
 
-    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
+    feed = db.session.scalar(db.select(models.Feed).filter_by(
+        name=feed_name, user_id=current_user.id))
     # running from db.session ensures cascading effects
     db.session.delete(feed)
     db.session.commit()
@@ -291,13 +319,15 @@ def feed_delete(feed_name):
 
 
 @app.post("/feeds/<feed_name>/entries")
+@login_required
 def feed_sync(feed_name):
     "Force sync the given feed and redirect to the entry list for it."
-    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
+    feed = db.session.scalar(db.select(models.Feed).filter_by(
+        name=feed_name, user_id=current_user.id))
     if not feed:
         flask.abort(404, "Feed not found")
 
-    task = tasks.sync_feed(feed.name)
+    task = tasks.sync_feed(feed.id, feed.name)
     task.get()
 
     response = flask.make_response()
@@ -307,11 +337,15 @@ def feed_sync(feed_name):
 
 # TODO unit test this view
 @app.get("/entries/<int:id>")
+@login_required
 def entry_view(id):
     """
     Fetch the entry content from the source and display it for reading locally.
     """
     entry = db.get_or_404(models.Entry, id)
+    if entry.feed.user_id != current_user.id:
+        flask.abort(404)
+
     dest_url = entry.content_url or entry.entry_url
     if not dest_url:
         # this view can't work if no entry or content url
@@ -365,6 +399,7 @@ def entry_view(id):
 # for now this is accesible dragging an url to the searchbox
 # later it will be an autocomplete command there
 @app.get("/entries/preview")
+@login_required
 def preview_content():
     """
     Preview an url content in the reader, as if it was an entry parsed from a feed.
@@ -379,6 +414,7 @@ def preview_content():
 
 
 @app.post("/entries/kindle")
+@login_required
 def send_to_kindle():
     """
     If there's a registered device, send the article in the given URL through kindle.
@@ -459,12 +495,14 @@ def extract_article(url):
 
 
 @app.route("/feeds/<feed_name>/debug")
+@login_required
 def raw_feed(feed_name):
     """
     Shows a JSON dump of the feed data as received from the source.
     """
     feed = db.session.scalar(
-        db.select(models.Feed).filter_by(name=feed_name)
+        db.select(models.Feed)
+        .filter_by(name=feed_name, user_id=current_user.id)
         .options(sa.orm.undefer(models.Feed.raw_data))
     )
     if not feed:
@@ -478,12 +516,16 @@ def raw_feed(feed_name):
 
 
 @app.route("/entries/<int:id>/debug")
+@login_required
 def raw_entry(id):
     """
     Shows a JSON dump of the entry data as received from the source.
     """
     entry = db.get_or_404(models.Entry, id,
                           options=[sa.orm.undefer(models.Entry.raw_data)])
+
+    if entry.feed.user_id != current_user.id:
+        flask.abort(404)
 
     return app.response_class(
         response=entry.raw_data,
@@ -494,6 +536,7 @@ def raw_entry(id):
 
 # TODO improve this views to accept only valid values
 @app.put("/session/<setting>/<value>")
+@login_required
 def update_setting(setting, value):
     flask.session[setting] = value
 
@@ -502,6 +545,7 @@ def update_setting(setting, value):
 
 # TODO improve this views to accept only valid values
 @app.post("/session/<setting>")
+@login_required
 def toggle_setting(setting):
     flask.session[setting] = not flask.session.get(setting, False)
     return '', 204
@@ -513,17 +557,23 @@ def sidebar_feeds():
     For regular browser request (i.e. no ajax requests triggered by htmx),
     fetch folders and quick access feeds to make available to any template needing to render the sidebar.
     """
-    shortcut_feeds = db.session.scalars(db.select(models.Feed)
-                                        .order_by(models.Feed.score.desc())
-                                        .limit(5)).all()
+    if current_user.is_authenticated:
+        shortcut_feeds = db.session.scalars(db.select(models.Feed)
+                                            .filter_by(user_id=current_user.id)
+                                            .order_by(models.Feed.score.desc())
+                                            .limit(5)).all()
 
-    in_folder = db.session.scalars(db.select(models.Feed)
-                                   .filter(models.Feed.folder != None, models.Feed.folder != '')
-                                   .order_by(models.Feed.score.desc())).all()
+        in_folder = db.session.scalars(db.select(models.Feed)
+                                       .filter_by(user_id=current_user.id)
+                                       .filter(models.Feed.folder != None,
+                                               models.Feed.folder != '')
+                                       .order_by(models.Feed.score.desc())).all()
 
-    folders = defaultdict(list)
-    for feed in in_folder:
-        if len(folders[feed.folder]) < 5:
-            folders[feed.folder].append(feed)
+        folders = defaultdict(list)
+        for feed in in_folder:
+            if len(folders[feed.folder]) < 5:
+                folders[feed.folder].append(feed)
 
-    return dict(shortcut_feeds=shortcut_feeds, folders=folders, filters={})
+        return dict(shortcut_feeds=shortcut_feeds, folders=folders, filters={})
+
+    return {}

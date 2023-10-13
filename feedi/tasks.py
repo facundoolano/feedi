@@ -24,6 +24,10 @@ from feedi.app import create_huey_app
 from feedi.models import db
 
 feed_cli = flask.cli.AppGroup('feed')
+user_cli = flask.cli.AppGroup('user')
+
+app.cli.add_command(feed_cli)
+app.cli.add_command(user_cli)
 
 huey = MiniHuey()
 
@@ -40,7 +44,7 @@ def huey_task(*huey_args):
             # run the task inside an app context and log start and finish
             app = create_huey_app()
             with app.app_context():
-                fargs = ' '.join(args)
+                fargs = ' '.join([str(arg) for arg in args])
                 fkwargs = ' '.join([f'{k}={v}' for (k, v) in kwargs.items()])
 
                 app.logger.info("STARTING %s %s %s", f.__name__, fargs, fkwargs)
@@ -67,12 +71,12 @@ def huey_task(*huey_args):
 @feed_cli.command('sync')
 @huey_task(crontab(minute=app.config['SYNC_FEEDS_CRON_MINUTES']))
 def sync_all_feeds():
-    feeds = db.session.execute(db.select(models.Feed.name)).all()
+    feeds = db.session.execute(db.select(models.Feed.id, models.Feed.name)).all()
 
     tasks = []
     for feed in feeds:
         try:
-            tasks.append(sync_feed(feed.name))
+            tasks.append(sync_feed(feed.id, feed.name))
         except:
             app.logger.error("Skipping errored feed %s", feed.name)
 
@@ -86,8 +90,8 @@ def sync_all_feeds():
 
 
 @huey_task()
-def sync_feed(feed_name):
-    db_feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name))
+def sync_feed(feed_id, _feed_name):
+    db_feed = db.session.get(models.Feed, feed_id)
     db_feed.sync_with_remote()
     db.session.commit()
 
@@ -149,9 +153,26 @@ def debug_feed(url):
     parsers.rss.pretty_print(url)
 
 
+def load_user_arg(_ctx, _param, email):
+    """
+    CLI argument callback to load a user. If a user email is not provided explitly,
+    fallback to the DEFAULT_AUTH_USER from the settings, otherwise raise an error.
+    """
+    if not email:
+        email = app.config.get('DEFAULT_AUTH_USER')
+        if not email:
+            raise click.UsageError('No user provided and no DEFAULT_AUTH_USER set')
+
+    user = db.session.scalar(db.select(models.User).filter_by(email=email))
+    if not user:
+        raise click.UsageError(f'User {email} not found')
+    return user
+
+
 @feed_cli.command('load')
 @click.argument("file")
-def csv_load(file):
+@click.argument('user', required=False, callback=load_user_arg)
+def csv_load(file, user):
     "Load feeds from a local csv file."
 
     with open(file) as csv_file:
@@ -159,6 +180,7 @@ def csv_load(file):
 
             cls = models.Feed.resolve(values[0])
             feed = cls.from_valuelist(*values)
+            feed.user_id = user.id
             add_if_not_exists(feed)
 
     db.session.commit()
@@ -166,19 +188,22 @@ def csv_load(file):
 
 @feed_cli.command('dump')
 @click.argument("file")
-def csv_dump(file):
+@click.argument('user', required=False, callback=load_user_arg)
+def csv_dump(file, user):
     "Dump feeds to a local csv file."
 
     with open(file, 'w') as csv_file:
         feed_writer = csv.writer(csv_file)
-        for feed in db.session.execute(db.select(models.Feed)).scalars():
+        for feed in db.session.execute(db.select(models.Feed)
+                                       .filter_by(user_id=user.id)).scalars():
             feed_writer.writerow(feed.to_valuelist())
             app.logger.info('written %s', feed)
 
 
 @feed_cli.command('load-opml')
 @click.argument("file")
-def opml_load(file):
+@click.argument('user', required=False, callback=load_user_arg)
+def opml_load(file, user):
     document = opml.OpmlDocument.load(file)
 
     for outline in document.outlines:
@@ -187,12 +212,14 @@ def opml_load(file):
             folder = outline.text
             for feed in outline.outlines:
                 add_if_not_exists(models.RssFeed(name=feed.title or feed.text,
+                                                 user_id=user.id,
                                                  url=feed.xml_url,
                                                  folder=folder))
 
         else:
             # it's a top-level feed
             add_if_not_exists(models.RssFeed(name=feed.title or feed.text,
+                                             user_id=user.id,
                                              url=feed.xml_url))
 
     db.session.commit()
@@ -200,10 +227,13 @@ def opml_load(file):
 
 @feed_cli.command('dump-opml')
 @click.argument("file")
-def opml_dump(file):
+@click.argument('user', required=False, callback=load_user_arg)
+def opml_dump(file, user):
     document = opml.OpmlDocument()
     folder_outlines = {}
-    for feed in db.session.execute(db.select(models.RssFeed)).scalars():
+    for feed in db.session.execute(db.select(models.RssFeed)
+                                   .filter_by(user_id=user.id)
+                                   ).scalars():
         if feed.folder:
             # to represent folder structure we put the feed in nested outlines
             if not feed.folder in folder_outlines:
@@ -233,4 +263,21 @@ def add_if_not_exists(feed):
     app.logger.info('added %s', feed)
 
 
-app.cli.add_command(feed_cli)
+@user_cli.command('add')
+@click.argument('email')
+@click.password_option()
+def user_add(email, password):
+    print(email, password)
+    user = models.User(email=email)
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+
+
+@user_cli.command('del')
+@click.argument('email')
+def user_delete(email):
+    stmt = db.delete(models.User)\
+        .where(models.User.email == email)
+    db.session.execute(stmt)
+    db.session.commit()

@@ -25,6 +25,7 @@
                 <h1 class="title is-4">feedi</h1>
             </a>
 
+            {% if current_user.is_authenticated %}
             <div class="navbar-item navbar-autocomplete" href="/">
                 {% include "autocomplete.html" %}
             </div>
@@ -36,6 +37,7 @@
                 <span aria-hidden="true"></span>
                 <span aria-hidden="true"></span>
             </a>
+            {% endif %}
         </div>
         <div class="navbar-menu">
             <div class="navbar-end">
@@ -99,8 +101,10 @@
             <div class="column">
                <aside class="menu feeds-sidebar is-hidden-mobile">
                    <ul class="menu-list">
+                       {% if current_user.is_authenticated %}
                        {% include "autocomplete.html" %}
                        <hr class="dropdown-divider"/>
+                       {% endif %}
                        {% block sidebar_right %}
                        <a class="dropdown-item is-hidden-mobile" href="{{ url_for('feed_add') }}"><icon class="icon"><i class="fas fa-plus"></i></icon> Add feed</a>
                        <a class="dropdown-item is-hidden-mobile" href="{{ url_for('feed_list') }}"><icon class="icon"><i class="fas fa-edit"></i></icon> Manage feeds</a>

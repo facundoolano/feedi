@@ -5,6 +5,8 @@ import json
 
 import sqlalchemy as sa
 import sqlalchemy.dialects.sqlite as sqlite
+import werkzeug.security as security
+from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
 
 import feedi.parsers as parsers
@@ -27,7 +29,34 @@ def init_db(app):
         # this should be ~200mb
         dbapi_connection.execute('pragma cache_size = -195313')
 
+    @sa.event.listens_for(User.__table__, 'after_create')
+    def after_create(user_table, connection, **kw):
+        email = app.config.get('DEFAULT_AUTH_USER')
+        if email:
+            app.logger.info("Creating default user %s", email)
+            stmt = sa.insert(user_table).values(
+                email=email, password=generate_password_hash('admin'))
+            connection.execute(stmt)
+
     db.create_all()
+
+
+class User(UserMixin, db.Model):
+    __tablename__ = 'users'
+
+    id = sa.Column(sa.Integer, primary_key=True)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(100), nullable=False)
+
+    @staticmethod
+    def hash_password(raw_password):
+        return security.generate_password_hash(raw_password)
+
+    def set_password(self, raw_password):
+        self.password = security.generate_password_hash(raw_password)
+
+    def check_password(self, raw_password):
+        return security.check_password_hash(self.password, raw_password)
 
 
 class Feed(db.Model):
@@ -41,11 +70,13 @@ class Feed(db.Model):
     TYPE_MASTODON_NOTIFICATIONS = 'mastodon_notifications'
     TYPE_CUSTOM = 'custom'
 
-    url = sa.Column(sa.String, nullable=False)
     id = sa.Column(sa.Integer, primary_key=True)
+    user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False, index=True)
+
+    url = sa.Column(sa.String, nullable=False)
     type = sa.Column(sa.String, nullable=False)
 
-    name = sa.Column(sa.String, unique=True, index=True)
+    name = sa.Column(sa.String)
     icon_url = sa.Column(sa.String)
 
     created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
@@ -63,6 +94,9 @@ class Feed(db.Model):
 
     __mapper_args__ = {'polymorphic_on': type,
                        'polymorphic_identity': 'feed'}
+
+    __table_args__ = (sa.UniqueConstraint("user_id", "name"),
+                      sa.Index("ix_name_user", "user_id", "name"))
 
     def __repr__(self):
         return f'<{self.__class__.__name__} {self.name}>'
@@ -358,14 +392,14 @@ class Entry(db.Model):
         return self.entry_url and self.content_url != self.entry_url
 
     @classmethod
-    def _filtered_query(cls, hide_seen=False, favorited=None,
+    def _filtered_query(cls, user_id, hide_seen=False, favorited=None,
                         feed_name=None, username=None, folder=None,
                         older_than=None, text=None):
         """
         Return a base Entry query applying any combination of filters.
         """
 
-        query = db.select(cls)
+        query = db.select(cls).filter(cls.feed.has(user_id=user_id))
 
         if older_than:
             query = query.filter(cls.created < older_than)
@@ -398,21 +432,21 @@ class Entry(db.Model):
         return query
 
     @classmethod
-    def select_pinned(cls, **kwargs):
+    def select_pinned(cls, user_id, **kwargs):
         "Return the full list of pinned entries considering the optional filters."
-        query = cls._filtered_query(**kwargs)\
+        query = cls._filtered_query(user_id, **kwargs)\
                    .filter(cls.pinned.is_not(None))\
                    .order_by(cls.pinned.desc())
 
         return db.session.scalars(query).all()
 
     @classmethod
-    def sorted_by(cls, ordering, start_at, **filters):
+    def sorted_by(cls, user_id, ordering, start_at, **filters):
         """
         Return a query to filter entries added after the `start_at` datetime,
         sorted according to the specified `ordering` criteria and with optional filters.
         """
-        query = cls._filtered_query(older_than=start_at, **filters)
+        query = cls._filtered_query(user_id, older_than=start_at, **filters)
 
         if ordering == cls.ORDER_RECENCY:
             # reverse chronological order

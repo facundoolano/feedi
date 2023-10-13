@@ -25,22 +25,28 @@ dbreset:
 	rm instance/feedi.db
 
 feed-load:
-	$(flask) feed load feeds.csv
+	$(flask) feed load feeds.csv $(EMAIL)
 
 feed-dump:
-	$(flask) feed dump feeds.csv
+	$(flask) feed dump feeds.csv $(EMAIL)
 
 feed-load-opml:
-	$(flask) feed load-opml feeds.opml
+	$(flask) feed load-opml feeds.opml $(EMAIL)
 
 feed-dump-opml:
-	$(flask) feed dump-opml feeds.opml
+	$(flask) feed dump-opml feeds.opml $(EMAIL)
 
 feed-sync:
 	$(flask) feed sync
 
 feed-debug:
 	$(flask) feed debug $(URL)
+
+user-add:
+	$(flask) user add $(EMAIL)
+
+user-del:
+	$(flask) user del $(EMAIL)
 
 prod:
 	$(venv) gunicorn
