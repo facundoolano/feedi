@@ -7,6 +7,7 @@ import sqlalchemy as sa
 import sqlalchemy.dialects.sqlite as sqlite
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash
 
 import feedi.parsers as parsers
 from feedi.requests import get_favicon
@@ -27,6 +28,15 @@ def init_db(app):
         # experiment to try holding most of the db in memory
         # this should be ~200mb
         dbapi_connection.execute('pragma cache_size = -195313')
+
+    @sa.event.listens_for(User.__table__, 'after_create')
+    def after_create(user_table, connection, **kw):
+        email = app.config.get('DEFAULT_AUTH_USER')
+        if email:
+            app.logger.info("Creating default user %s", email)
+            stmt = sa.insert(user_table).values(
+                email=email, password=generate_password_hash('admin'))
+            connection.execute(stmt)
 
     db.create_all()
 
