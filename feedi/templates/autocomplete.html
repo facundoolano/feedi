@@ -5,7 +5,7 @@
                    autocomplete="off"
                    name="q"
                    hx-get="{{ url_for('autocomplete') }}"
-                   hx-trigger="keyup[target.value.length >= 3] changed delay:100ms, search, drop delay:50ms, paste delay:50ms"
+                   hx-trigger="keyup[target.value.length >= 3] changed delay:200ms, search, drop delay:50ms, paste delay:50ms"
                    hx-target="next .autocomplete-items"
                    _="on keydown[key is '/'] elsewhere focus() me then halt
                           then on keydown[key is 'ArrowDown' or (key is 'n' and ctrlKey)] focus() on the next .autocomplete-item halt
