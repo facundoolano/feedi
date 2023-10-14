@@ -41,7 +41,7 @@ def fetch_icon(url):
 
     # otherwise try to get the icon from an explicit icon link
     icon_url = feed['feed'].get('icon', feed['feed'].get('webfeeds_icon'))
-    if icon_url and requests.head(icon_url).ok:
+    if icon_url and requests.get(icon_url).ok:
         logger.debug("using feed icon: %s", icon_url)
         return icon_url
 
@@ -195,7 +195,7 @@ class RSSParser(CachingRequestsMixin):
 
     def parse_avatar_url(self, entry):
         url = entry.get('source', {}).get('icon')
-        if url and requests.head(url).ok:
+        if url and requests.get(url).ok:
             logger.debug('found entry-level avatar %s', url)
             return url
 
@@ -293,7 +293,7 @@ def discover_feed(url):
     common_paths = ['/feed', '/rss', '/feed.xml', '/rss.xml']
     for path in common_paths:
         rss_url = make_absolute(url, path)
-        res = requests.head(rss_url)
+        res = requests.get(rss_url)
         if res.ok and res.headers.get('Content-Type', '').endswith('xml'):
             feed_url = rss_url
             break

@@ -357,7 +357,7 @@ def entry_view(id):
     if 'youtube.com' in dest_url or 'vimeo.com' in dest_url:
         should_redirect = True
     else:
-        res = requests.head(dest_url)
+        res = requests.get(dest_url)
         if not res.ok:
             app.logger.error("Can't open entry url", res)
             return "Can't open entry url", 500
