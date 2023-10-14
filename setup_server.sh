@@ -58,6 +58,7 @@ ExecReload=/bin/kill -s HUP \$MAINPID
 KillMode=mixed
 TimeoutStopSec=5
 PrivateTmp=true
+LimitNOFILE=10240
 
 [Install]
 WantedBy=multi-user.target
