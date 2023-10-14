@@ -260,6 +260,7 @@ def feed_add_submit():
 
     feed_cls = models.Feed.resolve(values['type'])
     feed = feed_cls(**values)
+    feed.user_id = current_user.id
 
     feed.load_icon()
     db.session.add(feed)
