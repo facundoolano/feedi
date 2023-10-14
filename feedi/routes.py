@@ -247,9 +247,16 @@ def feed_add():
         if result:
             (url, name) = result
 
+    folders = db.session.scalars(
+        db.select(models.Feed.folder)
+        .filter(models.Feed.folder != None,
+                models.Feed.folder != '')
+        .filter_by(user_id=current_user.id).distinct())
+
     return flask.render_template('feed_edit.html',
                                  url=url,
-                                 name=name)
+                                 name=name,
+                                 folders=folders)
 
 
 @app.post("/feeds/new")
@@ -284,7 +291,13 @@ def feed_edit(feed_name):
     if not feed:
         flask.abort(404, "Feed not found")
 
-    return flask.render_template('feed_edit.html', feed=feed)
+    folders = db.session.scalars(
+        db.select(models.Feed.folder)
+        .filter(models.Feed.folder != None,
+                models.Feed.folder != '')
+        .filter_by(user_id=current_user.id).distinct()).all()
+
+    return flask.render_template('feed_edit.html', feed=feed, folders=folders)
 
 
 @app.post("/feeds/<feed_name>")
@@ -575,6 +588,6 @@ def sidebar_feeds():
             if len(folders[feed.folder]) < 5:
                 folders[feed.folder].append(feed)
 
-        return dict(shortcut_feeds=shortcut_feeds, folders=folders, filters={})
+        return dict(shortcut_feeds=shortcut_feeds, shortcut_folders=folders, filters={})
 
     return {}

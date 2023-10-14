@@ -41,8 +41,8 @@
         </div>
         <div class="navbar-menu">
             <div class="navbar-end">
-                {% if folders %}
-                  {% for (name, feeds) in folders.items() %}
+                {% if shortcut_folders %}
+                {% for (name, feeds) in shortcut_folders.items() %}
                 <a class="dropdown-item {% if filters.folder == name %}is-active"{% endif %}" href="{{ url_for('entry_list', folder=name ) }}">
                     <icon class="icon"><i class="far fa-folder-open"></i></icon> {{ name }}</a>
                 {% endfor %}
@@ -67,9 +67,9 @@
                             </div>
                         </div>
                         </li>
-                        {% if folders %}
-                          <hr class="dropdown-divider"/>
-                          {% for (name, feeds) in folders.items() %}
+                        {% if shortcut_folders %}
+                        <hr class="dropdown-divider"/>
+                        {% for (name, feeds) in shortcut_folders.items() %}
                             {% include "sidebar_folder.html" %}
                           {% endfor %}
                         {% endif %}
