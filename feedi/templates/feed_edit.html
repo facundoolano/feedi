@@ -46,7 +46,7 @@
         <div class="field">
             <label class="label">Folder</label>
             <div class="control">
-                <input class="input" list="folder-options" name="folder" type="text" placeholder="Folder name" {% if feed and feed.folder %}value="{{ feed.folder }}"{% endif %}>
+                <input class="input" list="folder-options" autocomplete="off" name="folder" type="text" placeholder="Folder name" {% if feed and feed.folder %}value="{{ feed.folder }}"{% endif %}>
                 <datalist id="folder-options">
                     {% for folder in folders %}
                     <option value="{{folder}}"></option>
