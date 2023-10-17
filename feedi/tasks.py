@@ -10,8 +10,8 @@ import tempfile
 from functools import wraps
 
 import click
-import filelock
 import flask
+import flufl.lock as locklib
 import opml
 import sqlalchemy as sa
 from flask import current_app as app
@@ -49,16 +49,8 @@ def huey_task(*huey_args):
 
                 app.logger.info("STARTING %s %s %s", f.__name__, fargs, fkwargs)
 
-                # using a lock file to ensure a given task is not attempted to run in parallel
-                # so we can have multiple app worker processes without spamming rss sources with redundant requests
-                lock_path = f'{tempfile.gettempdir()}/{f.__name__}-{fargs}-{fkwargs}'.replace(' ', '-')
-                lock = filelock.FileLock(lock_path)
-                try:
-                    with lock.acquire(blocking=False):
-                        f(*args, **kwargs)
-                        app.logger.info("FINISHED %s %s %s", f.__name__, fargs, fkwargs)
-                except filelock.Timeout:
-                    app.logger.info("SKIPPING locked task %s", lock_path)
+                f(*args, **kwargs)
+                app.logger.info("FINISHED %s %s %s", f.__name__, fargs, fkwargs)
 
         return decorator
 
@@ -68,8 +60,36 @@ def huey_task(*huey_args):
     return composed_decorator
 
 
+def locked_task(lifetime):
+    """
+    Wraps a task execution with a file lock acquisition to prevent concurrent execution of the same task.
+    The `lifetime` is the expected runtime of the task, used to expire the lock if for some reason a previous
+    run fails to release it.
+    """
+
+    def decorator(f):
+        lock_path = f'{tempfile.gettempdir()}/{f.__name__}'
+        task_lock = locklib.Lock(lock_path, default_timeout=0)
+        task_lock.lifetime = lifetime
+
+        def inner(*args, **kwargs):
+
+            app.logger.debug("locking %s", lock_path)
+
+            try:
+                with task_lock:
+                    return f(*args, *kwargs)
+            except (locklib.TimeOutError, locklib.AlreadyLockedError):
+                app.logger.info("skipping locked task %s", lock_path)
+
+        return inner
+
+    return decorator
+
+
 @feed_cli.command('sync')
 @huey_task(crontab(minute=app.config['SYNC_FEEDS_CRON_MINUTES']))
+@locked_task(lifetime=300)
 def sync_all_feeds():
     feeds = db.session.execute(db.select(models.Feed.id, models.Feed.name)).all()
 
@@ -98,6 +118,7 @@ def sync_feed(feed_id, _feed_name):
 
 @feed_cli.command('purge')
 @huey_task(crontab(minute='0', hour=app.config['DELETE_OLD_CRON_HOURS']))
+@locked_task(lifetime=20)
 def delete_old_entries():
     """
     Delete entries that are older than DELETE_AFTER_DAYS but
