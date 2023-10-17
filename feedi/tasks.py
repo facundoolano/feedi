@@ -95,17 +95,14 @@ def sync_all_feeds():
 
     tasks = []
     for feed in feeds:
-        try:
-            tasks.append(sync_feed(feed.id, feed.name))
-        except:
-            app.logger.error("Skipping errored feed %s", feed.name)
+        tasks.append((feed.name, sync_feed(feed.id, feed.name)))
 
     # wait for concurrent tasks to finish before returning
-    for task in tasks:
+    for name, task in tasks:
         try:
             task.get()
         except:
-            app.logger.exception("failure during async task %s", task)
+            app.logger.exception("failure during async task %s", name)
             continue
 
 

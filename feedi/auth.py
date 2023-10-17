@@ -22,6 +22,7 @@ def login():
     # just load the user so we know what to point feeds to in the DB
     default_email = app.config.get('DEFAULT_AUTH_USER')
     if default_email:
+        app.logger.debug("Logging default user %s", default_email)
         user = db.session.scalar(db.select(models.User).filter_by(email=default_email))
         flask_login.login_user(user, remember=True)
         return flask.redirect(flask.url_for('entry_list'))
