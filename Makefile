@@ -3,6 +3,8 @@
 venv=. venv/bin/activate &&
 flask=$(venv) flask --app feedi/app.py
 
+export FLASK_ENV ?= development
+
 venv:
 	python -m venv venv
 

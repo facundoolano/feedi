@@ -1,6 +1,5 @@
 # coding: utf-8
 
-
 from gevent import monkey
 
 monkey.patch_all()  # nopep8
@@ -15,9 +14,8 @@ import feedi.models as models
 
 def create_app():
     app = flask.Flask(__package__)
-    app.config.from_object('feedi.config.default')
-    app.config.from_envvar('FEEDI_CONFIG', silent=app.debug)
-    app.logger.setLevel(logging.INFO)
+    load_config(app)
+    app.logger.info('Starting app with FLASK_ENV=%s', os.getenv('FLASK_ENV'))
 
     with app.app_context():
         from . import auth, filters, routes, tasks
@@ -48,10 +46,20 @@ def create_huey_app():
     This is necessary to make config and db session available to the periodic tasks.
     """
     app = flask.Flask('huey_app')
-    app.config.from_object('feedi.config.default')
-    app.config.from_envvar('FEEDI_CONFIG', silent=app.debug)
-    app.logger.setLevel(logging.INFO)
+    load_config(app)
+
     with app.app_context():
         models.init_db(app)
 
     return app
+
+
+def load_config(app):
+    app.logger.setLevel(logging.INFO)
+    env = os.getenv('FLASK_ENV')
+    if not env:
+        app.logger.error('FLASK_ENV not set')
+        exit()
+
+    app.config.from_object('feedi.config.default')
+    app.config.from_object(f'feedi.config.{env}')

@@ -1,7 +1,7 @@
 bind = "127.0.0.1:5000"
 worker_class = "gevent"
 wsgi_app = "feedi.app:create_app()"
-raw_env = ["FEEDI_CONFIG=config/production.py"]
+raw_env = ["FLASK_ENV=production"]
 preload = True
 workers = 2
 timeout = 0
