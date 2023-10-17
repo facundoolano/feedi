@@ -123,21 +123,22 @@ class Feed(db.Model):
     def to_valuelist(self):
         return [self.type, self.name, self.url, self.folder]
 
-    def sync_with_remote(self):
+    def sync_with_remote(self, force=False):
         """
         Fetch this feed entries from its remote sources, saving them to the database and updating
         the feed metadata. The specific fetching logic is implemented by subclasses through the
         `fetch_entry_data` method.
+        If `force` is True, syncing will be attempted even if it was already done recently.
         """
         from flask import current_app as app
         utcnow = datetime.datetime.utcnow()
 
         cooldown_minutes = datetime.timedelta(minutes=app.config['SKIP_RECENTLY_UPDATED_MINUTES'])
-        if self.last_fetch and (utcnow - self.last_fetch < cooldown_minutes):
+        if not force and self.last_fetch and (utcnow - self.last_fetch < cooldown_minutes):
             app.logger.info('skipping recently synced feed %s', self.name)
             return
 
-        entries = self.fetch_entry_data()
+        entries = self.fetch_entry_data(force)
         self.last_fetch = utcnow
 
         for values in entries:
@@ -151,7 +152,7 @@ class Feed(db.Model):
                 on_conflict_do_update(("feed_id", "remote_id"), set_=values)
             )
 
-    def fetch_entry_data(self):
+    def fetch_entry_data(self, _force=False):
         """
         To be implemented by subclasses, this should contact the remote feed source, parse any new entries
         and return a list of values for each one.
@@ -236,7 +237,7 @@ class RssFeed(Feed):
     def to_valuelist(self):
         return [self.type, self.name, self.url, self.folder, self.filters]
 
-    def fetch_entry_data(self):
+    def fetch_entry_data(self, force=False):
         from flask import current_app as app
         skip_older_than = datetime.datetime.utcnow() - \
             datetime.timedelta(days=app.config['RSS_SKIP_OLDER_THAN_DAYS'])
@@ -245,9 +246,9 @@ class RssFeed(Feed):
             self.name, self.url,
             skip_older_than,
             app.config['RSS_MINIMUM_ENTRY_AMOUNT'],
-            self.last_fetch,
-            self.etag,
-            self.modified_header,
+            None if force else self.last_fetch,
+            None if force else self.etag,
+            None if force else self.modified_header,
             self.filters)
 
         self.etag = etag
@@ -283,7 +284,7 @@ class MastodonAccount(Feed):
             args['limit'] = app.config['MASTODON_FETCH_LIMIT']
         return args
 
-    def fetch_entry_data(self):
+    def fetch_entry_data(self, _force=False):
         return parsers.mastodon.fetch_toots(**self._api_args())
 
     def load_icon(self):
@@ -294,7 +295,7 @@ class MastodonAccount(Feed):
 
 class MastodonNotifications(MastodonAccount):
 
-    def fetch_entry_data(self):
+    def fetch_entry_data(self, _force=False):
         return parsers.mastodon.fetch_notifications(**self._api_args())
 
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_NOTIFICATIONS}
@@ -303,7 +304,7 @@ class MastodonNotifications(MastodonAccount):
 class CustomFeed(Feed):
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_CUSTOM}
 
-    def fetch_entry_data(self):
+    def fetch_entry_data(self, _force=False):
         return parsers.custom.fetch(self.name, self.url)
 
 

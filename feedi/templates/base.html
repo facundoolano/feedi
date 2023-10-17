@@ -110,7 +110,7 @@
                        <a class="dropdown-item is-hidden-mobile" href="{{ url_for('feed_list') }}"><icon class="icon"><i class="fas fa-edit"></i></icon> Manage feeds</a>
                        {% if filters.feed_name %}
                        <a class="dropdown-item is-hidden-mobile" href="{{ url_for('feed_edit', feed_name=filters.feed_name ) }}"><icon class="icon"><i class="fas fa-edit"></i></icon> Edit {{filters.feed_name}}</a>
-                       <a class="dropdown-item is-hidden-mobile" hx-post="{{ url_for('feed_sync', feed_name=filters.feed_name ) }}"
+                       <a class="dropdown-item" hx-post="{{ url_for('feed_sync', feed_name=filters.feed_name ) }}"
                           _="on htmx:beforeRequest add .fa-spin to <i/> in me"><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{filters.feed_name}}</a>
                        {% endif %}
                        <hr class="dropdown-divider is-hidden-mobile"/>

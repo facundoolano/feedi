@@ -341,7 +341,7 @@ def feed_sync(feed_name):
     if not feed:
         flask.abort(404, "Feed not found")
 
-    task = tasks.sync_feed(feed.id, feed.name)
+    task = tasks.sync_feed(feed.id, feed.name, force=True)
     task.get()
 
     response = flask.make_response()

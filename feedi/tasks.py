@@ -110,9 +110,9 @@ def sync_all_feeds():
 
 
 @huey_task()
-def sync_feed(feed_id, _feed_name):
+def sync_feed(feed_id, _feed_name, force=False):
     db_feed = db.session.get(models.Feed, feed_id)
-    db_feed.sync_with_remote()
+    db_feed.sync_with_remote(force=force)
     db.session.commit()
 
 
