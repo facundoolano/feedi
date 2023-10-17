@@ -14,3 +14,4 @@ stkclient==0.1.1
 gunicorn==21.2.0
 pyopml==1.0.0
 flask-login==0.6.2
+flufl.lock==8.0.2
