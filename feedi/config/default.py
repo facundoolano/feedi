@@ -1,7 +1,6 @@
 SECRET_KEY = b'\xffN\xcfX\xbc\xa9V\x8b*_zFB\xb9\xfa\x1d'
 SQLALCHEMY_DATABASE_URI = "sqlite:///feedi.db"
 # SQLALCHEMY_ENGINE_OPTIONS = {'connect_args': {'timeout': 15}}
-DEBUG = True
 TEMPLATES_AUTO_RELOAD = True
 
 ENTRY_PAGE_SIZE = 10
