@@ -10,7 +10,6 @@ import tempfile
 from functools import wraps
 
 import click
-import filelock
 import flask
 import opml
 import sqlalchemy as sa
@@ -49,16 +48,8 @@ def huey_task(*huey_args):
 
                 app.logger.info("STARTING %s %s %s", f.__name__, fargs, fkwargs)
 
-                # using a lock file to ensure a given task is not attempted to run in parallel
-                # so we can have multiple app worker processes without spamming rss sources with redundant requests
-                lock_path = f'{tempfile.gettempdir()}/{f.__name__}-{fargs}-{fkwargs}'.replace(' ', '-')
-                lock = filelock.FileLock(lock_path)
-                try:
-                    with lock.acquire(blocking=False):
-                        f(*args, **kwargs)
-                        app.logger.info("FINISHED %s %s %s", f.__name__, fargs, fkwargs)
-                except filelock.Timeout:
-                    app.logger.info("SKIPPING locked task %s", lock_path)
+                f(*args, **kwargs)
+                app.logger.info("FINISHED %s %s %s", f.__name__, fargs, fkwargs)
 
         return decorator
 
