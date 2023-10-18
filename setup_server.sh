@@ -29,8 +29,7 @@ sudo ufw --force enable
 FEEDI_DIR=/home/feedi
 
 # create a user to run the service
-sudo groupadd feedi || true
-sudo adduser --disabled-login --disabled-password feedi || true
+sudo adduser --comment --disabled-login --disabled-password feedi || true
 cd $FEEDI_DIR
 
 # install the app
