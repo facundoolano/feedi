@@ -2,7 +2,7 @@
 # Setup the server and the feedi app as a service.
 # The app will be installed in the running user's home directory and the
 # service will run with a new feedi user.
-# Tested on a raspberry Pi OS but I assume should work on any debian
+# Tested on a raspberry Pi OS and debian 12.
 #
 # ssh pi@feedi.local 'bash -s' < setup_server.sh
 
