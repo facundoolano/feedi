@@ -35,7 +35,7 @@ def init_db(app):
         if email:
             app.logger.info("Creating default user %s", email)
             stmt = sa.insert(user_table).values(
-                email=email, password=generate_password_hash('admin'))
+                email=email, password=security.generate_password_hash('admin'))
             connection.execute(stmt)
 
     db.create_all()
