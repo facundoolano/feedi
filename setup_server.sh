@@ -10,7 +10,7 @@ set -e
 
 sudo apt update -y
 sudo apt upgrade -y
-sudo apt install nginx ufw git vim python3-venv -y
+sudo apt install build-essential gcc python3 python3-dev python3-pip python3-venv python-is-python3 nginx ufw git vim  -y
 
 # install node 20 sigh
 sudo apt-get install -y ca-certificates curl gnupg
@@ -26,20 +26,34 @@ sudo ufw allow ssh
 sudo ufw allow 'Nginx HTTP'
 sudo ufw --force enable
 
+FEEDI_DIR=/home/feedi
+
+# create a user to run the service
+sudo groupadd feedi || true
+sudo adduser --disabled-login --disabled-password feedi || true
+cd $FEEDI_DIR
+
+# FIXME these steps should be done by the feedi user
 # install the app
-FEEDI_DIR=$(pwd)
 git clone https://github.com/facundoolano/feedi.git
 cd feedi
 make deps secret-key
 mkdir -p instance
 
-# setup the app as a service
-sudo groupadd feedi || true
-sudo useradd feedi -g feedi || true
+# disable default auth
+sed -i '/DEFAULT_AUTH_USER/s/^# //g' feedi/config/production.py
+
 touch instance/feedi.db
 sudo chown -R feedi .
+
+# FIXME do we really need this
 # let others write so we can overwrite with scp
 sudo chmod 666 instance/feedi.db
+
+# allow other users to read static files so nginx can serve them
+sudo chmod o+r -R feedi/static/
+DIR=$FEEDI_DIR/feedi/feedi/static
+while [[ $DIR != / ]]; do chmod +rx "$DIR"; DIR=$(dirname "$DIR"); done;
 
 sudo tee -a /etc/systemd/system/gunicorn.service > /dev/null <<EOF
 [Unit]
