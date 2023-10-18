@@ -267,7 +267,8 @@ def opml_dump(file, user):
 
 
 def add_if_not_exists(feed):
-    query = db.select(db.exists(models.Feed).where(models.Feed.name == feed.name))
+    query = db.select(db.exists(models.Feed)
+                      .where(models.Feed.name == feed.name, models.Feed.user_id == feed.user_id))
     if db.session.execute(query).scalar():
         app.logger.info('skipping already existent %s', feed.name)
         return
