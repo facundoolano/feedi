@@ -201,8 +201,6 @@ def csv_load(file, user):
             feed.user_id = user.id
             add_if_not_exists(feed)
 
-    db.session.commit()
-
 
 @feed_cli.command('dump')
 @click.argument("file")
@@ -240,8 +238,6 @@ def opml_load(file, user):
                                              user_id=user.id,
                                              url=feed.xml_url))
 
-    db.session.commit()
-
 
 @feed_cli.command('dump-opml')
 @click.argument("file")
@@ -276,8 +272,11 @@ def add_if_not_exists(feed):
         app.logger.info('skipping already existent %s', feed.name)
         return
 
-    feed.load_icon()
     db.session.add(feed)
+    db.session.commit()
+
+    feed.load_icon()
+    db.session.commit()
     app.logger.info('added %s', feed)
 
 
