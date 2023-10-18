@@ -129,7 +129,7 @@ Then update [the config](https://github.com/facundoolano/feedi/blob/a7a0c6e8b13b
 
 ### Non-local setup
 
-Not that I claim this to be production-ready, but there's a [setup script](./setup_server.sh) to run it as a service on a Debian Linux, which has been tested on a raspberry pi with Pi OS lite.
+Not that I claim this to be production-ready, but there's a [setup script](./setup_server.sh) to run it as a service on a Debian Linux.
 
 ### User management
 

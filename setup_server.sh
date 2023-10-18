@@ -2,7 +2,7 @@
 # Setup the server and the feedi app as a service.
 # The app will be installed in the running user's home directory and the
 # service will run with a new feedi user.
-# Tested on a raspberry Pi OS but I assume should work on any debian
+# Tested on a raspberry Pi OS and debian 12.
 #
 # ssh pi@feedi.local 'bash -s' < setup_server.sh
 
@@ -10,7 +10,7 @@ set -e
 
 sudo apt update -y
 sudo apt upgrade -y
-sudo apt install nginx ufw git vim python3-venv -y
+sudo apt install build-essential gcc python3 python3-dev python3-pip python3-venv python-is-python3 nginx ufw git vim  -y
 
 # install node 20 sigh
 sudo apt-get install -y ca-certificates curl gnupg
@@ -26,20 +26,34 @@ sudo ufw allow ssh
 sudo ufw allow 'Nginx HTTP'
 sudo ufw --force enable
 
-# install the app
-FEEDI_DIR=$(pwd)
-git clone https://github.com/facundoolano/feedi.git
-cd feedi
-make deps secret-key
-mkdir -p instance
+FEEDI_DIR=/home/feedi
 
-# setup the app as a service
-sudo groupadd feedi || true
-sudo useradd feedi -g feedi || true
-touch instance/feedi.db
+# create a user to run the service
+sudo adduser --comment --disabled-login --disabled-password feedi || true
+cd $FEEDI_DIR
+
+# install the app
+sudo su feedi -c "git clone https://github.com/facundoolano/feedi.git"
+cd feedi
+sudo su feedi -c "make deps secret-key"
+sudo su feedi -c "mkdir -p instance"
+
+# disable default auth
+sed -i '/DEFAULT_AUTH_USER/s/^# //g' feedi/config/production.py
+
+# mark the database as already migrated
+sudo su feedi -c "venv/bin/alembic stamp head"
+
 sudo chown -R feedi .
+
+# FIXME do we really need this?
 # let others write so we can overwrite with scp
 sudo chmod 666 instance/feedi.db
+
+# allow other users to read static files so nginx can serve them
+sudo chmod o+r -R feedi/static/
+DIR=$FEEDI_DIR/feedi/feedi/static
+while [[ $DIR != / ]]; do chmod +rx "$DIR"; DIR=$(dirname "$DIR"); done;
 
 sudo tee -a /etc/systemd/system/gunicorn.service > /dev/null <<EOF
 [Unit]
