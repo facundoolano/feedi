@@ -285,7 +285,6 @@ def add_if_not_exists(feed):
 @click.argument('email')
 @click.password_option()
 def user_add(email, password):
-    print(email, password)
     user = models.User(email=email)
     user.set_password(password)
     db.session.add(user)
