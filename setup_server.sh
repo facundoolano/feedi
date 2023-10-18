@@ -33,7 +33,6 @@ sudo groupadd feedi || true
 sudo adduser --disabled-login --disabled-password feedi || true
 cd $FEEDI_DIR
 
-# FIXME these steps should be done by the feedi user
 # install the app
 sudo su feedi -c "git clone https://github.com/facundoolano/feedi.git"
 cd feedi
