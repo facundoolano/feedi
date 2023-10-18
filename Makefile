@@ -53,9 +53,13 @@ user-del:
 prod:
 	$(venv) gunicorn
 
-# FIXME this is hacky
 BRANCH ?= main
-prod-update:
+prod-deploy:
+	sudo su feedi -c "make prod-update-code BRANCH=$(BRANCH)"
+	sudo systemctl restart gunicorn
+
+BRANCH ?= main
+prod-update-code:
 	git stash # because of prod config
 	git fetch
 	git checkout $(BRANCH)
@@ -63,7 +67,7 @@ prod-update:
 	git stash apply
 	make deps
 	$(venv) alembic upgrade head
-	sudo systemctl restart gunicorn
+
 
 secret-key:
 	echo "SECRET_KEY = '$$(python -c 'import secrets; print(secrets.token_hex())')'" >> feedi/config/production.py
