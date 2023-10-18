@@ -35,18 +35,20 @@ cd $FEEDI_DIR
 
 # FIXME these steps should be done by the feedi user
 # install the app
-git clone https://github.com/facundoolano/feedi.git
+sudo su feedi -c "git clone https://github.com/facundoolano/feedi.git"
 cd feedi
-make deps secret-key
-mkdir -p instance
+sudo su feedi -c "make deps secret-key"
+sudo su feedi -c "mkdir -p instance"
 
 # disable default auth
 sed -i '/DEFAULT_AUTH_USER/s/^# //g' feedi/config/production.py
 
-touch instance/feedi.db
+# mark the database as already migrated
+sudo su feedi -c "venv/bin/alembic stamp head"
+
 sudo chown -R feedi .
 
-# FIXME do we really need this
+# FIXME do we really need this?
 # let others write so we can overwrite with scp
 sudo chmod 666 instance/feedi.db
 
