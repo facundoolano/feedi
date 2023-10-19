@@ -316,7 +316,11 @@ def pretty_print(url):
 
 
 def to_datetime(struct_time):
-    return datetime.datetime.fromtimestamp(time.mktime(struct_time))
+    try:
+        return datetime.datetime.fromtimestamp(time.mktime(struct_time))
+    except:
+        logger.error("Failure in date parsing, received %s", struct_time)
+        raise
 
 
 def short_date_handler(date_str):

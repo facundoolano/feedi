@@ -107,10 +107,13 @@ def sync_all_feeds():
 
 
 @huey_task()
-def sync_feed(feed_id, _feed_name, force=False):
+def sync_feed(feed_id, feed_name, force=False):
     db_feed = db.session.get(models.Feed, feed_id)
-    db_feed.sync_with_remote(force=force)
-    db.session.commit()
+    try:
+        db_feed.sync_with_remote(force=force)
+        db.session.commit()
+    except:
+        app.logger.exception("Error processing %s %s", feed_id, feed_name)
 
 
 @feed_cli.command('purge')
