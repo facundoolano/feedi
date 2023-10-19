@@ -420,10 +420,10 @@ def preview_content():
     """
     url = flask.request.args['url']
     article = extract_article(url)
-    entry = {"content_url": url,
-             "title": article['title'],
-             "username": article['byline']}
-
+    # put together entry stub for the template
+    entry = models.Entry(content_url=url,
+                         title=article['title'],
+                         username=article['byline'])
     return flask.render_template("content_preview.html", content=article['content'], entry=entry)
 
 
