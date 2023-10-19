@@ -53,10 +53,15 @@ user-del:
 prod:
 	$(venv) gunicorn
 
+# Install feedi on a fresh debian server.
+# usage:   make prod-install SSH=pi@feedi.local
+prod-install:
+	ssh $(SSH) 'bash -s' < setup_server.sh
+
+# Update the version running on a remote server (initialized according to setup_server.sh)
 BRANCH ?= main
 prod-deploy:
-	sudo su feedi -c "make prod-update-code BRANCH=$(BRANCH)"
-	sudo systemctl restart gunicorn
+	ssh $(SSH) "cd /home/feedi/feedi && sudo su feedi -c \"make prod-update-code BRANCH=$(BRANCH)\" && sudo systemctl restart gunicorn"
 
 BRANCH ?= main
 prod-update-code:
@@ -68,12 +73,11 @@ prod-update-code:
 	make deps
 	$(venv) alembic upgrade head
 
-
 secret-key:
 	echo "SECRET_KEY = '$$(python -c 'import secrets; print(secrets.token_hex())')'" >> feedi/config/production.py
 
 prod-db-push:
-	scp instance/feedi.db pi@feedi.local:feedi/instance/feedi.db
+	scp instance/feedi.db $(SSH):/home/feedi/feedi/instance/feedi.db
 
 prod-db-pull:
-	scp pi@feedi.local:feedi/instance/feedi.db  instance/feedi.db
+	scp $(SSH):/home/feedi/feedi/instance/feedi.db  instance/feedi.db
