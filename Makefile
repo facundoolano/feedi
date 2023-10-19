@@ -80,4 +80,17 @@ prod-db-push:
 	scp instance/feedi.db $(SSH):/home/feedi/feedi/instance/feedi.db
 
 prod-db-pull:
-	scp $(SSH):/home/feedi/feedi/instance/feedi.db  instance/feedi.db
+	scp $(SSH):/home/feedi/feedi/instance/feedi.db instance/feedi.db
+
+prod-csv-push:
+	make feed-dump EMAIL=$(EMAIL)
+	scp feeds.csv $(SSH):/home/feedi/feedi/feeds.csv
+	git checkout feeds.csv
+	ssh $(SSH) "cd /home/feedi/feedi && sudo su feedi -c \"FLASK_ENV=production make feed-load EMAIL=$(EMAIL)\" && sudo su feedi -c \"git checkout feeds.csv\""
+
+prod-csv-pull:
+	ssh $(SSH) "cd /home/feedi/feedi && sudo su feedi -c \"FLASK_ENV=production make feed-dump EMAIL=$(EMAIL)\""
+	scp $(SSH):/home/feedi/feedi/feeds.csv feeds.csv
+	ssh $(SSH) "cd /home/feedi/feedi && sudo su feedi -c \"git checkout feeds.csv\""
+	FLASK_ENV=production make feed-load EMAIL=$(EMAIL)
+	git checkout feeds.csv

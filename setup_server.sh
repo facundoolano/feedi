@@ -5,6 +5,7 @@
 # Tested on a raspberry Pi OS and debian 12.
 #
 # ssh pi@feedi.local 'bash -s' < setup_server.sh
+# TODO: allow to customize pulled git branch
 
 set -e
 
