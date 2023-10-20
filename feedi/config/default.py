@@ -11,6 +11,10 @@ DELETE_AFTER_DAYS = 7
 RSS_MINIMUM_ENTRY_AMOUNT = 5
 MASTODON_FETCH_LIMIT = 50
 
+# How many tasks to allow running concurrently. eg. how many feeds to sync at a time.
+# This affects the sqlalchemy engine pool size
+HUEY_POOL_SIZE = 100
+
 # this is a hack to get personal kindle integration (see readme)
 # a real implementation would require some way for the user to set up this integration
 # from the web, or at least some make target to make the setup reproducible

@@ -29,6 +29,8 @@ def init_db(app):
         # this should be ~200mb
         dbapi_connection.execute('pragma cache_size = -195313')
 
+        app.logger.debug("Created DB connection")
+
     @sa.event.listens_for(User.__table__, 'after_create')
     def after_create(user_table, connection, **kw):
         email = app.config.get('DEFAULT_AUTH_USER')
