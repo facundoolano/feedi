@@ -12,7 +12,6 @@ import click
 import flask
 import opml
 import sqlalchemy as sa
-from flask import current_app as app
 from huey import crontab
 from huey.contrib.mini import MiniHuey
 
@@ -21,13 +20,14 @@ import feedi.parsers as parsers
 from feedi.app import create_huey_app
 from feedi.models import db
 
+app = create_huey_app()
+huey = MiniHuey(pool_size=app.config['HUEY_POOL_SIZE'])
+
 feed_cli = flask.cli.AppGroup('feed')
 user_cli = flask.cli.AppGroup('user')
 
-app.cli.add_command(feed_cli)
-app.cli.add_command(user_cli)
-
-huey = MiniHuey()
+flask.current_app.cli.add_command(feed_cli)
+flask.current_app.cli.add_command(user_cli)
 
 
 def huey_task(*huey_args):
@@ -40,15 +40,17 @@ def huey_task(*huey_args):
         @wraps(f)
         def decorator(*args, **kwargs):
             # run the task inside an app context and log start and finish
-            app = create_huey_app()
             with app.app_context():
                 fargs = ' '.join([str(arg) for arg in args])
                 fkwargs = ' '.join([f'{k}={v}' for (k, v) in kwargs.items()])
 
                 app.logger.info("STARTING %s %s %s", f.__name__, fargs, fkwargs)
 
-                f(*args, **kwargs)
-                app.logger.info("FINISHED %s %s %s", f.__name__, fargs, fkwargs)
+                try:
+                    f(*args, **kwargs)
+                    app.logger.info("FINISHED %s %s %s", f.__name__, fargs, fkwargs)
+                except:
+                    app.logger.error("ERRORED %s %s %s", f.__name__, fargs, fkwargs)
 
         return decorator
 
@@ -77,13 +79,10 @@ def sync_all_feeds():
 
 
 @huey_task()
-def sync_feed(feed_id, feed_name, force=False):
+def sync_feed(feed_id, _feed_name, force=False):
     db_feed = db.session.get(models.Feed, feed_id)
-    try:
-        db_feed.sync_with_remote(force=force)
-        db.session.commit()
-    except:
-        app.logger.exception("Error processing %s %s", feed_id, feed_name)
+    db_feed.sync_with_remote(force=force)
+    db.session.commit()
 
 
 @feed_cli.command('purge')

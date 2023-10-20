@@ -49,6 +49,11 @@ def create_huey_app():
     load_config(app)
 
     with app.app_context():
+        # since huey tasks share the db engine pool, we want to have a big enough pool
+        # so all concurrent tasks get their own connection
+        pool_size = round(app.config['HUEY_POOL_SIZE'] * 1.1)
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_size': pool_size}
+
         models.init_db(app)
 
     return app
