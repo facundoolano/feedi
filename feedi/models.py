@@ -61,6 +61,18 @@ class User(UserMixin, db.Model):
         return security.check_password_hash(self.password, raw_password)
 
 
+class KindleCredentials(db.Model):
+    __tablename__ = 'kindle_credentials'
+    id = sa.Column(sa.Integer, primary_key=True)
+    user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False, unique=True)
+    credentials = sa.Column(sa.String, nullable=False)
+
+
+User.has_kindle = sa.orm.column_property(sa.select(sa.func.count(KindleCredentials.id) == 1)
+                                         .where(KindleCredentials.user_id == User.id)
+                                         .scalar_subquery())
+
+
 class Feed(db.Model):
     """
     Represents an external source of items, e.g. an RSS feed or social app account.
@@ -90,6 +102,7 @@ class Feed(db.Model):
                                   cascade="all, delete-orphan", lazy='dynamic')
     raw_data = sa.orm.deferred(sa.Column(sa.String,
                                          doc="The original feed data received from the feed, as JSON"))
+
     folder = sa.Column(sa.String, index=True)
     score = sa.Column(sa.Integer, default=0, nullable=False,
                       doc="counts how many times articles of this feed have been interacted with. ")
