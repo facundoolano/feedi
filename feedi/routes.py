@@ -433,18 +433,13 @@ def send_to_kindle():
     """
     If there's a registered device, send the article in the given URL through kindle.
     """
-    credentials = app.config.get('KINDLE_CREDENTIALS_PATH')
-    if not credentials:
+    if not current_user.has_kindle:
         return '', 204
 
-    credentials = pathlib.Path(credentials)
-    try:
-        credentials.stat
-    except FileNotFoundError:
-        return '', 204
+    kindle = db.session.scalar(db.select(models.KindleCredentials).filter_by(
+        user_id=current_user.id))
 
-    with open(credentials) as fp:
-        kindle_client = stkclient.Client.load(fp)
+    kindle_client = stkclient.Client.loads(kindle.credentials)
 
     url = flask.request.args['url']
     article = extract_article(url)
