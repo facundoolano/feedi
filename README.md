@@ -15,7 +15,7 @@ supports RSS/Atom, custom website and API scraping, and also works as a Mastodon
 See the documentation below and the [devlog](DEVLOG.md) for notes about its design and implementation.
 
 ## Local installation
-feedi requires Python >= 3.9. If you don't have it installed already consider using pyenv or asdf.
+feedi requires Python >= 3.9. If you don't have it installed already consider using [pyenv](https://github.com/pyenv/pyenv#installation) or [asdf](https://asdf-vm.com/guide/getting-started.html).
 
 The instructions below use make for convenience, but you can alternatively check the Makefile if you prefer to run the commands manually.
 
@@ -30,6 +30,8 @@ Then, to run the app:
     make dev
 
 The application will be available at http://localhost:5000/
+
+Alternatively, you can build and run the app in a docker container with `make docker`.
 
 ## Basic usage
 ### Adding sources

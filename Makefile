@@ -94,3 +94,8 @@ prod-csv-pull:
 	ssh $(SSH) "cd /home/feedi/feedi && sudo su feedi -c \"git checkout feeds.csv\""
 	FLASK_ENV=production make feed-load EMAIL=$(EMAIL)
 	git checkout feeds.csv
+
+docker:
+	mkdir -p instance
+	docker build -t feedi .
+	docker run -p 5000:5000 -v ${shell pwd}/instance:/app/instance feedi
