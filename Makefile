@@ -9,10 +9,13 @@ venv:
 	python -m venv venv
 
 deps: venv
-	$(venv) pip install -r requirements.txt && npm install
+	$(venv) pip install -r requirements.txt
 
 deps-dev: deps
 	$(venv) pip install ipython ipdb flask-shell-ipython
+
+npm:
+	npm install
 
 dev:
 	$(flask) run --debug --reload

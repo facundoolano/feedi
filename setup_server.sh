@@ -36,7 +36,7 @@ cd $FEEDI_DIR
 # install the app
 sudo su feedi -c "git clone https://github.com/facundoolano/feedi.git"
 cd feedi
-sudo su feedi -c "make deps secret-key"
+sudo su feedi -c "make deps npm secret-key"
 sudo su feedi -c "mkdir -p instance"
 
 # disable default auth
