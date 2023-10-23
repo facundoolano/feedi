@@ -14,32 +14,32 @@ supports RSS/Atom, custom website and API scraping, and also works as a Mastodon
 
 See the documentation below and the [devlog](DEVLOG.md) for notes about its design and implementation.
 
-## Local installation
+## Installation
 feedi requires Python >= 3.9. If you don't have it installed already consider using [pyenv](https://github.com/pyenv/pyenv#installation) or [asdf](https://asdf-vm.com/guide/getting-started.html).
 
-The instructions below use make for convenience, but you can alternatively check the Makefile if you prefer to run the commands manually.
+To install feedi on a local environment:
 
-After cloning this repository, install feedi on a local environment by running:
-
+    git clone https://github.com/facundoolano/feedi.git
+    cd feedi
     make
 
 Then, to run the app:
 
     make run
 
-The application will be available at http://localhost:5000/.
+The application will be available at `http://localhost:5000/`.
 
-Alternatively, you can build and run the app in a docker container with `make docker`.
+Alternatively, you can build and run the app in a docker container with `make docker`. Read below for [non-local setup instructions](#non-local-setup).
 
 ## Basic usage
 ### Adding sources
-- empty by default
-- in case you want to see some content right away, you can run `make feeds-load feed-sync` to pull entries from a set of rss feeeds included by default [in the repo](feeds.csv).
-- manually by clicking on Add Feed or navigating to `/feeds/new`
-- initial fetch, then every N minutes. [LINK]
-- or discovering rss feeds from other articles / preview
+By default, your feed will be empty. You can load some content from a set of [default websites](feeds.csv) if you want to get a quick feel of how the app works:
 
-- otherwise import a custom csv or OPML
+    make feeds-load feeds-sync
+
+Otherwise, you can manually add sources by clicking the `+ Add Feed` button or navigating to `http://localhost:5000/feeds/new`. When you first add a feed, the app  will fetch its most recent articles, then it will check periodically (every 30 minutes [by default](https://github.com/facundoolano/feedi/blob/15add28488c5800eef2dbcb43adf1355da9133c3/feedi/config/default.py#L5)) for new content.
+
+You can also import a collection of feeds from an OPML or CSV file, see [below](#bulk-importexport-feeds-from-csv-and-opml-files).
 
 ### Browsing the feed
 - feed metaphor
