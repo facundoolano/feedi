@@ -135,7 +135,7 @@ Note that there's no open user registration functionality exposed to the front e
 
 | shortcut                              | when                         | action                              |
 | -----------                           | -----------                  | ---------                           |
-| /                                     |                              | focus search input                  |
+| Cmd+k                                 |                              | focus search input                  |
 | Enter                                 | search focused               | submit first suggestion             |
 | Escape                                | search or suggestion focused | hide suggestions                    |
 | Down Arrow, Ctrl+n                    | search or suggestion focused | next suggestion                     |
