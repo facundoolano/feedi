@@ -56,6 +56,15 @@ The application will be available at http://localhost:5000/
 - previewing articles by dragging an url to the search box
 
 ## Advanced features
+### Bulk import/export feeds from csv and OPML files
+
+`make feed-load` will load feeds from a local `feeds.csv` file. A [sample file](https://github.com/facundoolano/feedi/blob/HEAD/feeds.csv) is included in the repo
+in case you want to see some content right away.
+
+There's also a `make feed-load-opml` to import a list of RSS feeds from a `feeds.opml` file in the [OPML format](https://en.wikipedia.org/wiki/OPML).
+
+There are analogous `make feed-dump` and `make feed-dump-opml` targets to export feed data from the app.
+
 ### Mastodon account setup
 
 One or more Mastodon accounts can be added to ingest the user home feed and notifications.
@@ -83,18 +92,22 @@ With the resulting access token, you can add the user home feed or the user noti
 See the [Mastodon.py documentation](https://mastodonpy.readthedocs.io/en/stable/#usage) for further details.
 
 ### Github notification feed
-TODO
+You can ingest the notifications from GitHub into feedi. To do so, navigate to your home feed at https://github.com/, open the page HTML source and search for an atom feed link. It should look something like:
+
+``` html
+  <link rel="alternate" type="application/atom+xml" title="ATOM" href="/facundoolano.private.atom?token=<TOKEN>" />
+```
+
+Copy the href url and use it to add a new RSS feed in feedi.
+
 ### Goodreads home feed
-TODO
+You can ingest the notifications from Goodreads.com into feedi. To do so, navigate to your home feed at https://www.goodreads.com/, open the page HTML source and search for an atom feed link. It should look something like:
 
-### Bulk import/export feeds from csv and OPML files
+``` html
+<link href='https://www.goodreads.com/home/index_rss/<ID>?key=<KEY>' rel='alternate' title='Goodreads' type='application/atom+xml'>
+```
 
-`make feed-load` will load feeds from a local `feeds.csv` file. A [sample file](https://github.com/facundoolano/feedi/blob/HEAD/feeds.csv) is included in the repo
-in case you want to see some content right away.
-
-There's also a `make feed-load-opml` to import a list of RSS feeds from a `feeds.opml` file in the [OPML format](https://en.wikipedia.org/wiki/OPML).
-
-There are analogous `make feed-dump` and `make feed-dump-opml` targets to export feed data from the app.
+Copy the href url and use it to add a new RSS feed in feedi.
 
 ### Kindle device support (experimental)
 
@@ -148,6 +161,7 @@ Other than RSS and Mastodon feeds, the app can ingest arbitrary sources with cus
 To add a custom parser, subclass [feedi.parsers.custom.CustomParser](https://github.com/facundoolano/feedi/blob/4e6b7974b70c70abb4a0f7091adbe344ef0b29a1/feedi/parsers/custom.py#L20). The `is_compatible` method determines wheter a given url should be parsed with that parser. The `fetch` method does the actual fetching and parsing of entries. See the [feedi.parsers.custom](https://github.com/facundoolano/feedi/blob/HEAD/feedi/parsers/custom.py) module for some examples.
 
 Once the parser is implemented, it will be used when a new feed of type "Custom" is added in the webapp with the expected url.
+
 
 ### Keyboard shortcuts
 
