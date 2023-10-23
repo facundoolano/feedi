@@ -2,13 +2,13 @@
 
 feedi is a web news reader with a minimal interface akin to a Mastodon or Twitter feed.
 
-supports RSS/Atom, custom website and API scraping, and also works as a Mastodon Client.
-
-- interface is twitter/mastodon like (vs email)
-- but with user control
-- auto mark as read
-- although it's a web app, it's designed for wasy setup on a local install for personal use
-- it's also prepared for self-hosted multiuser setups
+Noteworthy features:
+- Easy local and self-hosted environment setup.
+- Mastodon home and notification streams support.
+- Hackable RSS parsers and ad hoc scrapers.
+- Smart feed sorting options (highlight infrequent sources, auto mark as read).
+- Local article reading and preview using Mozilla's reader mode.
+- Send to Kindle device support.
 
 ![](feedi.png)
 
@@ -189,7 +189,7 @@ for example to deploy the app on the internet or to support multiple accounts.
 To enable user authentication:
 
 1. Remove the `DEFAULT_AUTH_USER` setting from the [configuration](https://github.com/facundoolano/feedi/blob/HEAD/feedi/config/default.py).
-2. If you already have a DB created, reset it with `make dbreset`. Or, alternatively, remove the default user
+2. If you already have a DB created, reset it with `make db-reset`. Or, alternatively, remove the default user
 with `make user-del EMAIL=admin@admin.com`. Note that this will also remove feeds and entries associated to it in the DB.
 3. You can create new users by running `make user-add EMAIL=some@email.address`. The command will prompt for a password.
 
