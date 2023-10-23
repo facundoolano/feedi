@@ -9,7 +9,6 @@ from collections import defaultdict
 
 import flask
 import sqlalchemy as sa
-import stkclient
 from bs4 import BeautifulSoup
 from flask import current_app as app
 from flask_login import current_user, login_required
@@ -431,20 +430,13 @@ def preview_content():
 @login_required
 def send_to_kindle():
     """
-    If there's a registered device, send the article in the given URL through kindle.
+    If the user has a registered device, send the article in the given URL through kindle.
     """
-    credentials = app.config.get('KINDLE_CREDENTIALS_PATH')
-    if not credentials:
+    if not current_user.has_kindle:
         return '', 204
 
-    credentials = pathlib.Path(credentials)
-    try:
-        credentials.stat
-    except FileNotFoundError:
-        return '', 204
-
-    with open(credentials) as fp:
-        kindle_client = stkclient.Client.load(fp)
+    kindle = db.session.scalar(db.select(models.KindleDevice).filter_by(
+        user_id=current_user.id))
 
     url = flask.request.args['url']
     article = extract_article(url)
@@ -454,11 +446,9 @@ def send_to_kindle():
     with tempfile.NamedTemporaryFile(mode='w+', delete=False) as fp:
         compress_article(fp.name, article)
 
-        serials = [d.device_serial_number for d in kindle_client.get_owned_devices()]
-        kindle_client.send_file(pathlib.Path(fp.name), serials,
-                                format='zip',
-                                author=article['byline'],
-                                title=article['title'])
+        kindle.send(pathlib.Path(fp.name),
+                    author=article['byline'],
+                    title=article['title'])
 
         return '', 204
 
@@ -479,6 +469,8 @@ def compress_article(outfilename, article):
 
             # update each img src url to point to the local copy of the file
             img['src'] = img_filename
+
+            # TODO webp images aren't supported, convert to png or jpg
 
             # download the image into the zip, inside the files subdir
             with requests.get(img_url, stream=True) as img_src, zip.open(img_filename, mode='w') as img_dest:

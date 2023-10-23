@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block sidebar_right %}{%endblock%}
+
+
+{% block content %}
+<div class="box is-radiusless feed-entry  ">
+    <div class="content">
+        <h3>Register device</h3>
+        <br/>
+
+        <p>Open <a href="{{ signin_url }}" target="_blank">this link</a>, authenticate with Amazon, then copy the redirect browser URL in the form below.</p>
+
+            <form method="post">
+                <input type="hidden" name="verifier" value="{{verifier}}">
+
+            <div class="field">
+                <label class="label">Redirect URL</label>
+                <div class="control">
+                    <textarea class="textarea" name="redirect_url"></textarea>
+                </div>
+            </div>
+
+            <div class="level is-mobile">
+                <div class="field level-left"></div>
+                <div class="field is-grouped level-right">
+                    <p class="control"><button class="button is-primary" type="submit"
+                                               _="on click add .is-loading">Save</button></p>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+    {% endblock %}

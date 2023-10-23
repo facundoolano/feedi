@@ -104,28 +104,14 @@ With the resulting access token, you can add the user home feed or the user noti
 
 See the [Mastodon.py documentation](https://mastodonpy.readthedocs.io/en/stable/#usage) for further details.
 
-### Kindle device setup
+### Kindle device support (experimental)
 
-The app allows to register a kindle device (statically in the configuration, for now) to send the cleaned up article HTML to it. This uses the [stkclient](https://github.com/maxdjohnson/stkclient) library.
+The app allows to register a kindle device to send the cleaned up article HTML to it, yielding better results
+than the default Amazon Send to Kindle Chrome extension.
 
-To generate a device credentials file:
+To enable the "send to kindle" feature on your user, navigate to `/auth/kindle` and follow the instructions to register the device credentials.
 
-``` python
-import stkclient
-
-a = stkclient.OAuth2()
-signin_url = a.get_signin_url()
-# Open `signin_url` in a browser, sign in and authorize the application, pass
-# the final redirect_url below
-client = a.create_client(redirect_url)
-
-with open('kindle.creds', 'w') as fp:
-    client.dump(fp)
-```
-
-Then update [the config](https://github.com/facundoolano/feedi/blob/a7a0c6e8b13b790cc80b499bb9a9d9a55e8f975b/feedi/config.py#L13-L16) to point to the generated file:
-
-    KINDLE_CREDENTIALS_PATH = 'kindle.creds'
+This features uses the [stkclient](https://github.com/maxdjohnson/stkclient) library and stores device credentials in the DB file (use at your own risk).
 
 ### Non-local setup
 

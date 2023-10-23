@@ -5,6 +5,7 @@ import json
 
 import sqlalchemy as sa
 import sqlalchemy.dialects.sqlite as sqlite
+import stkclient
 import werkzeug.security as security
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
@@ -61,6 +62,49 @@ class User(UserMixin, db.Model):
         return security.check_password_hash(self.password, raw_password)
 
 
+class KindleDevice(db.Model):
+    __tablename__ = 'kindle_credentials'
+    id = sa.Column(sa.Integer, primary_key=True)
+    user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False, unique=True)
+    credentials = sa.Column(sa.String, nullable=False)
+
+    @staticmethod
+    def signin_url():
+        auth = stkclient.OAuth2()
+        signin_url = auth.get_signin_url()
+        return auth._verifier, signin_url
+
+    @classmethod
+    def add_from_url(cls, user_id, verifier, redirect_url):
+        """
+        Creates or updates a kindle device for the given user, based on
+        an auth redirect.
+        """
+        auth = stkclient.OAuth2()
+        auth._verifier = verifier
+        client = auth.create_client(redirect_url)
+
+        values = dict(user_id=user_id, credentials=client.dumps())
+        db.session.execute(
+            sqlite.insert(cls).
+            values(**values).
+            on_conflict_do_update(("user_id",), set_=values)
+        )
+
+    def send(self, path, author, title):
+        client = stkclient.Client.loads(self.credentials)
+        serials = [d.device_serial_number for d in client.get_owned_devices()]
+        client.send_file(path, serials,
+                         format='zip',
+                         author=author,
+                         title=title)
+
+
+User.has_kindle = sa.orm.column_property(sa.select(sa.func.count(KindleDevice.id) == 1)
+                                         .where(KindleDevice.user_id == User.id)
+                                         .scalar_subquery())
+
+
 class Feed(db.Model):
     """
     Represents an external source of items, e.g. an RSS feed or social app account.
@@ -90,6 +134,7 @@ class Feed(db.Model):
                                   cascade="all, delete-orphan", lazy='dynamic')
     raw_data = sa.orm.deferred(sa.Column(sa.String,
                                          doc="The original feed data received from the feed, as JSON"))
+
     folder = sa.Column(sa.String, index=True)
     score = sa.Column(sa.Integer, default=0, nullable=False,
                       doc="counts how many times articles of this feed have been interacted with. ")
