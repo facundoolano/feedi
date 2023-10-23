@@ -1,6 +1,7 @@
 import flask
 import flask_login
 from flask import current_app as app
+from flask_login import current_user, login_required
 
 import feedi.models as models
 from feedi.models import db
@@ -16,7 +17,7 @@ def init():
         return db.session.get(models.User, int(user_id))
 
 
-@app.route("/login")
+@app.get("/auth/login")
 def login():
     # if config has a default user it means auth is disabled
     # just load the user so we know what to point feeds to in the DB
@@ -30,7 +31,7 @@ def login():
     return flask.render_template('login.html')
 
 
-@app.route('/login', methods=['POST'])
+@app.post('/auth/login')
 def login_post():
     email = flask.request.form.get('email')
     password = flask.request.form.get('password')
@@ -44,4 +45,21 @@ def login_post():
 
     flask_login.login_user(user, remember=True)
 
+    return flask.redirect(flask.url_for('entry_list'))
+
+
+@app.get("/auth/kindle")
+@login_required
+def kindle_add():
+    verifier, url = models.KindleDevice.signin_url()
+    return flask.render_template('kindle.html', signin_url=url, verifier=verifier)
+
+
+@app.post("/auth/kindle")
+@login_required
+def kindle_add_submit():
+    verifier = flask.request.form.get('verifier')
+    redirect_url = flask.request.form.get('redirect_url')
+    models.KindleDevice.add_from_url(current_user.id, verifier, redirect_url)
+    db.session.commit()
     return flask.redirect(flask.url_for('entry_list'))

@@ -435,7 +435,6 @@ def send_to_kindle():
     if not current_user.has_kindle:
         return '', 204
 
-    # TODO backref
     kindle = db.session.scalar(db.select(models.KindleDevice).filter_by(
         user_id=current_user.id))
 
@@ -470,6 +469,8 @@ def compress_article(outfilename, article):
 
             # update each img src url to point to the local copy of the file
             img['src'] = img_filename
+
+            # TODO webp images aren't supported, convert to png or jpg
 
             # download the image into the zip, inside the files subdir
             with requests.get(img_url, stream=True) as img_src, zip.open(img_filename, mode='w') as img_dest:

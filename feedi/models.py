@@ -86,21 +86,20 @@ class KindleDevice(db.Model):
 
         values = dict(user_id=user_id, credentials=client.dumps())
         db.session.execute(
-            sqlite.insert(Entry).
+            sqlite.insert(cls).
             values(**values).
-            on_conflict_do_update(("user_id"), set_=values)
+            on_conflict_do_update(("user_id",), set_=values)
         )
 
     def send(self, path, author, title):
         client = stkclient.Client.loads(self.credentials)
         serials = [d.device_serial_number for d in client.get_owned_devices()]
-        client.send_file(pathlib.Path(fp.name), serials,
+        client.send_file(path, serials,
                          format='zip',
                          author=author,
                          title=title)
 
 
-# FIXME probably remove
 User.has_kindle = sa.orm.column_property(sa.select(sa.func.count(KindleDevice.id) == 1)
                                          .where(KindleDevice.user_id == User.id)
                                          .scalar_subquery())
