@@ -1,30 +1,92 @@
 # feedi
 
-feedi is a personal web RSS reader that also works as a (read-only) Mastodon client.
+feedi is a web news reader with a minimal interface akin to a Mastodon or Twitter feed.
+
+supports RSS/Atom, custom website and API scraping, and also works as a Mastodon Client.
+
+- interface is twitter/mastodon like (vs email)
+- but with user control
+- auto mark as read
+- although it's a web app, it's designed for wasy setup on a local install for personal use
+- it's also prepared for self-hosted multiuser setups
 
 ![](feedi.png)
 
-The project is currently experimental and is missing some pieces (and it will likely remain that way for a while),
-but feel free to try and hack on it. More details on the [design notes](#design-and-implementation-notes) below.
+See the documentation below and the [devlog](DEVLOG.md) for notes about its design and implementation.
 
-## Local setup
+## Local installation
+feedi requires Python >= 3.9. If you don't have it installed already consider using pyenv or asdf.
 
-Requires Python 3 (tested with 3.9 and 3.11) and nodejs (for the reader functionality; tested with node 20).
+The instructions below use make for convenience, but you can alternatively check the Makefile if you prefer to run the commands manually.
 
-To install on a local virtual env run:
+After cloning this repository, install feedi on a local environment by running:
 
-    make deps-dev
+    git clone https://github.com/facundoolano/feedi.git
+    cd feedi/
+    make deps
 
-Then a development server can be run at http://localhost:5000 with:
+Then, to run the app:
 
     make dev
 
-A production-like server can also be run at http://localhost:5000 with:
+The application will be available at http://localhost:5000/
 
-    make prod
+## Basic usage
+### Adding sources
+- empty by default
+- in case you want to see some content right away, you can run `make feeds-load feed-sync` to pull entries from a set of rss feeeds included by default [in the repo](feeds.csv).
+- manually by clicking on Add Feed or navigating to `/feeds/new`
+- initial fetch, then every N minutes. [LINK]
+- or discovering rss feeds from other articles / preview
 
+- otherwise import a custom csv or OPML
 
-## Advanced usage
+### Browsing the feed
+- feed metaphor
+- user vs title
+- frequency sorting, rationale
+- auto mark as read (disable from setting), rationale for doing this
+- alternate strict cronological
+- alternate best score. option to edit it
+
+### Reading articles
+- go to source
+- go to discussion when available
+- local reader if nodejs
+- previewing articles by dragging an url to the search box
+
+## Advanced features
+### Mastodon account setup
+
+One or more Mastodon accounts can be added to ingest the user home feed and notifications.
+The account login flow isn't supported in the web interface yet, so some steps need to be run manually
+in the python shell to obtain a user access token:
+
+    make shell
+    >>> import mastodon
+    >>> Mastodon.create_app("feedi", scopes=['read'], to_file='mastodon.creds', api_base_url='https://mastodon.social')
+
+The code above will register a `feedi` app in the mastodon.social server, storing the client and secret in the `mastodon.creds` file.
+Note that you don't need to create more than one app per server (even if to plan to log in mutliple times or multiple accounts,
+the same app credentials file can be reused).
+
+Once app credentials are available, they can be used to instantiate a client and log in a user to obtain an access token:
+
+    >>> client = Mastodon('mastodon.creds', api_base_url='https://mastodon.social')
+    >>> client.log_in(username='some@email.address', password='password', scopes=['read'])
+    [CLIENT ACCESS TOKEN PRINTED HERE]
+
+With the resulting access token, you can add the user home feed or the user notification feed from the web UI by accessing
+ `/feeds/new` and selecting feed type `Mastodon` or `Mastodon Notifications`. (the same access token can be reused to add
+ both feeds).
+
+See the [Mastodon.py documentation](https://mastodonpy.readthedocs.io/en/stable/#usage) for further details.
+
+### Github notification feed
+TODO
+### Goodreads home feed
+TODO
+
 ### Bulk import/export feeds from csv and OPML files
 
 `make feed-load` will load feeds from a local `feeds.csv` file. A [sample file](https://github.com/facundoolano/feedi/blob/HEAD/feeds.csv) is included in the repo
@@ -33,6 +95,15 @@ in case you want to see some content right away.
 There's also a `make feed-load-opml` to import a list of RSS feeds from a `feeds.opml` file in the [OPML format](https://en.wikipedia.org/wiki/OPML).
 
 There are analogous `make feed-dump` and `make feed-dump-opml` targets to export feed data from the app.
+
+### Kindle device support (experimental)
+
+The app allows to register a kindle device to send the cleaned up article HTML to it, yielding better results
+than the default Amazon Send to Kindle Chrome extension.
+
+To enable the "send to kindle" feature on your user, navigate to `/auth/kindle` and follow the instructions to register the device credentials.
+
+This features uses the [stkclient](https://github.com/maxdjohnson/stkclient) library and stores device credentials in the DB file (use at your own risk).
 
 ### Feed parsing
 
@@ -78,59 +149,6 @@ To add a custom parser, subclass [feedi.parsers.custom.CustomParser](https://git
 
 Once the parser is implemented, it will be used when a new feed of type "Custom" is added in the webapp with the expected url.
 
-### Mastodon account setup
-
-One or more Mastodon accounts can be added to ingest the user home feed and notifications.
-The account login flow isn't supported in the web interface yet, so some steps need to be run manually
-in the python shell to obtain a user access token:
-
-    make shell
-    >>> import mastodon
-    >>> Mastodon.create_app("feedi", scopes=['read'], to_file='mastodon.creds', api_base_url='https://mastodon.social')
-
-The code above will register a `feedi` app in the mastodon.social server, storing the client and secret in the `mastodon.creds` file.
-Note that you don't need to create more than one app per server (even if to plan to log in mutliple times or multiple accounts,
-the same app credentials file can be reused).
-
-Once app credentials are available, they can be used to instantiate a client and log in a user to obtain an access token:
-
-    >>> client = Mastodon('mastodon.creds', api_base_url='https://mastodon.social')
-    >>> client.log_in(username='some@email.address', password='password', scopes=['read'])
-    [CLIENT ACCESS TOKEN PRINTED HERE]
-
-With the resulting access token, you can add the user home feed or the user notification feed from the web UI by accessing
- `/feeds/new` and selecting feed type `Mastodon` or `Mastodon Notifications`. (the same access token can be reused to add
- both feeds).
-
-See the [Mastodon.py documentation](https://mastodonpy.readthedocs.io/en/stable/#usage) for further details.
-
-### Kindle device support (experimental)
-
-The app allows to register a kindle device to send the cleaned up article HTML to it, yielding better results
-than the default Amazon Send to Kindle Chrome extension.
-
-To enable the "send to kindle" feature on your user, navigate to `/auth/kindle` and follow the instructions to register the device credentials.
-
-This features uses the [stkclient](https://github.com/maxdjohnson/stkclient) library and stores device credentials in the DB file (use at your own risk).
-
-### Non-local setup
-
-Not that I claim this to be production-ready, but there's a [setup script](./setup_server.sh) to run it as a service on a Debian Linux.
-
-### User management
-
-The default app configuration assumes a single-user unauthenticated setup, but authentication can be enabled in case security is necessary,
-for example to deploy the app on the internet or to support multiple accounts.
-
-To enable user authentication:
-
-1. Remove the `DEFAULT_AUTH_USER` setting from the [configuration](https://github.com/facundoolano/feedi/blob/HEAD/feedi/config/default.py).
-2. If you already have a DB created, reset it with `make dbreset`. Or, alternatively, remove the default user
-with `make user-del EMAIL=admin@admin.com`. Note that this will also remove feeds and entries associated to it in the DB.
-3. You can create new users by running `make user-add EMAIL=some@email.address`. The command will prompt for a password.
-
-Note that there's no open user registration functionality exposed to the front end, but it should be straightforward to add it if you need it. Check the [auth module](https://github.com/facundoolano/feedi/blob/HEAD/feedi/auth.py) and the [flask-login documentation](https://flask-login.readthedocs.io/en/latest/) for details.
-
 ### Keyboard shortcuts
 
 | shortcut                              | when                         | action                              |
@@ -149,42 +167,19 @@ Note that there's no open user registration functionality exposed to the front e
 | f                                     | entry focused                | favorite entry                      |
 | Escape                                | viewing entry content        | go back                             |
 
-## Design and implementation notes
+### User management
 
-This project was inspired by the Mastodon web client and the idea of [IndieWeb readers](https://aaronparecki.com/2018/04/20/46/indieweb-reader-my-new-home-on-the-internet), although it's not intended to become either a fully-fledged Mastodon client nor support all the components of an indie reader. I tried to build an interface similar to the Mastodon and Twitter feeds, which feels more intuitive to me than the usual email inbox metaphor of most RSS readers.
+The default app configuration assumes a single-user unauthenticated setup, but authentication can be enabled in case security is necessary,
+for example to deploy the app on the internet or to support multiple accounts.
 
-I applied a [Boring Tech](https://mcfunley.com/choose-boring-technology) and [Radical Simplicity](https://www.radicalsimpli.city/) mindset when possible; I didn't attempt to make the app scalable or particularly maintainable, I preferred for it to be easy to setup locally and iterate on. I skipped functionality I wouldn't need to use frequently yet (e.g user auth) and focused instead on trying out UX ideas to see how I liked to use the tool myself (still going through that process).
+To enable user authentication:
 
-The backend is written in Python using [Flask](flask.palletsprojects.com/). Although I usually default to Postgres for most projects, I opted for sqlite here since it's easier to manage and comes built-in with Python. Some periodic tasks (fetching RSS articles and Mastodon toots, deleting old feed entries) are run using the [Mini-Huey library](https://huey.readthedocs.io/en/latest/contrib.html#mini-huey) in the same Python process as the server. The concurrency is handled by gevent and the production server is configured to run with gunicorn.
+1. Remove the `DEFAULT_AUTH_USER` setting from the [configuration](https://github.com/facundoolano/feedi/blob/HEAD/feedi/config/default.py).
+2. If you already have a DB created, reset it with `make dbreset`. Or, alternatively, remove the default user
+with `make user-del EMAIL=admin@admin.com`. Note that this will also remove feeds and entries associated to it in the DB.
+3. You can create new users by running `make user-add EMAIL=some@email.address`. The command will prompt for a password.
 
-The frontend is rendered server-side with [htmx](htmx.org/) for the dynamic fragments (e.g. infinite scrolling, input autocomplete). I tried not to replace native browser features more than necessary. I found that htmx, together with its companion [hyperscript library](hyperscript.org/) were enough to implement anything I needed without a single line of JavaScript, and was surprised by its expressiveness. I'm not sure how it would scale for a bigger project with multiple maintainers, but it certainly felt ideal for this one (I basically picked up front end development where I left it over a decade ago). Here are a couple examples:
+Note that there's no open user registration functionality exposed to the front end, but it should be straightforward to add it if you need it. Check the [auth module](https://github.com/facundoolano/feedi/blob/HEAD/feedi/auth.py) and the [flask-login documentation](https://flask-login.readthedocs.io/en/latest/) for details.
 
-``` html
-<!-- show a dropdown menu -->
-<div class="dropdown-trigger">
-    <a class="icon level-item" tabindex="-1"
-       _="on click go to middle of the closest .feed-entry smoothly then
-              on click toggle .is-active on the closest .dropdown then
-              on click elsewhere remove .is-active from the closest .dropdown">
-        <i class="fas fa-ellipsis-v"></i>
-    </a>
-</div>
-
-<!-- show an image on a modal -->
-<figure class="image is-5by3 is-clickable" tabindex="-1"
-        _="on click add .is-active to the next .modal then halt">
-    <img src="{{ entry.media_url }}" alt="article preview">
-</figure>
-
-<!-- toggle a setting to display entry thumbnails -->
-<label class="checkbox">
-    <input type="checkbox" name="hide_media"
-           hx-post="/session/hide_media"
-           _="on click toggle .is-hidden on .media-url-container">
-    Show thumbnails
-</label>
-```
-
-The CSS is [bulma](bulma.io/), with a bunch of hacky tweaks on top which I'm not particularly proud of.
-
-I (reluctantly) added a dependency on nodejs to use the [mozilla/readability](https://github.com/mozilla/readability) package to show articles in an embedded "reader mode" (skipping ads and bypassing some paywalls). I tried several python alternatives but none worked quite as well as the Mozilla tool. It has the added benefit that extracting articles with them and sending them to a Kindle device produces better results than using Amazon's Send To Kindle browser extension.
+### Non-local setup
+You can refer to the [Flask documentation](https://flask.palletsprojects.com/en/2.1.x/deploying/) for a instructions on how to deploy feedi to a non-local environment. The [setup script](./setup_server.sh) included in the repository shows an example setup for a Debian server. You can run it remotely with ssh like `make prod-install SSH=user@server`.
