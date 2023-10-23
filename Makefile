@@ -8,14 +8,14 @@ export FLASK_ENV ?= development
 venv:
 	python -m venv venv
 
-deps: venv
+deps: venv node_modules
 	$(venv) pip install -r requirements.txt
 
 deps-dev: deps
 	$(venv) pip install ipython ipdb flask-shell-ipython
 
-npm:
-	npm install
+node_modules:
+	npm install || true
 
 dev:
 	$(flask) run --debug --reload
@@ -53,7 +53,7 @@ user-add:
 user-del:
 	$(flask) user del $(EMAIL)
 
-prod:
+prod: feedi/config/production.py
 	$(venv) gunicorn
 
 # Install feedi on a fresh debian server.
@@ -76,8 +76,9 @@ prod-update-code:
 	make deps
 	$(venv) alembic upgrade head
 
-secret-key:
-	echo "SECRET_KEY = '$$(python -c 'import secrets; print(secrets.token_hex())')'" >> feedi/config/production.py
+# one-time generate the production configuration, including the flask app secret key
+feedi/config/production.py:
+	echo "DEFAULT_AUTH_USER = None \nSECRET_KEY = '$$(python -c 'import secrets; print(secrets.token_hex())')'" >> feedi/config/production.py
 
 prod-db-push:
 	scp instance/feedi.db $(SSH):/home/feedi/feedi/instance/feedi.db
