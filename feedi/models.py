@@ -63,7 +63,7 @@ class User(UserMixin, db.Model):
 
 
 class KindleDevice(db.Model):
-    __tablename__ = 'kindle_credentials'
+    __tablename__ = 'kindle_devices'
     id = sa.Column(sa.Integer, primary_key=True)
     user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False, unique=True)
     credentials = sa.Column(sa.String, nullable=False)
