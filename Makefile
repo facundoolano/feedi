@@ -1,14 +1,16 @@
-.PHONY: deps dev-deps shell serve dbreset dbshell feed-load feed-sync feed-debug
+.PHONY: all deps dev-deps run docker shell dbreset dbshell feed-* prod-* user-* db-*
 
 venv=. venv/bin/activate &&
 flask=$(venv) flask --app feedi/app.py
 
 export FLASK_ENV ?= development
 
+all: deps node_modules
+
 venv:
 	python -m venv venv
 
-deps: venv node_modules
+deps: venv
 	$(venv) pip install -r requirements.txt
 
 deps-dev: deps
@@ -17,16 +19,23 @@ deps-dev: deps
 node_modules:
 	npm install || true
 
-dev:
+# Serve the app in development mode
+run:
 	$(flask) run --debug --reload
+
+# Build a docker for the app container and run it
+docker:
+	mkdir -p instance
+	docker build -t feedi .
+	docker run -p 5000:5000 -v ${shell pwd}/instance:/app/instance feedi
 
 shell:
 	DISABLE_CRON_TASKS=1 $(flask) shell
 
-dbshell:
+db-shell:
 	sqlite3 -cmd ".open instance/feedi.db"
 
-dbreset:
+db-reset:
 	rm instance/feedi.db
 
 feed-load:
@@ -53,6 +62,7 @@ user-add:
 user-del:
 	$(flask) user del $(EMAIL)
 
+# Serve the app in production mode, with gunicorn
 prod: feedi/config/production.py
 	$(venv) gunicorn
 
@@ -98,8 +108,3 @@ prod-csv-pull:
 	ssh $(SSH) "cd /home/feedi/feedi && sudo su feedi -c \"git checkout feeds.csv\""
 	FLASK_ENV=production make feed-load EMAIL=$(EMAIL)
 	git checkout feeds.csv
-
-docker:
-	mkdir -p instance
-	docker build -t feedi .
-	docker run -p 5000:5000 -v ${shell pwd}/instance:/app/instance feedi

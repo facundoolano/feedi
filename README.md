@@ -21,15 +21,13 @@ The instructions below use make for convenience, but you can alternatively check
 
 After cloning this repository, install feedi on a local environment by running:
 
-    git clone https://github.com/facundoolano/feedi.git
-    cd feedi/
-    make deps
+    make
 
 Then, to run the app:
 
-    make dev
+    make run
 
-The application will be available at http://localhost:5000/
+The application will be available at http://localhost:5000/.
 
 Alternatively, you can build and run the app in a docker container with `make docker`.
 
