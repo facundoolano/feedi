@@ -57,10 +57,12 @@ not just because it's less work but because the app is [not arranged](https://ww
 Another peculiarity of the feed metaphor is that some entries are more content-centric articles (eg. blog posts) and some more user-centric updates (eg. Mastodon toots). The entry parsers are implemented to favor user or content display depending on what info is available from the source.
 
 ### Reading articles
-- go to source
-- go to discussion when available
-- local reader if nodejs
-- previewing articles by dragging an url to the search box
+There are different ways to interact with an entrie from the feed:
+
+- If you click on the content or press Enter when focusing on the entry, the article conent will be fetch and displayed on the local reader. This will be a stripped-down version of the article (usually removing site links, ads and, in some cases, paywalls) powered by the [mozilla/readability](https://github.com/mozilla/readability) library. Note that for this to work you need node >= 20 installed when setting up the app.
+  -  The reader can also be used to preview arbitrary articles by dragging their url to the searchbox.
+- If you click on the article title the original website will be open on a new browser tab.
+- In some cases, as with link agreggators like reddit, hacker news or lobste.rs, there will be a separate link for the article discussion.
 
 ## Advanced features
 ### Bulk import/export feeds from csv and OPML files
