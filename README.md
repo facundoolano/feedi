@@ -2,11 +2,7 @@
 
 feedi is a web news reader with a minimal interface akin to a Mastodon or Twitter feed.
 
-<br/>
-<img src="feedi2.jpg" width="240">
-<img src="feedi.png" width="600">
-<br/>
-<br/>
+![](feedi.png)
 
 Features:
 - Easy local and self-hosted environment setup.
