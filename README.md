@@ -2,15 +2,19 @@
 
 feedi is a web news reader with a minimal interface akin to a Mastodon or Twitter feed.
 
-Noteworthy features:
+<br/>
+<img src="feedi2.jpg" width="240">
+<img src="feedi.png" width="600">
+<br/>
+<br/>
+
+Features:
 - Easy local and self-hosted environment setup.
 - Mastodon home and notification streams support.
 - Hackable RSS parsers and ad hoc scrapers.
 - Smart feed sorting options (highlight infrequent sources, auto mark as read).
 - Local article reading and preview using Mozilla's reader mode.
 - Send to Kindle device support.
-
-![](feedi.png)
 
 See the documentation below and the [devlog](DEVLOG.md) for notes about its design and implementation.
 
@@ -37,9 +41,9 @@ By default, your feed will be empty. You can load some content from a set of [de
 
     make feeds-load feeds-sync
 
-Otherwise, you can manually add sources by clicking the `+ Add Feed` button or navigating to `http://localhost:5000/feeds/new`. When you first add a feed, the app  will fetch its most recent articles, then it will check periodically (every 30 minutes [by default](https://github.com/facundoolano/feedi/blob/15add28488c5800eef2dbcb43adf1355da9133c3/feedi/config/default.py#L5)) for new content.
+Otherwise, you can manually add sources by clicking the `+ Add Feed` button or navigating to `http://localhost:5000/feeds/new`. When you first add a feed, the app  will fetch its most recent articles, then it will check periodically for new content (every 30 minutes [by default](https://github.com/facundoolano/feedi/blob/15add28488c5800eef2dbcb43adf1355da9133c3/feedi/config/default.py#L5)) .
 
-You can also import a collection of feeds from an OPML or CSV file, see [below](#bulk-importexport-feeds-from-csv-and-opml-files).
+You can also import a collection of feeds from an [OPML or CSV file]((#bulk-importexport-feeds-from-csv-and-opml-files)).
 
 ### Browsing the feed
 - feed metaphor
