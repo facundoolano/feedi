@@ -42,23 +42,24 @@ Otherwise, you can manually add sources by clicking the `+ Add Feed` button or n
 You can also import a collection of feeds from an [OPML or CSV file]((#bulk-importexport-feeds-from-csv-and-opml-files)).
 
 ### Browsing the feed
-feedi is arranged as a scrollable stream of entries (without the tracking, the ads and the "curation" of social media feeds). Each source can optionally be put into a folder, which then constitutes its own filtered stream. Some of the behavior of those streams can be controlled via settings on the right-side of the screen (desktop) or on the navbar manu (mobile).
+The interface is arranged as a social-media like scrollable stream of articles (minus the tracking, ads and feed "curation"). Each source feed can optionally be put into a folder, which then constitutes its own filtered stream. Some of the behavior of those streams can be controlled via settings on the right-side of the screen (desktop) or on the navbar manu (mobile).
 
-Although strict chronological sorting of the entries is available, it has the issue that, if you mix news articles and social media streams with slower paced sources as magazines and blogs, the least frequent (and often more interesting) articles will tend to get buried in the stream and go unnoticed. Because of this the default feed sorting will feature the least frequent sources more prominently. There's a third, more experimental, sorting criteria: showing entries from "most liked" feeds, based on how frequently those have been read.
+Although strict chronological sorting of the entries is available, it has the issue that, if you mix news articles and social media streams with slower-paced sources as magazines and blogs, the least frequent (and often more interesting) articles will tend to get buried in the stream and go unnoticed. Because of this, the default feed sorting will feature the least-frequent sources more prominently. There's also a third, more experimental, sorting criteria: showing entries from "most liked" feeds, based on how frequently those have been read.
 
-Since these alternative sorting criteria break the chronological order of entries, it means that older, better scored entries will usually precede newer ones. To prevent the same content being displayed every time you open the feed, the app will track "already viewed" entries as you scroll and hide them next time you load it.
+Since these alternative sorting criteria break the chronological order of entries, it means that some older, better scored entries will precede newer ones. To prevent the same content being displayed every time you open the feed, the app will track "already viewed" entries as you scroll and hide them next time you load it.
 This is considered preferrable to having to manually mark entries as read,
 not just because it's less work but because the app is [not arranged](https://www.oliverburkeman.com/river) around the idea of [clearing an inbox](https://danq.me/2023/07/29/rss-zero/). You can, of course, pin entries to the top of the feed or mark them as favorites to go back to them later. You can also just disable the hiding of already seen entries.
 
-Another peculiarity of the feed metaphor is that some entries are more content-centric articles (eg. blog posts) and some more user-centric updates (eg. Mastodon toots). The entry parsers are implemented to favor user or content display depending on what info is available from the source.
+Another peculiarity of the feed metaphor is that some entries are more content-centric articles (eg. blog posts) and some more user-centric updates (eg. Mastodon toots). The entry parsers are implemented to choose between user or content display depending on what info is available from the source.
 
 ### Reading articles
-There are different ways to interact with an entrie from the feed:
+There are different ways to interact with a feed entry:
 
-- If you click on the content or press Enter when focusing on the entry, the article conent will be fetch and displayed on the local reader. This will be a stripped-down version of the article (usually removing site links, ads and, in some cases, paywalls) powered by the [mozilla/readability](https://github.com/mozilla/readability) library. Note that for this to work you need node >= 20 installed when setting up the app.
-  -  The reader can also be used to preview arbitrary articles by dragging their url to the searchbox.
 - If you click on the article title the original website will be open on a new browser tab.
 - In some cases, as with link agreggators like reddit, hacker news or lobste.rs, there will be a separate link for the article discussion.
+- If you click on the content or press Enter when focusing on the entry, the article content will be fetch and displayed on the local reader. This will be a stripped-down version of the article (removing some site links, ads and paywalls) powered by the [mozilla/readability](https://github.com/mozilla/readability) library. Note that for this to work you need node >= 20 installed when setting up the project.
+  -  The reader can also be used to preview arbitrary articles by dragging their url to the searchbox.
+
 
 ## Advanced features
 ### Bulk import/export feeds from csv and OPML files
