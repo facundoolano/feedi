@@ -168,3 +168,4 @@ feeds.csv
 
 node_modules/
 kindle.creds
+feedi/config/production.py
