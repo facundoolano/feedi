@@ -240,11 +240,15 @@ def feed_add():
     url = flask.request.args.get('url')
     discover = flask.request.args.get('discover')
     name = None
+    error_msg = None
 
     if discover:
         result = rss.discover_feed(discover)
         if result:
             (url, name) = result
+
+        if not result or not url:
+            error_msg = "RSS feed link not found at the given URL."
 
     folders = db.session.scalars(
         db.select(models.Feed.folder)
@@ -255,14 +259,24 @@ def feed_add():
     return flask.render_template('feed_edit.html',
                                  url=url,
                                  name=name,
-                                 folders=folders)
+                                 folders=folders,
+                                 error_msg=error_msg)
 
 
 @app.post("/feeds/new")
 @login_required
 def feed_add_submit():
     # FIXME use a forms lib for validations, type coercion, etc
-    values = {k: v for k, v in flask.request.form.items() if v}
+    values = {k: v.strip() for k, v in flask.request.form.items() if v}
+
+    if not values.get('name') or not values.get('url'):
+        return flask.render_template('feed_edit.html', error_msg='Name and url are required fields', **values)
+
+    name = values.get('name')
+    feed = db.session.scalar(db.select(models.Feed).filter_by(
+        name=name, user_id=current_user.id))
+    if feed:
+        return flask.render_template('feed_edit.html', error_msg=f"A feed with name '{name}' already exists", **values)
 
     feed_cls = models.Feed.resolve(values['type'])
     feed = feed_cls(**values)
@@ -307,10 +321,15 @@ def feed_edit_submit(feed_name):
     if not feed:
         flask.abort(404, "Feed not found")
 
+    # FIXME fixme use proper form validations
+    values = flask.request.form
+    if not values.get('name') or not values.get('url'):
+        return flask.render_template('feed_edit.html', error_msg='Name and url are required fields', **values)
+
     # setting values at the instance level instead of issuing an update on models.Feed
     # so we don't need to explicitly inspect the feed to figure out its subclass
-    for (attr, value) in flask.request.form.items():
-        setattr(feed, attr, value)
+    for (attr, value) in values.items():
+        setattr(feed, attr, value.strip())
     db.session.commit()
 
     return flask.redirect(flask.url_for('feed_list'))

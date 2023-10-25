@@ -5,6 +5,9 @@
     <div class="content">
         <h3>Edit feed</h3>
         <br/>
+        {% if error_msg %}
+        <article class="message is-danger"><div class="message-body">{{ error_msg }}</div></article>
+        {% endif  %}
 
         <form method="post">
             <div class="field">
