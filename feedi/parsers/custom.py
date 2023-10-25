@@ -1,6 +1,7 @@
 import datetime
 import json
 
+import dateparser
 from bs4 import BeautifulSoup
 from feedi.requests import CachingRequestsMixin, requests
 
@@ -90,6 +91,39 @@ class RevistaLenguaParser(CustomParser):
                 # this website does very funky things with the html
                 # can't really make them work on the reader
                 'content_url': None,
+            })
+
+        return entry_values
+
+
+class EternaCadenciaParser(CustomParser):
+    BASE_URL = 'https://eternacadencia.com.ar'
+
+    def fetch(self):
+        url = f'{self.BASE_URL}/blog'
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, 'lxml')
+
+        entry_values = []
+        for article in soup.find_all(class_='news'):
+            content_url = self.BASE_URL + article.find('a')['href']
+            author = article.find(class_='tag')
+            if author:
+                author = author.text
+
+            date_str = article.find(class_='newsDate').text
+            date = dateparser.parse(date_str, languages=['es'])
+
+            entry_values.append({
+                'remote_id': content_url.split('/')[-1],
+                'title': article.find(class_='newsTitle').text,
+                'username': author,
+                'remote_created': date,
+                'remote_updated': date,
+                'body': article.find(class_='newsSummary').text,
+                'media_url': article.find('img')['src'],
+                'entry_url': content_url,
+                'content_url': content_url,
             })
 
         return entry_values
