@@ -395,18 +395,11 @@ def entry_view(id):
         elif res.headers.get('Content-Type', '').startswith('application/'):
             # if the content type is application eg youtube video or pdf, don't try to render locally
             should_redirect = True
-            pass
 
     if should_redirect:
         entry.feed.score += 1
         db.session.commit()
-
-        if 'HX-Request' in flask.request.headers:
-            response = flask.make_response()
-            response.headers['HX-Redirect'] = dest_url
-            return response
-        else:
-            return flask.redirect(dest_url)
+        return redirect_response(dest_url)
 
     # When requested through htmx (ajax), this page loads layout first, then the content
     # on a separate request. The reason for this is that article fetching is slow, and we
@@ -419,13 +412,29 @@ def entry_view(id):
         # if ajax/htmx just load the empty UI and load content asynchronously
         content = None
     else:
-        # if full browser load or explicit content request, fetch the article synchronously
-        content = extract_article(
-            entry.content_url)['content']
         entry.feed.score += 1
         db.session.commit()
 
+        # if full browser load or explicit content request, fetch the article synchronously
+        try:
+            content = extract_article(entry.content_url)['content']
+        except:
+            return redirect_response(entry.content_url)
+
     return flask.render_template("entry_content.html", entry=entry, content=content)
+
+
+def redirect_response(url):
+    """
+    Issue the proper redirect depending on whether the current request came
+    is a regular one or an ajax/htmx one.
+    """
+    if 'HX-Request' in flask.request.headers:
+        response = flask.make_response()
+        response.headers['HX-Redirect'] = url
+        return response
+    else:
+        return flask.redirect(url)
 
 
 # for now this is accesible dragging an url to the searchbox
@@ -437,7 +446,11 @@ def preview_content():
     Preview an url content in the reader, as if it was an entry parsed from a feed.
     """
     url = flask.request.args['url']
-    article = extract_article(url)
+    try:
+        article = extract_article(url)
+    except:
+        return flask.redirect(url)
+
     # put together entry stub for the template
     entry = models.Entry(content_url=url,
                          title=article['title'],
@@ -503,7 +516,9 @@ def extract_article(url):
     # article content than all the python libraries I've tried... even than the readabilipy
     # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
     # for parsing the article sadly this adds a dependency to node and a few npm pacakges
-    r = subprocess.run(["feedi/extract_article.js", url], capture_output=True, text=True)
+    r = subprocess.run(["feedi/extract_article.js", url],
+                       capture_output=True, text=True, check=True)
+
     article = json.loads(r.stdout)
 
     # load lazy images by replacing putting the data-src into src and stripping other attrs
