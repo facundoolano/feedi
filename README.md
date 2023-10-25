@@ -35,7 +35,7 @@ Alternatively, you can build and run the app in a docker container with `make do
 ### Adding sources
 By default, your feed will be empty. You can load some content from a set of [default websites](feeds.csv) if you want to get a quick feel of how the app works:
 
-    make feeds-load feeds-sync
+    make feed-load feed-sync
 
 Otherwise, you can manually add sources by clicking the `+ Add Feed` button or navigating to `http://localhost:5000/feeds/new`. When you first add a feed, the app  will fetch its most recent articles, then it will check periodically for new content (every 30 minutes [by default](https://github.com/facundoolano/feedi/blob/15add28488c5800eef2dbcb43adf1355da9133c3/feedi/config/default.py#L5)) .
 
