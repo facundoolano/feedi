@@ -82,6 +82,10 @@ class RSSParser(CachingRequestsMixin):
         # https://feedparser.readthedocs.io/en/latest/http-etag.html
         feed = feedparser.parse(self.url, etag=etag, modified=modified)
 
+        if feed.bozo:
+            logger.error("Failure parsing feed %s", feed.bozo_exception)
+            return None, [], None, None
+
         if not feed['feed']:
             logger.info('skipping empty feed %s %s', self.url, feed.get('debug_message'))
             return None, [], None, None
@@ -265,11 +269,17 @@ def discover_feed(url):
         logger.warn("Failed to discover feed from url %s %s", url, res)
         return
 
+    # assume the url is already a feed url
+    parsed = feedparser.parse(res.content)
+    if not parsed.bozo:
+        # no error, looks like a proper feed
+        title = parsed.feed.get('title')
+        return url, title
+
     soup = BeautifulSoup(res.content, 'lxml')
 
     # resolve title
-    title = extract_meta(soup, 'og:site_name') or extract_meta(
-        soup, 'og:title')
+    title = extract_meta(soup, 'og:site_name', 'og:title')
     if not title:
         title = soup.find('title')
         if title:

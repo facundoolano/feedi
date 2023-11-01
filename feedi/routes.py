@@ -139,10 +139,12 @@ def autocomplete():
         # we can reasonably assume this is a url
 
         options += [
-            ('Add feed', flask.url_for('feed_add', url=term), 'fas fa-plus'),
             ('Preview article', flask.url_for('preview_content', url=term), 'far fa-eye'),
-            ('Discover feed', flask.url_for('feed_add', discover=term), 'fas fa-rss'),
+            ('Discover feed', flask.url_for('feed_add', url=term), 'fas fa-rss'),
         ]
+        if current_user.has_kindle:
+            options += [('Send to Kindle', flask.url_for('send_to_kindle',
+                         url=term), 'fas fa-tablet-alt')]
     else:
         folders = db.session.scalars(
             db.select(models.Feed.folder)
@@ -238,17 +240,16 @@ def feed_list():
 @login_required
 def feed_add():
     url = flask.request.args.get('url')
-    discover = flask.request.args.get('discover')
     name = None
     error_msg = None
 
-    if discover:
-        result = rss.discover_feed(discover)
+    if url:
+        result = rss.discover_feed(url)
         if result:
             (url, name) = result
 
         if not result or not url:
-            error_msg = "RSS feed link not found at the given URL."
+            error_msg = "RSS/Atom feed link not found at the given URL."
 
     folders = db.session.scalars(
         db.select(models.Feed.folder)

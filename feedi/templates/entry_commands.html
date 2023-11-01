@@ -11,7 +11,7 @@
 <a class="dropdown-item" _="on click writeText('{{ entry.content_url }}') into the navigator's clipboard"><span class="icon"><i class="fas fa-link"></i></span> Copy URL</a>
 
 {% if not entry.entry_url or entry.content_url != entry.entry_url %}
-<a href="{{ url_for('feed_add', discover=entry.content_url) }}" class="dropdown-item"><span class="icon"><i class="fas fa-rss"></i></span> Discover feed</a>
+<a href="{{ url_for('feed_add', url=entry.content_url) }}" class="dropdown-item"><span class="icon"><i class="fas fa-rss"></i></span> Discover feed</a>
 {% endif %}
 {% if current_user.has_kindle %}
 <a class="dropdown-item" hx-post="{{ url_for('send_to_kindle', url=entry.content_url ) }}"
