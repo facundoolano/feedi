@@ -286,7 +286,7 @@ def discover_feed(url):
         link = soup.find('link', type=type, href=True)
         if link:
             feed_url = make_absolute(url, link['href'])
-            break
+            return feed_url, title
 
     # if none found in the html, try with common urls, provided that they exist
     # and are xml content
@@ -295,8 +295,7 @@ def discover_feed(url):
         rss_url = make_absolute(url, path)
         res = requests.get(rss_url)
         if res.ok and res.headers.get('Content-Type', '').endswith('xml'):
-            feed_url = rss_url
-            break
+            return rss_url, title
 
     return feed_url, title
 
