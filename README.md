@@ -1,6 +1,6 @@
 # feedi
 
-feedi is a web news reader with a minimal interface akin to a Mastodon or Twitter feed.
+feedi is a web feed reader with a minimal interface akin to a Mastodon or Twitter feed.
 
 ![](feedi.png)
 
