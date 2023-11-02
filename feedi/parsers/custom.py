@@ -44,7 +44,9 @@ class AgendaBAParser(CustomParser):
 
         entry_values = []
         for item in items:
-            created = datetime.datetime.fromisoformat(item['created_at'])
+            # keep only the date since the time is unreliable
+            created = datetime.datetime.fromisoformat(item['created_at']).date()
+
             content_url = f'{self.BASE_URL}?contenido={item["id"]}'
             entry_values.append({
                 'remote_id': item['id'],
