@@ -1,0 +1,12 @@
+{
+  "name": "feedi",
+  "display": "standalone",
+  "start_url": "/",
+  "icons": [
+    {
+      "src": "img/512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
