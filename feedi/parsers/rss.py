@@ -83,8 +83,8 @@ class RSSParser(CachingRequestsMixin):
         feed = feedparser.parse(self.url, etag=etag, modified=modified)
 
         if feed.bozo:
-            logger.error("Failure parsing feed %s", feed.bozo_exception)
-            return None, [], None, None
+            logger.warning("Failure parsing feed %s", feed.bozo_exception)
+            # this doesn't necessarily mean the feed was not parsed, so moving on
 
         if not feed['feed']:
             logger.info('skipping empty feed %s %s', self.url, feed.get('debug_message'))
