@@ -99,37 +99,58 @@ class RSSParser(CachingRequestsMixin):
         modified = getattr(feed, 'modified', None)
 
         entries = []
-        is_first_load = previous_fetch is None
         for item in feed['items']:
 
-            if self.should_skip(item):
-                continue
-
-            # don't try to process stuff that hasn't changed recently
-            updated = item.get('updated_parsed', item.get('published_parsed'))
-            if updated and previous_fetch and to_datetime(updated) < previous_fetch:
-                logger.debug('skipping up to date entry %s', item.get('link'))
-                continue
-
-            # or that's too old
-            published = item.get('published_parsed', item.get('updated_parsed'))
-            if (self.skip_older_than and published and to_datetime(published) < self.skip_older_than):
-                # unless it's the first time we're loading it, in which case we prefer to show old stuff
-                # to showing nothing
-                if not is_first_load or not self.min_amount or len(entries) >= self.min_amount:
-                    logger.debug('skipping old entry %s', item.get('link'))
-                    continue
-
-            if filters and not self._matches(item, filters):
-                logger.debug('skipping entry not matching filters %s %s', item.get('link'), filters)
-                continue
-
-            entry = self.parse(item)
-            if entry:
-                entry['raw_data'] = json.dumps(item)
-                entries.append(entry)
+            try:
+                entry = self.parse(item, len(entries), previous_fetch, filters)
+                if entry:
+                    entry['raw_data'] = json.dumps(item)
+                    entries.append(entry)
+            except Exception as error:
+                exc_desc_lines = traceback.format_exception_only(type(error), error)
+                exc_desc = ''.join(exc_desc_lines).rstrip()
+                logger.error("skipping errored entry %s %s %s",
+                             self.feed_name,
+                             item.get('link'),
+                             exc_desc)
+                logger.debug(traceback.format_exc())
 
         return feed['feed'], entries, etag, modified
+
+    def parse(self, item, parsed_count, previous_fetch, filters):
+        """
+        Pass the given raw entry data to each of the field parsers to produce an
+        entry values dict.
+        """
+        if self.should_skip(item):
+            return
+
+        # don't try to process stuff that hasn't changed recently
+        updated = item.get('updated_parsed', item.get('published_parsed'))
+        if updated and previous_fetch and to_datetime(updated) < previous_fetch:
+            logger.debug('skipping up to date entry %s', item.get('link'))
+            return
+
+        # or that's too old
+        is_first_load = previous_fetch is None
+        published = item.get('published_parsed', item.get('updated_parsed'))
+        if (self.skip_older_than and published and to_datetime(published) < self.skip_older_than):
+            # unless it's the first time we're loading it, in which case we prefer to show old stuff
+            # to showing nothing
+            if not is_first_load or not self.min_amount or parsed_count >= self.min_amount:
+                logger.debug('skipping old entry %s', item.get('link'))
+                return
+
+        if filters and not self._matches(item, filters):
+            logger.debug('skipping entry not matching filters %s %s', item.get('link'), filters)
+            return
+
+        result = {}
+        for field in self.FIELDS:
+            method = 'parse_' + field
+            result[field] = getattr(self, method)(item)
+
+        return result
 
     @staticmethod
     def should_skip(_entry):
@@ -152,29 +173,6 @@ class RSSParser(CachingRequestsMixin):
                 return False
 
         return True
-
-    def parse(self, entry):
-        """
-        Pass the given raw entry data to each of the field parsers to produce an
-        entry values dict.
-        """
-        result = {}
-
-        for field in self.FIELDS:
-            method = 'parse_' + field
-            try:
-                result[field] = getattr(self, method)(entry)
-            except Exception as error:
-                exc_desc_lines = traceback.format_exception_only(type(error), error)
-                exc_desc = ''.join(exc_desc_lines).rstrip()
-                logger.error("skipping errored entry %s %s %s",
-                             self.feed_name,
-                             entry.get('link'),
-                             exc_desc)
-                logger.debug(traceback.format_exc())
-                return
-
-        return result
 
     def parse_title(self, entry):
         return entry['title']
