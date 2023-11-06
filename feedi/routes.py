@@ -380,29 +380,6 @@ def entry_view(id):
     if entry.feed.user_id != current_user.id:
         flask.abort(404)
 
-    dest_url = entry.content_url or entry.entry_url
-    if not dest_url:
-        # this view can't work if no entry or content url
-        return "Entry not readable", 400
-
-    should_redirect = None
-    # TODO we could add support for more here
-    if 'youtube.com' in dest_url or 'vimeo.com' in dest_url:
-        should_redirect = True
-    else:
-        res = requests.get(dest_url)
-        if not res.ok:
-            app.logger.error("Can't open entry url", res)
-            return "Can't open entry url", 500
-        elif res.headers.get('Content-Type', '').startswith('application/'):
-            # if the content type is application eg youtube video or pdf, don't try to render locally
-            should_redirect = True
-
-    if should_redirect:
-        entry.feed.score += 1
-        db.session.commit()
-        return redirect_response(dest_url)
-
     # When requested through htmx (ajax), this page loads layout first, then the content
     # on a separate request. The reason for this is that article fetching is slow, and we
     # don't want the view entry action to freeze the UI without loading indication.
@@ -412,18 +389,28 @@ def entry_view(id):
 
     if 'HX-Request' in flask.request.headers and not 'content' in flask.request.args:
         # if ajax/htmx just load the empty UI and load content asynchronously
-        content = None
+        return flask.render_template("entry_content.html", entry=entry, content=None)
     else:
         entry.feed.score += 1
         db.session.commit()
 
+        dest_url = entry.content_url or entry.entry_url
+        if not dest_url:
+            # this view can't work if no entry or content url
+            return "Entry not readable", 400
+
+        # if it's a video site, just redirect. TODO add more sites
+        if 'youtube.com' in dest_url or 'vimeo.com' in dest_url:
+            return redirect_response(dest_url)
+
         # if full browser load or explicit content request, fetch the article synchronously
         try:
-            content = extract_article(entry.content_url)['content']
+            content = extract_article(dest_url)['content']
+            return flask.render_template("entry_content.html", entry=entry, content=content)
         except:
-            return redirect_response(entry.content_url)
+            pass
 
-    return flask.render_template("entry_content.html", entry=entry, content=content)
+    return redirect_response(dest_url)
 
 
 def redirect_response(url):
