@@ -143,8 +143,9 @@ def autocomplete():
             ('Discover feed', flask.url_for('feed_add', url=term), 'fas fa-rss'),
         ]
         if current_user.has_kindle:
-            options += [('Send to Kindle', flask.url_for('send_to_kindle',
-                         url=term), 'fas fa-tablet-alt')]
+            options += [('Send to Kindle',
+                         flask.url_for('send_to_kindle', url=term), 'fas fa-tablet-alt',
+                         'POST')]
     else:
         folders = db.session.scalars(
             db.select(models.Feed.folder)
