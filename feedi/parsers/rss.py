@@ -347,19 +347,19 @@ class RedditParser(RSSParser):
 
     def parse_body(self, entry):
         soup = BeautifulSoup(entry['summary'], 'lxml')
-        link_url = soup.find("a", string="[link]")
-        comments_url = soup.find("a", string="[comments]")
+        link_anchor = soup.find("a", string="[link]")
+        comments_anchor = soup.find("a", string="[comments]")
 
-        if link_url['href'] == comments_url['href']:
+        if link_anchor['href'] == comments_anchor['href']:
             # this looks like it's a local reddit discussion
             # return the summary instead of fetching description
 
             # remove the links from the body first
-            link_url.decompose()
-            comments_url.decompose()
+            link_anchor.decompose()
+            comments_anchor.decompose()
             return str(soup)
 
-        return self.fetch_meta(link_url, 'og:description', 'description')
+        return self.fetch_meta(link_anchor['href'], 'og:description', 'description')
 
     def parse_content_url(self, entry):
         soup = BeautifulSoup(entry['summary'], 'lxml')
