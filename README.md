@@ -8,13 +8,35 @@ Features:
 - Easy local and self-hosted environment setup.
 - Mobile optimized UI.
 - Mastodon home and notification streams support.
-- Hackable RSS parsers and ad hoc scrapers.
 - Custom parsers for Reddit, Github and Goodreads.
+- Hackable RSS parsers and ad hoc scrapers.
 - Smart feed sorting options (highlight infrequent sources, auto mark as read).
 - Local article reading and preview using Mozilla's reader mode.
 - Send to Kindle device support.
 
 See the documentation below and the [devlog](DEVLOG.md) for notes about its design and implementation.
+
+## Documentation
+
+- [Installation](#installation)
+- [Basic usage](#basic-usage)
+    - [Adding sources](#adding-sources)
+    - [Browsing the feed](#browsing-the-feed)
+    - [Reading articles](#reading-articles)
+- [Advanced features](#advanced-features)
+    - [Bulk import/export feeds from csv and OPML files](#bulk-importexport-feeds-from-csv-and-opml-files)
+    - [Mastodon account setup](#mastodon-account-setup)
+    - [Github notification feed](#github-notification-feed)
+    - [Goodreads home feed](#goodreads-home-feed)
+    - [Reddit feeds](#reddit-feeds)
+    - [Kindle device support (experimental)](#kindle-device-support-experimental)
+    - [Feed parsing](#feed-parsing)
+        - [RSS/Atom feeds](#rssatom-feeds)
+        - [Custom feeds](#custom-feeds)
+    - [Keyboard shortcuts](#keyboard-shortcuts)
+    - [User management](#user-management)
+    - [Non-local setup](#non-local-setup)
+
 
 ## Installation
 feedi requires Python >= 3.9. If you don't have it installed already consider using [pyenv](https://github.com/pyenv/pyenv#installation) or [asdf](https://asdf-vm.com/guide/getting-started.html).
