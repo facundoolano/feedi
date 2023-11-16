@@ -369,6 +369,14 @@ class RedditParser(RSSParser):
         # this particular feed puts the reddit comments page in the link
         return entry['link']
 
+    def parse_username(self, entry):
+        # instead of showing the username show the subreddit name when available
+        # this is kind of an abuse but yields a more useful UI
+        if entry.get('tags', []):
+            return entry['tags'][0]['label']
+
+        return super().parse_username(entry)
+
 
 class LobstersParser(RSSParser):
     @staticmethod
