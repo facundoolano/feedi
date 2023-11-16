@@ -6,8 +6,10 @@ feedi is a web feed reader with a minimal interface akin to a Mastodon or Twitte
 
 Features:
 - Easy local and self-hosted environment setup.
+- Mobile optimized view.
 - Mastodon home and notification streams support.
 - Hackable RSS parsers and ad hoc scrapers.
+- Custom parsers for Reddit, Github and Goodreads.
 - Smart feed sorting options (highlight infrequent sources, auto mark as read).
 - Local article reading and preview using Mozilla's reader mode.
 - Send to Kindle device support.
@@ -114,6 +116,14 @@ You can ingest the notifications from Goodreads.com into feedi. To do so, naviga
 ```
 
 Copy the href url and use it to add a new RSS feed in feedi.
+
+### Reddit feeds
+
+Reddit exposes public pages as RSS feeds by appending `.rss` to the URL, for example `https://www.reddit.com/r/selfhosted.rss` or `www.reddit.com/user/someuser.rss`.
+
+Additionally, authenticated users have access to RSS feeds for private account pages: the front page, saved links, message inbox, etc. Links can be found [here](https://www.reddit.com/prefs/feeds/).
+feedi uses special purpose feed parsers both for reddit listing messages and links, and for the user inbox.
+
 
 ### Kindle device support (experimental)
 
