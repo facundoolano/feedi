@@ -340,10 +340,27 @@ def short_date_handler(date_str):
 feedparser.registerDateHandler(short_date_handler)
 
 
-class RedditParser(RSSParser):
+class RedditInboxParser(RSSParser):
+    "Parser for message inboxes, see https://www.reddit.com/prefs/feeds/ when logged in."
+
     @staticmethod
     def is_compatible(feed_url):
-        return 'reddit.com' in feed_url
+        return 'reddit.com/message' in feed_url
+
+    def parse_body(self, entry):
+        return entry['content'][0]['value']
+
+    def parse_title(self, entry):
+        return entry['title'].split(': ')[-1].capitalize()
+
+
+class RedditParser(RSSParser):
+    "Parser for public or private reddit listings (i.e. subreddits, user messages, home feed, etc.)"
+
+    @staticmethod
+    def is_compatible(feed_url):
+        # looks like reddit but not like the inbox feed
+        return 'reddit.com' in feed_url and not 'reddit.com/message' in feed_url
 
     def parse_body(self, entry):
         soup = BeautifulSoup(entry['summary'], 'lxml')
