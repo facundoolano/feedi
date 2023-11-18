@@ -186,6 +186,8 @@ class RSSParser(CachingRequestsMixin):
     def parse_username(self, entry):
         # TODO if missing try to get from meta?
         author = entry.get('author', '')
+        if author:
+            author = BeautifulSoup(author, 'lxml').text
 
         if ',' in author:
             author = author.split(',')[0]
@@ -203,7 +205,9 @@ class RSSParser(CachingRequestsMixin):
 
     def parse_body(self, entry):
         summary = entry.get('summary')
-        if not summary:
+        if summary:
+            summary = html.unescape(summary)
+        else:
             url = self.parse_content_url(entry)
             if not url:
                 return
