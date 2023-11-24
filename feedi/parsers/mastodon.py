@@ -9,10 +9,25 @@ import mastodon
 logger = logging.getLogger(__name__)
 
 
-def fetch_avatar(server_url, access_token):
+def register_app(server_url):
+    # TODO
+    raise NotImplementedError
+
+
+def auth_redirect_url(server_url, client_id, client_secret, callback_url):
+    # TODO
+    raise NotImplementedError
+
+
+def oauth_login(server_url, code, callback_url):
+    # TODO
+    raise NotImplementedError
+
+
+def fetch_account_data(server_url, access_token):
     client = mastodon.Mastodon(access_token=access_token,
                                api_base_url=server_url)
-    return client.me()['avatar']
+    return client.me()
 
 
 def fetch_toots(server_url, access_token, newer_than=None, limit=None):

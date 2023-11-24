@@ -87,6 +87,8 @@ class MastodonAccount(db.Model):
     user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False)
     access_token = sa.Column(sa.String, nullable=False)
 
+    app = sa.orm.relationship("MastodonApp", back_populates="accounts", lazy='joined')
+
 
 class KindleDevice(db.Model):
     __tablename__ = 'kindle_devices'
@@ -336,18 +338,23 @@ class RssFeed(Feed):
 
 class MastodonHomeFeed(Feed):
     mastodon_account_id = sa.orm.mapped_column(sa.ForeignKey("mastodon_accounts.id"), nullable=True)
+    account = sa.orm.relationship("MastodonAccount", back_populates="feeds", lazy='joined')
 
+    # FIXME this won't work anymore
     @classmethod
     def from_valuelist(cls, _type, name, url, folder, access_token):
         return cls(**dict(name=name, url=url, folder=folder, access_token=access_token))
 
+    # FIXME this won't work anymore
     def to_valuelist(self):
         return [self.type, self.name, self.url, self.folder, self.access_token]
 
     def _api_args(self):
         from flask import current_app as app
         latest_entry = self.entries.order_by(Entry.remote_updated.desc()).first()
-        args = dict(server_url=self.url, access_token=self.access_token)
+
+        args = dict(server_url=self.account.app.api_base_url,
+                    access_token=self.account.access_token)
         if latest_entry:
             # there's some entry on db, this is not the first time we're syncing
             # get all toots since the last seen one
@@ -361,7 +368,7 @@ class MastodonHomeFeed(Feed):
         return parsers.mastodon.fetch_toots(**self._api_args())
 
     def load_icon(self):
-        self.icon_url = parsers.mastodon.fetch_avatar(self.url, self.access_token)
+        self.icon_url = parsers.mastodon.fetch_account_data(self.url, self.access_token)['avatar']
 
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_HOME}
 
