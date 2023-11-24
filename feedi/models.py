@@ -90,17 +90,16 @@ class MastodonAccount(db.Model):
     app_id = sa.orm.mapped_column(sa.ForeignKey("mastodon_apps.id"), nullable=False)
     user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False)
     access_token = sa.Column(sa.String, nullable=False)
+    username = sa.Column(sa.String)
 
     app = sa.orm.relationship("MastodonApp", lazy='joined')
     user = sa.orm.relationship("User", back_populates='mastodon_accounts')
 
-    @property
-    def username(self):
-        # FIXME this should probably be a db field instead of calling the api
+    def fetch_username(self):
         username = parsers.mastodon.fetch_account_data(
             self.app.api_base_url, self.access_token)['username']
         domain = self.app.api_base_url.split('//')[-1]
-        return f'{username}@{domain}'
+        self.username = f'{username}@{domain}'
 
 
 class KindleDevice(db.Model):

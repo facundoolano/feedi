@@ -136,6 +136,7 @@ def mastodon_oauth_callback():
     masto_acct = models.MastodonAccount(app_id=masto_app.id,
                                         user_id=current_user.id,
                                         access_token=access_token)
+    masto_acct.fetch_username()
     db.session.add(masto_acct)
     db.session.commit()
 
