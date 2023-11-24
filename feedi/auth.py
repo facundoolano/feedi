@@ -83,11 +83,11 @@ def mastodon_oauth_submit():
     Returns a redirect to the mastodon authorization url on that instance, which
     will then redirect to the callback route.
     """
-    # sanitize base url
     base_url = flask.request.form.get('url')
     if not base_url:
         return flask.render_template('mastodon.html', error_msg="The instance url is required")
 
+    # normalize base url
     url_parts = urllib.parse.urlparse(base_url)
     base_url = f'https://{url_parts.netloc}'
 
