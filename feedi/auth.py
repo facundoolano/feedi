@@ -71,13 +71,19 @@ def kindle_add_submit():
 @app.get("/auth/mastodon")
 @login_required
 def mastodon_oauth():
+    "Displays the form to initiate a mastodon oauth login flow."
     return flask.render_template('mastodon.html')
 
 
 @app.post("/auth/mastodon")
 @login_required
 def mastodon_oauth_submit():
-    """TODO"""
+    """
+    Starts the Oauth login flow to a user submitted mastodon instance.
+    If there's no app already registered for that instance, one is created.
+    Returns a redirect to the mastodon authorization url on that instance, which
+    will then redirect to the callback route.
+    """
     # sanitize base url
     base_url = flask.request.form.get('url')
     if not base_url:
@@ -86,6 +92,7 @@ def mastodon_oauth_submit():
     url_parts = urllib.parse.urlparse(base_url)
     base_url = f'https://{url_parts.netloc}'
 
+    # FIXME consider movint some of this stuff to the models
     # if not already registered, register with mastopy and save to db
     masto_app = db.session.scalar(db.select(models.MastodonApp).filter_by(api_base_url=base_url))
     if not masto_app:
@@ -104,16 +111,15 @@ def mastodon_oauth_submit():
     return flask.redirect(redirect_url)
 
 
-def mastodon_callback_url(base_url):
-    return flask.url_for('mastodon_oauth_callback',
-                         server=base_url,
-                         _external=True)
-
-
 @app.get("/auth/mastodon/callback")
 @login_required
 def mastodon_oauth_callback():
-    """TODO"""
+    """
+    The route the user will be redirected to after granting feedi permission to access
+    the mastodon account. The account will be logged in with the received authorization code
+    and an access token will be stored in the DB for subsequent access to the mastodon api.
+    Redirects to the feed add form to proceed creating a mastodon feed associated with the new account.
+    """
     code = flask.request.args.get('code')
     base_url = flask.request.args.get('server')
     if not code or not base_url:
@@ -145,3 +151,9 @@ def mastodon_oauth_callback():
 
     # redirect to feed creation with masto pre-selected
     return flask.redirect(flask.url_for('feed_add', masto_acct=masto_acct.id))
+
+
+def mastodon_callback_url(base_url):
+    return flask.url_for('mastodon_oauth_callback',
+                         server=base_url,
+                         _external=True)
