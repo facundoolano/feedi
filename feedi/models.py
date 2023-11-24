@@ -79,6 +79,61 @@ class MastodonApp(db.Model):
 
     accounts = sa.orm.relationship("MastodonAccount", back_populates="app")
 
+    @classmethod
+    def get_or_create(cls, api_base_url):
+        """
+        If a feedi app was already registered at the given mastodon instance, fetch it from
+        db and return it, otherwise register a new one and store it.
+        """
+        app = db.session.scalar(db.select(models.MastodonApp).filter_by(api_base_url=api_base_url))
+        if not masto_app:
+            app.logger.info('Registering mastodon application for %s', api_base_url)
+            client_id, client_secret = parsers.mastodon.register_app(
+                base_url, cls._oauth_callback_url(api_base_url))
+            masto_app = cls(api_base_url=api_base_url,
+                            client_id=client_id,
+                            client_secret=client_secret)
+            db.session.add(masto_app)
+            db.session.commit()
+        return app
+
+    def auth_redirect_url(self):
+        """
+        Get the url to redirect to to request access to a user account in the instance
+        where this app is registered.
+        """
+        return parsers.mastodon.auth_redirect_url(self.api_base_url,
+                                                  self.client_id,
+                                                  self.client_secret,
+                                                  self._oauth_callback_url(self.api_base_url))
+
+    def create_account(self, user_id  oauth_code):
+        "Given an oauth authorization code from this app, create a new mastodon user account."
+        access_token = parsers.mastodon.oauth_login(self.api_base_url,
+                                                    self.client_id,
+                                                    self.client_secret,
+                                                    self.mastodon_callback_url(self.api_base_url),
+                                                    oauth_code)
+
+        username = parsers.mastodon.fetch_account_data(
+            self.api_base_url, access_token)['username']
+        domain = self.app.api_base_url.split('//')[-1]
+        username = f'{username}@{domain}'
+
+        masto_acct = MastodonAccount(app_id=self.id,
+                                     user_id=user_id,
+                                     username=username,
+                                     access_token=access_token)
+        db.session.add(masto_acct)
+        db.session.commit()
+        return masto_acct
+
+    @staticmethod
+    def _oauth_callback_url(api_base_url):
+        return flask.url_for('mastodon_oauth_callback',
+                             server=api_base_url,
+                             _external=True)
+
 
 class MastodonAccount(db.Model):
     """
@@ -94,12 +149,6 @@ class MastodonAccount(db.Model):
 
     app = sa.orm.relationship("MastodonApp", lazy='joined')
     user = sa.orm.relationship("User", back_populates='mastodon_accounts')
-
-    def fetch_username(self):
-        username = parsers.mastodon.fetch_account_data(
-            self.app.api_base_url, self.access_token)['username']
-        domain = self.app.api_base_url.split('//')[-1]
-        self.username = f'{username}@{domain}'
 
 
 class KindleDevice(db.Model):

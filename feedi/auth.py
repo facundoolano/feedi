@@ -7,7 +7,6 @@ from flask_login import current_user, login_required
 
 import feedi.models as models
 from feedi.models import db
-from feedi.parsers import mastodon
 
 
 def init():
@@ -92,23 +91,8 @@ def mastodon_oauth_submit():
     url_parts = urllib.parse.urlparse(base_url)
     base_url = f'https://{url_parts.netloc}'
 
-    # FIXME consider movint some of this stuff to the models
-    # if not already registered, register with mastopy and save to db
-    masto_app = db.session.scalar(db.select(models.MastodonApp).filter_by(api_base_url=base_url))
-    if not masto_app:
-        app.logger.info('Registering mastodon application for %s', base_url)
-        client_id, client_secret = mastodon.register_app(base_url, mastodon_callback_url(base_url))
-        masto_app = models.MastodonApp(api_base_url=base_url,
-                                       client_id=client_id,
-                                       client_secret=client_secret)
-        db.session.add(masto_app)
-        db.session.commit()
-
-    redirect_url = mastodon.auth_redirect_url(masto_app.api_base_url,
-                                              masto_app.client_id,
-                                              masto_app.client_secret,
-                                              mastodon_callback_url(base_url))
-    return flask.redirect(redirect_url)
+    app = models.MastodonApp.get_or_create(base_url)
+    return flask.redirect(app.auth_redirect_url())
 
 
 @app.get("/auth/mastodon/callback")
@@ -132,28 +116,8 @@ def mastodon_oauth_callback():
         flask.abort(404)
 
     app.logger.info("Authenticating mastodon user %s at %s", current_user.id, base_url)
-    access_token = mastodon.oauth_login(masto_app.api_base_url,
-                                        masto_app.client_id,
-                                        masto_app.client_secret,
-                                        mastodon_callback_url(base_url),
-                                        code)
-
-    # store the token in the masto accounts table
-    masto_acct = models.MastodonAccount(app_id=masto_app.id,
-                                        user_id=current_user.id,
-                                        access_token=access_token)
-    db.session.add(masto_acct)
-    db.session.flush()
-    masto_acct.fetch_username()
-    db.session.commit()
-
+    account = masto_app.create_account(current_user.id, code)
     app.logger.info("Successfully logged in mastodon")
 
     # redirect to feed creation with masto pre-selected
-    return flask.redirect(flask.url_for('feed_add', masto_acct=masto_acct.id))
-
-
-def mastodon_callback_url(base_url):
-    return flask.url_for('mastodon_oauth_callback',
-                         server=base_url,
-                         _external=True)
+    return flask.redirect(flask.url_for('feed_add', masto_acct=account.id))
