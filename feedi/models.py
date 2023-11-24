@@ -76,6 +76,18 @@ class MastodonApp(db.Model):
     client_secret = sa.Column(sa.String, nullable=False)
 
 
+class MastodonAccount(db.Model):
+    """
+    Contains an access token for a user account on a specific mastodon instance.
+    The same access token can be used for more than one feed (e.g. home and notifications).
+    """
+    __tablename__ = 'mastodon_accounts'
+    id = sa.Column(sa.Integer, primary_key=True)
+    app_id = sa.orm.mapped_column(sa.ForeignKey("mastodon_apps.id"), nullable=False)
+    user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False)
+    access_token = sa.Column(sa.String, nullable=False)
+
+
 class KindleDevice(db.Model):
     __tablename__ = 'kindle_devices'
     id = sa.Column(sa.Integer, primary_key=True)
@@ -167,8 +179,8 @@ class Feed(db.Model):
         "Return the Feed model subclass for the given feed type."
         subclasses = {
             cls.TYPE_RSS: RssFeed,
-            cls.TYPE_MASTODON_ACCOUNT: MastodonAccount,
-            cls.TYPE_MASTODON_NOTIFICATIONS: MastodonNotifications,
+            cls.TYPE_MASTODON_ACCOUNT: MastodonHomeFeed,
+            cls.TYPE_MASTODON_NOTIFICATIONS: MastodonNotificationsFeed,
             cls.TYPE_CUSTOM: CustomFeed
         }
 
@@ -322,8 +334,8 @@ class RssFeed(Feed):
         self.icon_url = parsers.rss.fetch_icon(self.url)
 
 
-class MastodonAccount(Feed):
-    access_token = sa.Column(sa.String)
+class MastodonHomeFeed(Feed):
+    mastodon_account_id = sa.orm.mapped_column(sa.ForeignKey("mastodon_accounts.id"), nullable=True)
 
     @classmethod
     def from_valuelist(cls, _type, name, url, folder, access_token):
@@ -354,7 +366,7 @@ class MastodonAccount(Feed):
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_ACCOUNT}
 
 
-class MastodonNotifications(MastodonAccount):
+class MastodonNotificationsFeed(MastodonHomeFeed):
 
     def fetch_entry_data(self, _force=False):
         return parsers.mastodon.fetch_notifications(**self._api_args())
