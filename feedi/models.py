@@ -138,7 +138,7 @@ class Feed(db.Model):
     __tablename__ = 'feeds'
 
     TYPE_RSS = 'rss'
-    TYPE_MASTODON_ACCOUNT = 'mastodon'
+    TYPE_MASTODON_HOME = 'mastodon'
     TYPE_MASTODON_NOTIFICATIONS = 'mastodon_notifications'
     TYPE_CUSTOM = 'custom'
 
@@ -179,7 +179,7 @@ class Feed(db.Model):
         "Return the Feed model subclass for the given feed type."
         subclasses = {
             cls.TYPE_RSS: RssFeed,
-            cls.TYPE_MASTODON_ACCOUNT: MastodonHomeFeed,
+            cls.TYPE_MASTODON_HOME: MastodonHomeFeed,
             cls.TYPE_MASTODON_NOTIFICATIONS: MastodonNotificationsFeed,
             cls.TYPE_CUSTOM: CustomFeed
         }
@@ -363,7 +363,7 @@ class MastodonHomeFeed(Feed):
     def load_icon(self):
         self.icon_url = parsers.mastodon.fetch_avatar(self.url, self.access_token)
 
-    __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_ACCOUNT}
+    __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_HOME}
 
 
 class MastodonNotificationsFeed(MastodonHomeFeed):
