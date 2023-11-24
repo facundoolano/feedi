@@ -89,6 +89,7 @@ def mastodon_oauth_submit():
     # if not already registered, register with mastopy and save to db
     masto_app = db.session.scalar(db.select(models.MastodonApp).filter_by(api_base_url=base_url))
     if not masto_app:
+        app.logger.info('Registering mastodon application for %s', base_url)
         client_id, client_secret = mastodon.register_app(base_url, mastodon_callback_url(base_url))
         masto_app = models.MastodonApp(api_base_url=base_url,
                                        client_id=client_id,
@@ -113,15 +114,18 @@ def mastodon_callback_url(base_url):
 @login_required
 def mastodon_oauth_callback():
     """TODO"""
-
-    appid = flask.request.form.get('appid')
     code = flask.request.form.get('code')
     base_url = flask.request.form.get('server')
-    if not appid or not code or not base_url:
+    if not code or not base_url:
+        app.logger.error("Missing required parameter in mastodon oauth callback")
         flask.abort(400)
 
-    masto_app = db.get_or_404(models.MastodonApp, int(appid))
+    masto_app = db.session.scalar(db.select(models.MastodonApp).filter_by(api_base_url=base_url))
+    if not masto_app:
+        app.logger.error("Mastodon application not found for %s", base_url)
+        flask.abort(404)
 
+    app.logger.info("Authenticating mastodon user %s at %s", current_user.id, base_url)
     access_token = mastodon.oauth_login(masto_app.api_base_url,
                                         masto_app.client_id,
                                         masto_app.client_secret,
