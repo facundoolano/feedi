@@ -51,6 +51,8 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
 
+    mastodon_accounts = sa.orm.relationship("MastodonAccount", back_populates='user')
+
     @staticmethod
     def hash_password(raw_password):
         return security.generate_password_hash(raw_password)
@@ -89,7 +91,16 @@ class MastodonAccount(db.Model):
     user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False)
     access_token = sa.Column(sa.String, nullable=False)
 
-    app = sa.orm.relationship("MastodonApp", back_populates="accounts", lazy='joined')
+    app = sa.orm.relationship("MastodonApp", lazy='joined')
+    user = sa.orm.relationship("User", back_populates='mastodon_accounts')
+
+    @property
+    def username(self):
+        # FIXME this should probably be a db field instead of calling the api
+        username = parsers.mastodon.fetch_account_data(
+            self.app.api_base_url, self.access_token)['username']
+        domain = self.app.api_base_url.split('//')[-1]
+        return f'{username}@{domain}'
 
 
 class KindleDevice(db.Model):
