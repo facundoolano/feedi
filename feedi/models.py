@@ -107,7 +107,7 @@ class MastodonApp(db.Model):
                                                   self.client_secret,
                                                   self._oauth_callback_url(self.api_base_url))
 
-    def create_account(self, user_id  oauth_code):
+    def create_account(self, user_id, oauth_code):
         "Given an oauth authorization code from this app, create a new mastodon user account."
         access_token = parsers.mastodon.oauth_login(self.api_base_url,
                                                     self.client_id,
