@@ -89,7 +89,7 @@ class MastodonApp(db.Model):
         if not masto_app:
             app.logger.info('Registering mastodon application for %s', api_base_url)
             client_id, client_secret = parsers.mastodon.register_app(
-                base_url, cls._oauth_callback_url(api_base_url))
+                api_base_url, cls._oauth_callback_url(api_base_url))
             masto_app = cls(api_base_url=api_base_url,
                             client_id=client_id,
                             client_secret=client_secret)
