@@ -174,7 +174,9 @@ def autocomplete():
     static_options = [
         ('Home', flask.url_for('entry_list'), 'fas fa-home'),
         ('Favorites', flask.url_for('favorites', favorited=True), 'far fa-star'),
-        ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit')
+        ('Add Feed', flask.url_for('feed_add'), 'fas fa-plus'),
+        ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit'),
+        ('Mastodon login', flask.url_for('mastodon_oauth'), 'fab fa-mastodon')
     ]
     for so in static_options:
         if term.lower() in so[0].lower():

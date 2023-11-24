@@ -129,14 +129,8 @@
 
 {% block sidebar_right %}
 {% if feed %}
-<li>
-    <div class="level-left">
-        <div class="level-item">
-            <a class="dropdown-item" hx-post="{{ url_for('feed_list', feed_name=feed.name )}}"
-               _="on htmx:beforeRequest add .fa-spin to <i/> in me"
-            ><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{feed.name}}</a>
-        </div>
-    </div>
-</li>
+<a class="dropdown-item" hx-post="{{ url_for('feed_list', feed_name=feed.name )}}"
+   _="on htmx:beforeRequest add .fa-spin to <i/> in me"
+><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{feed.name}}</a>
 {% endif %}
 {% endblock %}
