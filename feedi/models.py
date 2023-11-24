@@ -75,6 +75,8 @@ class MastodonApp(db.Model):
     client_id = sa.Column(sa.String, nullable=False)
     client_secret = sa.Column(sa.String, nullable=False)
 
+    accounts = sa.orm.relationship("MastodonAccount", back_populates="app")
+
 
 class MastodonAccount(db.Model):
     """
@@ -338,7 +340,7 @@ class RssFeed(Feed):
 
 class MastodonHomeFeed(Feed):
     mastodon_account_id = sa.orm.mapped_column(sa.ForeignKey("mastodon_accounts.id"), nullable=True)
-    account = sa.orm.relationship("MastodonAccount", back_populates="feeds", lazy='joined')
+    account = sa.orm.relationship("MastodonAccount", lazy='joined')
 
     # FIXME this won't work anymore
     @classmethod

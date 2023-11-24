@@ -30,7 +30,7 @@ def oauth_login(server_url, client_id, client_secret, callback_url, code):
     client = mastodon.Mastodon(client_id=client_id,
                                client_secret=client_secret,
                                api_base_url=server_url)
-    return client.log_in(code=code, redirect_uri=callback_url)
+    return client.log_in(code=code, redirect_uri=callback_url, scopes=SCOPES)
 
 
 def fetch_account_data(server_url, access_token):

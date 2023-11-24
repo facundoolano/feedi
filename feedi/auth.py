@@ -114,8 +114,8 @@ def mastodon_callback_url(base_url):
 @login_required
 def mastodon_oauth_callback():
     """TODO"""
-    code = flask.request.form.get('code')
-    base_url = flask.request.form.get('server')
+    code = flask.request.args.get('code')
+    base_url = flask.request.args.get('server')
     if not code or not base_url:
         app.logger.error("Missing required parameter in mastodon oauth callback")
         flask.abort(400)
@@ -138,6 +138,8 @@ def mastodon_oauth_callback():
                                         access_token=access_token)
     db.session.add(masto_acct)
     db.session.commit()
+
+    app.logger.info("Successfully logged in mastodon")
 
     # redirect to feed creation with masto pre-selected
     return flask.redirect(flask.url_for('feed_add', masto_acct=masto_acct.id))
