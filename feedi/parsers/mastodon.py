@@ -28,6 +28,10 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
         # in that case the created date, the one displayed, will be taken from the reblogged toot
         entry['remote_updated'] = toot['edited_at'] or toot['created_at']
 
+        if toot.get('in_reply_to_id') and not toot.get('reblog'):
+            # we don't want to show replies as standalone toots in the timeline, unless they are reblogs
+            continue
+
         if toot.get('reblog'):
             reblogged_by = display_name(toot)
             entry['header'] = f'<i class="fas fa-retweet"></i> { reblogged_by } boosted'
