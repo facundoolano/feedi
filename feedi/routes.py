@@ -274,8 +274,11 @@ def feed_add_submit():
     # FIXME use a forms lib for validations, type coercion, etc
     values = {k: v.strip() for k, v in flask.request.form.items() if v}
 
-    if not values.get('name') or not values.get('url'):
-        return flask.render_template('feed_edit.html', error_msg='Name and url are required fields', **values)
+    if not values.get('name'):
+        return flask.render_template('feed_edit.html', error_msg='name is required', **values)
+
+    if not values.get('url') and not values.get('type', '').startswith('mastodon'):
+        return flask.render_template('feed_edit.html', error_msg='url is required', **values)
 
     name = values.get('name')
     feed = db.session.scalar(db.select(models.Feed).filter_by(
@@ -286,9 +289,10 @@ def feed_add_submit():
     feed_cls = models.Feed.resolve(values['type'])
     feed = feed_cls(**values)
     feed.user_id = current_user.id
+    db.session.add(feed)
+    db.session.flush()
 
     feed.load_icon()
-    db.session.add(feed)
     db.session.commit()
 
     # trigger a sync of this feed to fetch its entries.

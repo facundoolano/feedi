@@ -159,7 +159,7 @@ class Feed(db.Model):
     id = sa.Column(sa.Integer, primary_key=True)
     user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False, index=True)
 
-    url = sa.Column(sa.String, nullable=False)
+    url = sa.Column(sa.String)
     type = sa.Column(sa.String, nullable=False)
 
     name = sa.Column(sa.String)
@@ -380,7 +380,8 @@ class MastodonHomeFeed(Feed):
         return parsers.mastodon.fetch_toots(**self._api_args())
 
     def load_icon(self):
-        self.icon_url = parsers.mastodon.fetch_account_data(self.url, self.access_token)['avatar']
+        self.icon_url = parsers.mastodon.fetch_account_data(
+            self.account.app.api_base_url, self.account.access_token)['avatar']
 
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_HOME}
 

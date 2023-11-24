@@ -22,6 +22,23 @@
                 </div>
             </div>
 
+            <div class="field {% if not feed or not feed.type.startswith('mastodon')%}is-hidden{% endif %} "
+                 _="on load or change from <select[name='type']/> if (the value of the previous <select[name='type']/>) includes('mastodon') then remove .is-hidden else add .is-hidden end">
+
+
+                <div class="field">
+                    <label class="label">Account</label>
+                    <div class="select">
+                        <select name="mastodon_account_id">
+                            {% for account in current_user.mastodon_accounts %}
+                            <option value="{{account.id}}">{{ account.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <p class="help">To add an account, log into Mastodon <a href="{{url_for('mastodon_oauth')}}">here</a>.</p>
+                </div>
+            </div>
+
         <div class="field">
             <label class="label">Name</label>
             <div class="control">
@@ -29,24 +46,9 @@
             </div>
         </div>
 
-        <div class="field {% if not feed or not feed.type.startswith('mastodon')%}is-hidden{% endif %} "
-             _="on load or change from <select[name='type']/> if (the value of the previous <select[name='type']/>) includes('mastodon') then remove .is-hidden else add .is-hidden end">
-
-
-            <div class="field">
-                <label class="label">Mastodon account</label>
-                <div class="select">
-                    <select name="mastodon_account_id">
-                        {% for account in current_user.mastodon_accounts %}
-                        <option value="{{account.id}}">{{ account.username }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <p class="help">To add an account, log into Mastodon <a href="{{url_for('mastodon_oauth')}}">here</a>.</p>
-            </div>
-        </div>
-
-        <div class="field">
+        <div class="field"
+             _="on load or change from <select[name='type']/> if (the value of the previous <select[name='type']/>) includes('mastodon') then add .is-hidden else remove .is-hidden end"
+        >
             <label class="label">URL</label>
             <div class="control">
                 <input class="input" name="url" type="text"  {% if feed or url  %}value="{{ url or feed.url }}"{% endif %}>
