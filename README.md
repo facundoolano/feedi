@@ -152,7 +152,7 @@ feedi uses special purpose feed parsers both for reddit listing messages and lin
 The app allows to register a kindle device to send the cleaned up article HTML to it, yielding better results
 than the default Amazon Send to Kindle Chrome extension.
 
-To enable the "send to kindle" feature on your user, navigate to `/auth/kindle` and follow the instructions to register the device credentials.
+To enable the "send to kindle" feature on your user, navigate to `/auth/kindle` or type 'kindle' in the searchbox, and follow the instructions to register the device credentials.
 
 This features uses the [stkclient](https://github.com/maxdjohnson/stkclient) library and stores device credentials in the DB file (use at your own risk).
 
