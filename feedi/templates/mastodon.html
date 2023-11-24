@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block sidebar_right %}{%endblock%}
+
+
+{% block content %}
+<div class="box is-radiusless feed-entry  ">
+    <div class="content">
+        <h3>Mastodon account login</h3>
+        <br/>
+
+        <p>
+            To add a Mastodon account feed, enter the url of the instance where your account is registered below.
+            You'll be redirected to that instance to authorize the feedi app to access your Mastodon account,
+            and back to feedi to create the mastodon feed.
+            TEST: {{url_for('mastodon_oauth_calback', _external=True, appid=1)}}
+        </p>
+
+        {% if error_msg %}
+        <article class="message is-danger"><div class="message-body">{{ error_msg }}</div></article>
+        {% endif  %}
+        <form method="post">
+            <div class="field">
+                <label class="label">Instance URL</label>
+                <div class="control">
+                    <input class="input" name="url" type="text" placeholder="https://mastodon.social/">
+                </div>
+            </div>
+
+            <div class="level is-mobile">
+                <div class="field level-left"></div>
+                <div class="field is-grouped level-right">
+                    <p class="control"><button class="button is-primary" type="submit"
+                                               _="on click add .is-loading">Authenticate</button></p>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+    {% endblock %}
