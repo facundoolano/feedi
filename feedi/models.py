@@ -86,14 +86,14 @@ class MastodonApp(db.Model):
         db and return it, otherwise register a new one and store it.
         """
         app = db.session.scalar(db.select(models.MastodonApp).filter_by(api_base_url=api_base_url))
-        if not masto_app:
+        if not app:
             app.logger.info('Registering mastodon application for %s', api_base_url)
             client_id, client_secret = parsers.mastodon.register_app(
                 api_base_url, cls._oauth_callback_url(api_base_url))
-            masto_app = cls(api_base_url=api_base_url,
-                            client_id=client_id,
-                            client_secret=client_secret)
-            db.session.add(masto_app)
+            app = cls(api_base_url=api_base_url,
+                      client_id=client_id,
+                      client_secret=client_secret)
+            db.session.add(app)
             db.session.commit()
         return app
 
