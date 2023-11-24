@@ -89,7 +89,7 @@ def mastodon_oauth_submit():
     # if not already registered, register with mastopy and save to db
     masto_app = db.session.scalar(db.select(models.MastodonApp).filter_by(api_base_url=base_url))
     if not masto_app:
-        client_id, client_secret = mastodon.register_app(base_url)
+        client_id, client_secret = mastodon.register_app(base_url, mastodon_callback_url(base_url))
         masto_app = models.MastodonApp(api_base_url=base_url,
                                        client_id=client_id,
                                        client_secret=client_secret)
@@ -99,29 +99,34 @@ def mastodon_oauth_submit():
     redirect_url = mastodon.auth_redirect_url(masto_app.api_base_url,
                                               masto_app.client_id,
                                               masto_app.client_secret,
-                                              flask.url_for('mastodon_oauth_calback',
-                                                            appid=masto_app.id,
-                                                            _external=True))
+                                              mastodon_callback_url(base_url))
     return flask.redirect(redirect_url)
+
+
+def mastodon_callback_url(base_url):
+    return flask.url_for('mastodon_oauth_callback',
+                         server=base_url,
+                         _external=True)
 
 
 @app.get("/auth/mastodon/callback")
 @login_required
-def mastodon_oauth_calback():
+def mastodon_oauth_callback():
     """TODO"""
 
     appid = flask.request.form.get('appid')
     code = flask.request.form.get('code')
-    if not appid or not code:
+    base_url = flask.request.form.get('server')
+    if not appid or not code or not base_url:
         flask.abort(400)
 
     masto_app = db.get_or_404(models.MastodonApp, int(appid))
 
-    # mastodon api requires passing again the already used callback url
-    callback_url = flask.url_for('mastodon_oauth_calback',
-                                 appid=masto_app.id,
-                                 _external=True)
-    access_token = mastodon.oauth_login(masto_app.api_base_url, code, callback_url)
+    access_token = mastodon.oauth_login(masto_app.api_base_url,
+                                        masto_app.client_id,
+                                        masto_app.client_secret,
+                                        mastodon_callback_url(base_url),
+                                        code)
 
     # store the token in the masto accounts table
     masto_acct = models.MastodonAccount(app_id=masto_app.id,

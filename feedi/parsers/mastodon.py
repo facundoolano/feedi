@@ -8,20 +8,29 @@ import mastodon
 
 logger = logging.getLogger(__name__)
 
+CLIENT_NAME = 'feedi'
+SCOPES = ['read', 'write']
 
-def register_app(server_url):
-    # TODO
-    raise NotImplementedError
+
+def register_app(server_url, callback_url):
+    return mastodon.Mastodon.create_app(CLIENT_NAME, api_base_url=server_url,
+                                        redirect_uris=[callback_url],
+                                        scopes=SCOPES)
 
 
 def auth_redirect_url(server_url, client_id, client_secret, callback_url):
-    # TODO
-    raise NotImplementedError
+    client = mastodon.Mastodon(client_id=client_id,
+                               client_secret=client_secret,
+                               api_base_url=server_url)
+    return client.auth_request_url(client_id=client_id, scopes=SCOPES,
+                                   redirect_uris=callback_url)
 
 
-def oauth_login(server_url, code, callback_url):
-    # TODO
-    raise NotImplementedError
+def oauth_login(server_url, client_id, client_secret, callback_url, code):
+    client = mastodon.Mastodon(client_id=client_id,
+                               client_secret=client_secret,
+                               api_base_url=server_url)
+    return client.log_in(code=code, redirect_uri=callback_url)
 
 
 def fetch_account_data(server_url, access_token):
