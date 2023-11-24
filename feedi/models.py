@@ -62,6 +62,20 @@ class User(UserMixin, db.Model):
         return security.check_password_hash(self.password, raw_password)
 
 
+class MastodonApp(db.Model):
+    """
+    Represents the feedi app as registered in a particular mastodon instance. This app has associated
+    credentials to generate access tokens for all mastodon accounts in that instance.
+    Credentials are persisted so the app is still available for subsequent account registrations for a given
+    instance.
+    """
+    __tablename__ = 'mastodon_apps'
+    id = sa.Column(sa.Integer, primary_key=True)
+    api_base_url = sa.Column(sa.String, nullable=False)
+    client_id = sa.Column(sa.String, nullable=False)
+    client_secret = sa.Column(sa.String, nullable=False)
+
+
 class KindleDevice(db.Model):
     __tablename__ = 'kindle_devices'
     id = sa.Column(sa.Integer, primary_key=True)
