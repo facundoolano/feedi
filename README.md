@@ -97,10 +97,10 @@ There are analogous `make feed-dump` and `make feed-dump-opml` targets to export
 
 ### Mastodon account setup
 
-Mastodon integration supports feeds for the huser home and for the notification inbox.
-Before adding those feeds, feedi needs to be authorized to access the mastodon account by going to
-`Manage feeds > Mastodon login` or navigating to `/auth/mastodon`. After filling the mastodon instance name
-and grating access, feedi will redirect to feed add form, where either mastodon or mastodon notifications feed (or both) can be added.
+The Mastodon integration allows ingesting both the user home feed and the notification inbox as feeds.
+feedi first needs to be authorized to access the Mastodon account by navigating to
+`Manage feeds > Mastodon login` or to the url `/auth/mastodon`. After filling the instance name
+and grating access, feedi will redirect to the add feed form, where either mastodon or mastodon notifications feeds (or both) can be added.
 
 ### Github notification feed
 You can ingest the notifications from GitHub into feedi. To do so, navigate to your home feed at https://github.com/, open the page HTML source and search for an atom feed link. It should look something like:
