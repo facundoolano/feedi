@@ -130,6 +130,9 @@ class MastodonApp(db.Model):
 
     @staticmethod
     def _oauth_callback_url(api_base_url):
+        # the callback url contains the api_base_url because we need to know which app a callback belongs to
+        # and we can't use eg. the app id because it needs to be known before creating it, since it's passed
+        # to the registration api call
         return flask.url_for('mastodon_oauth_callback',
                              server=api_base_url,
                              _external=True)
