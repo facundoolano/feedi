@@ -115,10 +115,9 @@ class MastodonApp(db.Model):
                                                     self.mastodon_callback_url(self.api_base_url),
                                                     oauth_code)
 
-        username = parsers.mastodon.fetch_account_data(
-            self.api_base_url, access_token)['username']
+        account_data = parsers.mastodon.fetch_account_data(self.api_base_url, access_token)
         domain = self.app.api_base_url.split('//')[-1]
-        username = f'{username}@{domain}'
+        username = f"{account_data['username']}@{domain}"
 
         masto_acct = MastodonAccount(app_id=self.id,
                                      user_id=user_id,
