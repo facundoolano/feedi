@@ -85,7 +85,7 @@ class MastodonApp(db.Model):
         If a feedi app was already registered at the given mastodon instance, fetch it from
         db and return it, otherwise register a new one and store it.
         """
-        app = db.session.scalar(db.select(models.MastodonApp).filter_by(api_base_url=api_base_url))
+        app = db.session.scalar(db.select(MastodonApp).filter_by(api_base_url=api_base_url))
         if not app:
             app.logger.info('Registering mastodon application for %s', api_base_url)
             client_id, client_secret = parsers.mastodon.register_app(
@@ -112,11 +112,11 @@ class MastodonApp(db.Model):
         access_token = parsers.mastodon.oauth_login(self.api_base_url,
                                                     self.client_id,
                                                     self.client_secret,
-                                                    self.mastodon_callback_url(self.api_base_url),
+                                                    self._oauth_callback_url(self.api_base_url),
                                                     oauth_code)
 
         account_data = parsers.mastodon.fetch_account_data(self.api_base_url, access_token)
-        domain = self.app.api_base_url.split('//')[-1]
+        domain = self.api_base_url.split('//')[-1]
         username = f"{account_data['username']}@{domain}"
 
         masto_acct = MastodonAccount(app_id=self.id,
@@ -132,6 +132,7 @@ class MastodonApp(db.Model):
         # the callback url contains the api_base_url because we need to know which app a callback belongs to
         # and we can't use eg. the app id because it needs to be known before creating it, since it's passed
         # to the registration api call
+        import flask
         return flask.url_for('mastodon_oauth_callback',
                              server=api_base_url,
                              _external=True)
