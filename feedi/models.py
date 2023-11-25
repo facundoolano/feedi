@@ -403,14 +403,14 @@ class MastodonHomeFeed(Feed):
     mastodon_account_id = sa.orm.mapped_column(sa.ForeignKey("mastodon_accounts.id"), nullable=True)
     account = sa.orm.relationship("MastodonAccount", lazy='joined')
 
-    # FIXME this won't work anymore
     @classmethod
     def from_valuelist(cls, _type, name, url, folder, access_token):
-        return cls(**dict(name=name, url=url, folder=folder, access_token=access_token))
+        # csv export not supported for mastodon
+        raise NotImplementedError
 
-    # FIXME this won't work anymore
     def to_valuelist(self):
-        return [self.type, self.name, self.url, self.folder, self.access_token]
+        # csv export not supported for mastodon
+        raise NotImplementedError
 
     def _api_args(self):
         from flask import current_app as app
