@@ -15,10 +15,27 @@
                 <div class="select">
                     <select name="type" {% if feed %}disabled{% endif %}>
                         <option value="rss" {% if feed and feed.type == "rss" %} selected {% endif %}>RSS/Atom</option>
-                        <option value="mastodon" {% if feed and feed.type == "mastodon" %} selected {% endif %}>Mastodon</option>
+                        <option value="mastodon" {% if (feed and feed.type == "mastodon") or request.args.masto_acct %} selected {% endif %}>Mastodon</option>
                         <option value="mastodon_notifications" {% if feed and feed.type == "mastodon_notifications" %} selected {% endif %}>Mastodon Notifications</option>
                         <option value="custom" {% if feed and feed.type == "custom" %} selected {% endif %}>Custom</option>
                     </select>
+                </div>
+            </div>
+
+            <div class="field {% if not feed or not feed.type.startswith('mastodon')%}is-hidden{% endif %} "
+                 _="on load or change from <select[name='type']/> if (the value of the previous <select[name='type']/>) includes('mastodon') then remove .is-hidden else add .is-hidden end">
+
+
+                <div class="field">
+                    <label class="label">Account</label>
+                    <div class="select">
+                        <select name="mastodon_account_id">
+                            {% for account in current_user.mastodon_accounts %}
+                            <option value="{{account.id}}">{{ account.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <p class="help">To add an account, log into Mastodon <a href="{{url_for('mastodon_oauth')}}">here</a>.</p>
                 </div>
             </div>
 
@@ -29,17 +46,9 @@
             </div>
         </div>
 
-        <div class="field {% if not feed or not feed.type.startswith('mastodon')%}is-hidden{% endif %} " }"
-             _="on load or change from <select[name='type']/> if (the value of the previous <select[name='type']/>) includes('mastodon') then remove .is-hidden else add .is-hidden end">
-
-
-            <label class="label">Mastodon access token</label>
-            <div class="control">
-                <input class="input" name="access_token" type="text" {% if feed and feed.access_token %}value="{{ feed.access_token }}"{% endif %}>
-            </div>
-        </div>
-
-        <div class="field">
+        <div class="field"
+             _="on load or change from <select[name='type']/> if (the value of the previous <select[name='type']/>) includes('mastodon') then add .is-hidden else remove .is-hidden end"
+        >
             <label class="label">URL</label>
             <div class="control">
                 <input class="input" name="url" type="text"  {% if feed or url  %}value="{{ url or feed.url }}"{% endif %}>
@@ -122,14 +131,8 @@
 
 {% block sidebar_right %}
 {% if feed %}
-<li>
-    <div class="level-left">
-        <div class="level-item">
-            <a class="dropdown-item" hx-post="{{ url_for('feed_list', feed_name=feed.name )}}"
-               _="on htmx:beforeRequest add .fa-spin to <i/> in me"
-            ><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{feed.name}}</a>
-        </div>
-    </div>
-</li>
+<a class="dropdown-item" hx-post="{{ url_for('feed_list', feed_name=feed.name )}}"
+   _="on htmx:beforeRequest add .fa-spin to <i/> in me"
+><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{feed.name}}</a>
 {% endif %}
 {% endblock %}

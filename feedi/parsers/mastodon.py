@@ -8,11 +8,35 @@ import mastodon
 
 logger = logging.getLogger(__name__)
 
+CLIENT_NAME = 'feedi'
+SCOPES = ['read', 'write']
 
-def fetch_avatar(server_url, access_token):
+
+def register_app(server_url, callback_url):
+    return mastodon.Mastodon.create_app(CLIENT_NAME, api_base_url=server_url,
+                                        redirect_uris=[callback_url],
+                                        scopes=SCOPES)
+
+
+def auth_redirect_url(server_url, client_id, client_secret, callback_url):
+    client = mastodon.Mastodon(client_id=client_id,
+                               client_secret=client_secret,
+                               api_base_url=server_url)
+    return client.auth_request_url(client_id=client_id, scopes=SCOPES,
+                                   redirect_uris=callback_url)
+
+
+def oauth_login(server_url, client_id, client_secret, callback_url, code):
+    client = mastodon.Mastodon(client_id=client_id,
+                               client_secret=client_secret,
+                               api_base_url=server_url)
+    return client.log_in(code=code, redirect_uri=callback_url, scopes=SCOPES)
+
+
+def fetch_account_data(server_url, access_token):
     client = mastodon.Mastodon(access_token=access_token,
                                api_base_url=server_url)
-    return client.me()['avatar']
+    return client.me()
 
 
 def fetch_toots(server_url, access_token, newer_than=None, limit=None):
@@ -27,6 +51,10 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
         # it was reblogged. This will be used for sorting entries in the timeline.
         # in that case the created date, the one displayed, will be taken from the reblogged toot
         entry['remote_updated'] = toot['edited_at'] or toot['created_at']
+
+        if toot.get('in_reply_to_id') and not toot.get('reblog'):
+            # we don't want to show replies as standalone toots in the timeline, unless they are reblogs
+            continue
 
         if toot.get('reblog'):
             reblogged_by = display_name(toot)

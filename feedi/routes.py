@@ -174,7 +174,10 @@ def autocomplete():
     static_options = [
         ('Home', flask.url_for('entry_list'), 'fas fa-home'),
         ('Favorites', flask.url_for('favorites', favorited=True), 'far fa-star'),
-        ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit')
+        ('Add Feed', flask.url_for('feed_add'), 'fas fa-plus'),
+        ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit'),
+        ('Mastodon login', flask.url_for('mastodon_oauth'), 'fab fa-mastodon'),
+        ('Kindle setup', flask.url_for('kindle_add'), 'fas fa-tablet-alt')
     ]
     for so in static_options:
         if term.lower() in so[0].lower():
@@ -271,8 +274,11 @@ def feed_add_submit():
     # FIXME use a forms lib for validations, type coercion, etc
     values = {k: v.strip() for k, v in flask.request.form.items() if v}
 
-    if not values.get('name') or not values.get('url'):
-        return flask.render_template('feed_edit.html', error_msg='Name and url are required fields', **values)
+    if not values.get('name'):
+        return flask.render_template('feed_edit.html', error_msg='name is required', **values)
+
+    if not values.get('url') and not values.get('type', '').startswith('mastodon'):
+        return flask.render_template('feed_edit.html', error_msg='url is required', **values)
 
     name = values.get('name')
     feed = db.session.scalar(db.select(models.Feed).filter_by(
@@ -283,9 +289,10 @@ def feed_add_submit():
     feed_cls = models.Feed.resolve(values['type'])
     feed = feed_cls(**values)
     feed.user_id = current_user.id
+    db.session.add(feed)
+    db.session.flush()
 
     feed.load_icon()
-    db.session.add(feed)
     db.session.commit()
 
     # trigger a sync of this feed to fetch its entries.

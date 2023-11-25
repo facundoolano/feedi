@@ -97,29 +97,10 @@ There are analogous `make feed-dump` and `make feed-dump-opml` targets to export
 
 ### Mastodon account setup
 
-One or more Mastodon accounts can be added to ingest the user home feed and notifications.
-The account login flow isn't supported in the web interface yet, so some steps need to be run manually
-in the python shell to obtain a user access token:
-
-    make shell
-    >>> import mastodon
-    >>> Mastodon.create_app("feedi", scopes=['read'], to_file='mastodon.creds', api_base_url='https://mastodon.social')
-
-The code above will register a `feedi` app in the mastodon.social server, storing the client and secret in the `mastodon.creds` file.
-Note that you don't need to create more than one app per server (even if to plan to log in mutliple times or multiple accounts,
-the same app credentials file can be reused).
-
-Once app credentials are available, they can be used to instantiate a client and log in a user to obtain an access token:
-
-    >>> client = Mastodon('mastodon.creds', api_base_url='https://mastodon.social')
-    >>> client.log_in(username='some@email.address', password='password', scopes=['read'])
-    [CLIENT ACCESS TOKEN PRINTED HERE]
-
-With the resulting access token, you can add the user home feed or the user notification feed from the web UI by accessing
- `/feeds/new` and selecting feed type `Mastodon` or `Mastodon Notifications`. (the same access token can be reused to add
- both feeds).
-
-See the [Mastodon.py documentation](https://mastodonpy.readthedocs.io/en/stable/#usage) for further details.
+The Mastodon integration allows ingesting both the user home feed and the notification inbox as feeds.
+feedi first needs to be authorized to access the Mastodon account by navigating to
+`Manage feeds > Mastodon login` or to the url `/auth/mastodon`. After filling the instance name
+and grating access, feedi will redirect to the add feed form, where either mastodon or mastodon notifications feeds (or both) can be added.
 
 ### Github notification feed
 You can ingest the notifications from GitHub into feedi. To do so, navigate to your home feed at https://github.com/, open the page HTML source and search for an atom feed link. It should look something like:
@@ -152,7 +133,7 @@ feedi uses special purpose feed parsers both for reddit listing messages and lin
 The app allows to register a kindle device to send the cleaned up article HTML to it, yielding better results
 than the default Amazon Send to Kindle Chrome extension.
 
-To enable the "send to kindle" feature on your user, navigate to `/auth/kindle` and follow the instructions to register the device credentials.
+To enable the "send to kindle" feature on your user, navigate to `/auth/kindle` or type 'kindle' in the searchbox, and follow the instructions to register the device credentials.
 
 This features uses the [stkclient](https://github.com/maxdjohnson/stkclient) library and stores device credentials in the DB file (use at your own risk).
 
