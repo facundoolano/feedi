@@ -87,7 +87,6 @@ class MastodonApp(db.Model):
         """
         app = db.session.scalar(db.select(MastodonApp).filter_by(api_base_url=api_base_url))
         if not app:
-            app.logger.info('Registering mastodon application for %s', api_base_url)
             client_id, client_secret = parsers.mastodon.register_app(
                 api_base_url, cls._oauth_callback_url(api_base_url))
             app = cls(api_base_url=api_base_url,

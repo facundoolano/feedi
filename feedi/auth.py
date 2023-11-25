@@ -91,8 +91,9 @@ def mastodon_oauth_submit():
     url_parts = urllib.parse.urlparse(base_url)
     base_url = f'https://{url_parts.netloc}'
 
-    app = models.MastodonApp.get_or_create(base_url)
-    return flask.redirect(app.auth_redirect_url())
+    app.logger.info('Registering mastodon application for %s', base_url)
+    masto_app = models.MastodonApp.get_or_create(base_url)
+    return flask.redirect(masto_app.auth_redirect_url())
 
 
 @app.get("/auth/mastodon/callback")
