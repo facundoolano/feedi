@@ -16,7 +16,7 @@ from flask_login import current_user, login_required
 import feedi.models as models
 import feedi.tasks as tasks
 from feedi.models import db
-from feedi.parsers import rss
+from feedi.parsers import mastodon, rss
 from feedi.requests import requests
 
 
@@ -229,6 +229,41 @@ def entry_favorite(id):
         entry.feed.score += 2
 
     db.session.commit()
+    return '', 204
+
+
+@app.put("/mastodon/favorites/<int:id>")
+@login_required
+def mastodon_favorite(id):
+    entry = db.get_or_404(models.Entry, id)
+    if entry.feed.user_id != current_user.id:
+        flask.abort(404)
+
+    if not entry.feed.is_mastodon:
+        flask.abort(400)
+
+    masto_acct = entry.feed.account
+    mastodon.favorite(masto_acct.app.api_base_url,
+                      masto_acct.access_token,
+                      entry.remote_id)
+    return '', 204
+
+
+@app.put("/mastodon/boosts/<int:id>")
+@login_required
+def mastodon_boost(id):
+    entry = db.get_or_404(models.Entry, id)
+    if entry.feed.user_id != current_user.id:
+        flask.abort(404)
+
+    if not entry.feed.is_mastodon:
+        flask.abort(400)
+
+    masto_acct = entry.feed.account
+    mastodon.boost(masto_acct.app.api_base_url,
+                   masto_acct.access_token,
+                   entry.remote_id)
+
     return '', 204
 
 

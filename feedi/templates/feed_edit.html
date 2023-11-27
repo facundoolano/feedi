@@ -22,7 +22,7 @@
                 </div>
             </div>
 
-            <div class="field {% if not feed or not feed.type.startswith('mastodon')%}is-hidden{% endif %} "
+            <div class="field {% if not feed or not feed.is_mastodon %}is-hidden{% endif %} "
                  _="on load or change from <select[name='type']/> if (the value of the previous <select[name='type']/>) includes('mastodon') then remove .is-hidden else add .is-hidden end">
 
 

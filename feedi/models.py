@@ -9,6 +9,7 @@ import stkclient
 import werkzeug.security as security
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.ext.hybrid import hybrid_property
 
 import feedi.parsers as parsers
 from feedi.requests import get_favicon
@@ -253,6 +254,10 @@ class Feed(db.Model):
         if not subcls:
             raise ValueError(f'unknown type {type}')
         return subcls
+
+    @hybrid_property
+    def is_mastodon(self):
+        return (self.type == Feed.TYPE_MASTODON_HOME) | (self.type == Feed.TYPE_MASTODON_NOTIFICATIONS)
 
     @classmethod
     def from_valuelist(cls, type, name, url, folder):

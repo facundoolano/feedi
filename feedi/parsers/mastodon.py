@@ -39,6 +39,18 @@ def fetch_account_data(server_url, access_token):
     return client.me()
 
 
+def boost(server_url, access_token, toot_id):
+    client = mastodon.Mastodon(access_token=access_token,
+                               api_base_url=server_url)
+    client.status_reblog(id=toot_id)
+
+
+def favorite(server_url, access_token, toot_id):
+    client = mastodon.Mastodon(access_token=access_token,
+                               api_base_url=server_url)
+    client.status_favourite(id=toot_id)
+
+
 def fetch_toots(server_url, access_token, newer_than=None, limit=None):
     toots = mastodon_request(server_url, 'timeline', access_token, newer_than, limit)
     entries = []

@@ -183,10 +183,7 @@ def csv_dump(file, user):
         feed_writer = csv.writer(csv_file)
         for feed in db.session.execute(db.select(models.Feed)
                                        .filter_by(user_id=user.id)
-                                       .filter(models.Feed.type.not_in([
-                                           models.Feed.TYPE_MASTODON_HOME,
-                                           models.Feed.TYPE_MASTODON_NOTIFICATIONS
-                                       ]))).scalars():
+                                       .filter(models.Feed.is_mastodon == False)).scalars():
             feed_writer.writerow(feed.to_valuelist())
             app.logger.info('written %s', feed)
 
