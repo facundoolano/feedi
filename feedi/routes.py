@@ -322,6 +322,11 @@ def feed_add_submit():
         return flask.render_template('feed_edit.html', error_msg=f"A feed with name '{name}' already exists", **values)
 
     feed_cls = models.Feed.resolve(values['type'])
+
+    # FIXME this is an ugly patch
+    if not values['type'].startswith('mastodon'):
+        del values['mastodon_account_id']
+
     feed = feed_cls(**values)
     feed.user_id = current_user.id
     db.session.add(feed)
