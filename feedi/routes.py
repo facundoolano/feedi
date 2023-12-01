@@ -324,7 +324,7 @@ def feed_add_submit():
     feed_cls = models.Feed.resolve(values['type'])
 
     # FIXME this is an ugly patch
-    if not values['type'].startswith('mastodon'):
+    if not values['type'].startswith('mastodon') and values.get('mastodon_account_id'):
         del values['mastodon_account_id']
 
     feed = feed_cls(**values)
