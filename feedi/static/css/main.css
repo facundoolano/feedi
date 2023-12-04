@@ -4,12 +4,12 @@
     min-height: 100vh;
 }
 
-/* TODO similar to has-navbar-fixed-top-touch
+/* TODO similar to has-navbar-fixed-bottom-touch
 but we only want it for mobile*/
 @media screen and (max-width: 768px) {
     body {
         /* FIXME $navbar-height */
-        padding-top: 3.25rem!important;
+        /* padding-bottom: 3.25rem!important; */
     }
 }
 
@@ -136,7 +136,7 @@ but we only want it for mobile*/
 }
 
 .navbar {
-    border-bottom: solid 1px hsl(0, 0%, 90%);
+    border-top: solid 1px hsl(0, 0%, 90%);
 }
 
 .card.feed-entry, .box.feed-entry  {
@@ -289,6 +289,11 @@ img[src=""] {
     margin-top:0!important;
     margin-bottom:0!important;
     visibility: hidden;
+}
+
+.navbar-menu {
+    /* invert the shadow */
+    box-shadow: 0 -8px 16px rgba(10, 10, 10, 0.1)!important;
 }
 
 .autocomplete-items .navbar-dropdown {
