@@ -18,6 +18,13 @@
 </aside>
 {% endblock %}
 
+{% block mobile_navbar %}
+<a class="navbar-item"
+   _="on click if history.length == 1 go to url '{{ url_for("entry_list")}}' else go back end">
+    <h1 class="title is-4 has-text-grey-dark"><i class="fas fa-arrow-left"></i> </h1>
+</a>
+{% endblock %}
+
 {% block content %}
 
 <div class="box is-radiusless feed-entry">
