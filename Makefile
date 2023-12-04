@@ -21,7 +21,7 @@ node_modules:
 
 # Serve the app in development mode
 run:
-	$(flask) run --debug --reload
+	$(flask) run --debug --reload -h 0.0.0.0
 
 # Build a docker for the app container and run it
 docker:
