@@ -250,6 +250,13 @@ img[src=""] {
     width: 100%;
 }
 
+@media screen and (max-width: 768px) {
+.entry-quick-actions {
+    position: fixed;
+    right: .5rem;
+}
+}
+
 /* FIXME mobile-only, do this properly with sass */
 @media screen and (max-width: 1023px) {
     .entry-content {
