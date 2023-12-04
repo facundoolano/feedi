@@ -312,6 +312,14 @@ img[src=""] {
     background: white;
 }
 
+@media screen and (max-width: 768px) {
+    /* patch autocomplete to dropup on mobile only */
+    .autocomplete-items .navbar-dropdown {
+        bottom: 29px;
+    }
+}
+
+
 .autocomplete-items .navbar-item {
     padding: .375rem!important;
     white-space: unset!important;
