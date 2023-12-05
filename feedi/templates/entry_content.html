@@ -9,7 +9,7 @@
             <div class="level-left">
                 <div class="level-item">
                     <a _="on click if history.length == 1 go to url '{{ url_for("entry_list")}}' else go back end
-                          then on keyup[key is 'Escape'] elsewhere trigger click on me"
+                       then on keyup[key is 'Escape'] elsewhere trigger click on me"
                     ><icon><i class="fas fa-arrow-left"></i></icon> Back</a>
                 </div>
             </div>
@@ -19,10 +19,53 @@
 {% endblock %}
 
 {% block mobile_navbar %}
-<a class="navbar-item"
-   _="on click if history.length == 1 go to url '{{ url_for("entry_list")}}' else go back end">
-    <h1 class="title is-4 has-text-grey-dark"><i class="fas fa-arrow-left"></i> </h1>
-</a>
+<div class="navbar-brand">
+    <div class="navbar-item is-expanded">
+        <div class="level is-mobile " style="flex: 1 0 auto;">
+            <a class="is-white icon is-rounded level-item" title="Back"
+               _="on click if history.length == 1 go to url '{{ url_for("entry_list")}}' else go back end"
+            >
+                <i class="fas fa-arrow-left fa-lg"></i>
+            </a>
+        {% if entry.id %}
+        <a class="level-item icon is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite"
+           hx-put="{{ url_for('entry_favorite', id=entry.id )}}"
+           _="on click toggle .toggled"
+        ><i class="fas fa-star"></i></a>
+        {% endif %}
+
+        {% if entry.has_comments_url() %}
+        <a class="is-white icon is-rounded level-item" title="Comment"
+           href="{{ entry.entry_url}}" target="_blank">
+            <i class="fas fa-comment-alt"></i>
+        </a>
+        {% else %}
+        <a class="is-white icon is-rounded level-item" title="Go to source"
+           href="{{ entry.content_url}}" target="_blank">
+            <i class="fas fa-external-link-alt"></i>
+        </a>
+        {% endif %}
+
+        {% if entry.id %}
+        <a class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin"
+           hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
+           hx-swap="none"
+           _="on click toggle .toggled">
+            <i class="fas fa-thumbtack"></i></a>
+        {% endif %}
+
+        <a class="level-item icon hover-icon is-white is-rounded pin-button" title="More"
+           _="on click toggle .is-active then toggle .is-active on the previous .navbar-menu"
+        >
+            <i class="fas fa-bars"></i></a>
+
+    </div>
+    </div>
+
+</div>
+
+
+
 {% endblock %}
 
 {% block content %}
@@ -40,29 +83,6 @@
       <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.content_url %}· {{ entry.content_url | url_domain}}{% endif %}</small>
   </div>
 
-  <div class="media-right">
-      <div class="level entry-quick-actions">
-          <div class="level-left is-hidden-mobile">
-              {% block action_favorite %}
-              <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite entry"
-                 hx-put="{{ url_for('entry_favorite', id=entry.id )}}"
-                 _="on click toggle .toggled"
-              ><i class="fas fa-star"></i></a>
-              {% endblock %}
-              {% block action_pin %}
-              <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
-                 hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
-                 hx-swap="none"
-                 _="on click toggle .toggled">
-                  <i class="fas fa-thumbtack"></i></a>
-              {% endblock %}
-          </div>
-          <div class="level-left is-hidden-tablet">
-              {{ self.action_pin() }}
-              {{ self.action_favorite() }}
-          </div>
-      </div>
-  </div>
     </article>
     <div class="content entry-content">
         {% if content %}

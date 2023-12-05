@@ -27,8 +27,8 @@
                 {{ self.sidebar_right() }}
             </div>
         </div>
+        {% block mobile_navbar %}
         <div class="navbar-brand">
-            {% block mobile_navbar %}
             <a class="navbar-item"
                {% if request.endpoint in ['entry_list', 'favorites'] %}
                hx-get="{{ url_for('entry_list', **filters) }}"
@@ -39,8 +39,6 @@
             >
                 <h1 class="title is-4">feedi</h1>
             </a>
-            {% endblock %}
-
             {% if current_user.is_authenticated %}
             <div class="navbar-item navbar-autocomplete" href="/">
                 {% include "autocomplete.html" %}
@@ -54,7 +52,9 @@
                 <span aria-hidden="true"></span>
             </a>
             {% endif %}
+
         </div>
+        {% endblock %}
     </nav>
     <section class="container">
         <div class="columns">
