@@ -9,7 +9,7 @@
             <div class="level-left">
                 <div class="level-item">
                     <a _="on click if history.length == 1 go to url '{{ url_for("entry_list")}}' else go back end
-                          then on keyup[key is 'Escape'] elsewhere trigger click on me"
+                       then on keyup[key is 'Escape'] elsewhere trigger click on me"
                     ><icon><i class="fas fa-arrow-left"></i></icon> Back</a>
                 </div>
             </div>
@@ -19,10 +19,44 @@
 {% endblock %}
 
 {% block mobile_navbar %}
-<a class="navbar-item"
-   _="on click if history.length == 1 go to url '{{ url_for("entry_list")}}' else go back end">
-    <h1 class="title is-4 has-text-grey-dark"><i class="fas fa-arrow-left"></i> </h1>
-</a>
+<div class="navbar-brand">
+    <div class="navbar-item is-expanded">
+        <div class="level is-mobile " style="flex: 1 0 auto;">
+            <a class="is-white icon is-rounded level-item" title="back"
+               _="on click if history.length == 1 go to url '{{ url_for("entry_list")}}' else go back end"
+            >
+                <i class="fas fa-arrow-left fa-lg"></i>
+            </a>
+        <a class="level-item icon is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite"
+           hx-put="{{ url_for('entry_favorite', id=entry.id )}}"
+           _="on click toggle .toggled"
+        ><i class="fas fa-star"></i></a>
+
+        {% if entry.has_comments_url() %}
+        <a class="is-white icon is-rounded level-item" title="Comment"
+           href="{{ entry.entry_url}}" target="_blank">
+            <i class="fas fa-comment-alt"></i>
+        </a>
+        {% endif %}
+
+        <a class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
+           hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
+           hx-target="#pinned-entry-list"
+           _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />">
+            <i class="fas fa-thumbtack"></i></a>
+
+        <a class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
+           _="on click toggle .is-active then toggle .is-active on the previous .navbar-menu"
+        >
+            <i class="fas fa-bars"></i></a>
+
+    </div>
+    </div>
+
+</div>
+
+
+
 {% endblock %}
 
 {% block content %}
