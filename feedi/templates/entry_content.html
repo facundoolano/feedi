@@ -46,11 +46,11 @@
 
         <a class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin"
            hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
-           hx-target="#pinned-entry-list"
-           _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />">
+           hx-swap="none"
+           _="on click toggle .toggled">
             <i class="fas fa-thumbtack"></i></a>
 
-        <a class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="More"
+        <a class="level-item icon hover-icon is-white is-rounded pin-button" title="More"
            _="on click toggle .is-active then toggle .is-active on the previous .navbar-menu"
         >
             <i class="fas fa-bars"></i></a>
