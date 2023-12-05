@@ -22,7 +22,7 @@
 <div class="navbar-brand">
     <div class="navbar-item is-expanded">
         <div class="level is-mobile " style="flex: 1 0 auto;">
-            <a class="is-white icon is-rounded level-item" title="back"
+            <a class="is-white icon is-rounded level-item" title="Back"
                _="on click if history.length == 1 go to url '{{ url_for("entry_list")}}' else go back end"
             >
                 <i class="fas fa-arrow-left fa-lg"></i>
@@ -37,15 +37,20 @@
            href="{{ entry.entry_url}}" target="_blank">
             <i class="fas fa-comment-alt"></i>
         </a>
+        {% else %}
+        <a class="is-white icon is-rounded level-item" title="Go to source"
+           href="{{ entry.content_url}}" target="_blank">
+            <i class="fas fa-external-link-alt"></i>
+        </a>
         {% endif %}
 
-        <a class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
+        <a class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin"
            hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
            hx-target="#pinned-entry-list"
            _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />">
             <i class="fas fa-thumbtack"></i></a>
 
-        <a class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
+        <a class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="More"
            _="on click toggle .is-active then toggle .is-active on the previous .navbar-menu"
         >
             <i class="fas fa-bars"></i></a>
