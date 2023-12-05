@@ -139,6 +139,10 @@ but we only want it for mobile*/
     border-top: solid 1px hsl(0, 0%, 90%);
 }
 
+.navbar-brand .navbar-item {
+    padding-right: 0
+}
+
 .card.feed-entry, .box.feed-entry  {
     box-shadow: 0 0 0 0;
     border: solid 1px hsl(0, 0%, 90%);
