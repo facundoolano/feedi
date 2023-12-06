@@ -76,13 +76,27 @@
             <p class="image is-64x64">
                 {% include "entry_avatar.html" %}
             </p>
-  </figure>
-  <div class="media-content">
-      <a href="{{ entry.content_url }}" target="_blank"><strong>{{ entry.title }}</strong></a>
-      <br/>
-      <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.content_url %}· {{ entry.content_url | url_domain}}{% endif %}</small>
-  </div>
-
+        </figure>
+        <div class="media-content">
+            <a href="{{ entry.content_url }}" target="_blank"><strong>{{ entry.title }}</strong></a>
+            <br/>
+            <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.content_url %}· {{ entry.content_url | url_domain}}{% endif %}</small>
+        </div>
+        <div class="media-right">
+            <div class="level entry-quick-actions">
+                <div class="level-left is-hidden-mobile">
+                    <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite entry"
+                       hx-put="{{ url_for('entry_favorite', id=entry.id )}}"
+                       _="on click toggle .toggled"
+                    ><i class="fas fa-star"></i></a>
+                    <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
+                       hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
+                       hx-swap="none"
+                       _="on click toggle .toggled">
+                        <i class="fas fa-thumbtack"></i></a>
+                </div>
+            </div>
+        </div>
     </article>
     <div class="content entry-content">
         {% if content %}
