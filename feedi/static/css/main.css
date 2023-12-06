@@ -140,7 +140,11 @@ but we only want it for mobile*/
 }
 
 .navbar-brand .navbar-item {
-    padding-right: 0
+    padding-right: 0;
+}
+
+.navbar-item:hover, .navbar-burger:hover {
+    background-color: unset!important;
 }
 
 .card.feed-entry, .box.feed-entry  {
