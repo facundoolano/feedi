@@ -83,8 +83,8 @@ class RSSParser(CachingRequestsMixin):
         feed = feedparser.parse(self.url, etag=etag, modified=modified)
 
         if feed.bozo:
-            logger.error("Failure parsing feed %s", feed.bozo_exception)
-            return None, [], None, None
+            logger.warning("Failure parsing feed %s %s", self.feed_name, feed.bozo_exception)
+            # this doesn't necessarily mean the feed was not parsed, so moving on
 
         if not feed['feed']:
             logger.info('skipping empty feed %s %s', self.url, feed.get('debug_message'))
@@ -99,37 +99,58 @@ class RSSParser(CachingRequestsMixin):
         modified = getattr(feed, 'modified', None)
 
         entries = []
-        is_first_load = previous_fetch is None
         for item in feed['items']:
 
-            if self.should_skip(item):
-                continue
-
-            # don't try to process stuff that hasn't changed recently
-            updated = item.get('updated_parsed', item.get('published_parsed'))
-            if updated and previous_fetch and to_datetime(updated) < previous_fetch:
-                logger.debug('skipping up to date entry %s', item.get('link'))
-                continue
-
-            # or that's too old
-            published = item.get('published_parsed', item.get('updated_parsed'))
-            if (self.skip_older_than and published and to_datetime(published) < self.skip_older_than):
-                # unless it's the first time we're loading it, in which case we prefer to show old stuff
-                # to showing nothing
-                if not is_first_load or not self.min_amount or len(entries) >= self.min_amount:
-                    logger.debug('skipping old entry %s', item.get('link'))
-                    continue
-
-            if filters and not self._matches(item, filters):
-                logger.debug('skipping entry not matching filters %s %s', item.get('link'), filters)
-                continue
-
-            entry = self.parse(item)
-            if entry:
-                entry['raw_data'] = json.dumps(item)
-                entries.append(entry)
+            try:
+                entry = self.parse(item, len(entries), previous_fetch, filters)
+                if entry:
+                    entry['raw_data'] = json.dumps(item)
+                    entries.append(entry)
+            except Exception as error:
+                exc_desc_lines = traceback.format_exception_only(type(error), error)
+                exc_desc = ''.join(exc_desc_lines).rstrip()
+                logger.error("skipping errored entry %s %s %s",
+                             self.feed_name,
+                             item.get('link'),
+                             exc_desc)
+                logger.debug(traceback.format_exc())
 
         return feed['feed'], entries, etag, modified
+
+    def parse(self, item, parsed_count, previous_fetch, filters):
+        """
+        Pass the given raw entry data to each of the field parsers to produce an
+        entry values dict.
+        """
+        if self.should_skip(item):
+            return
+
+        # don't try to process stuff that hasn't changed recently
+        updated = item.get('updated_parsed', item.get('published_parsed'))
+        if updated and previous_fetch and to_datetime(updated) < previous_fetch:
+            logger.debug('skipping up to date entry %s', item.get('link'))
+            return
+
+        # or that's too old
+        is_first_load = previous_fetch is None
+        published = item.get('published_parsed', item.get('updated_parsed'))
+        if (self.skip_older_than and published and to_datetime(published) < self.skip_older_than):
+            # unless it's the first time we're loading it, in which case we prefer to show old stuff
+            # to showing nothing
+            if not is_first_load or not self.min_amount or parsed_count >= self.min_amount:
+                logger.debug('skipping old entry %s', item.get('link'))
+                return
+
+        if filters and not self._matches(item, filters):
+            logger.debug('skipping entry not matching filters %s %s', item.get('link'), filters)
+            return
+
+        result = {}
+        for field in self.FIELDS:
+            method = 'parse_' + field
+            result[field] = getattr(self, method)(item)
+
+        return result
 
     @staticmethod
     def should_skip(_entry):
@@ -153,29 +174,6 @@ class RSSParser(CachingRequestsMixin):
 
         return True
 
-    def parse(self, entry):
-        """
-        Pass the given raw entry data to each of the field parsers to produce an
-        entry values dict.
-        """
-        result = {}
-
-        for field in self.FIELDS:
-            method = 'parse_' + field
-            try:
-                result[field] = getattr(self, method)(entry)
-            except Exception as error:
-                exc_desc_lines = traceback.format_exception_only(type(error), error)
-                exc_desc = ''.join(exc_desc_lines).rstrip()
-                logger.error("skipping errored entry %s %s %s",
-                             self.feed_name,
-                             entry.get('link'),
-                             exc_desc)
-                logger.debug(traceback.format_exc())
-                return
-
-        return result
-
     def parse_title(self, entry):
         return entry['title']
 
@@ -188,6 +186,8 @@ class RSSParser(CachingRequestsMixin):
     def parse_username(self, entry):
         # TODO if missing try to get from meta?
         author = entry.get('author', '')
+        if author:
+            author = BeautifulSoup(author, 'lxml').text
 
         if ',' in author:
             author = author.split(',')[0]
@@ -205,7 +205,9 @@ class RSSParser(CachingRequestsMixin):
 
     def parse_body(self, entry):
         summary = entry.get('summary')
-        if not summary:
+        if summary:
+            summary = html.unescape(summary)
+        else:
             url = self.parse_content_url(entry)
             if not url:
                 return
@@ -342,26 +344,43 @@ def short_date_handler(date_str):
 feedparser.registerDateHandler(short_date_handler)
 
 
-class RedditParser(RSSParser):
+class RedditInboxParser(RSSParser):
+    "Parser for message inboxes, see https://www.reddit.com/prefs/feeds/ when logged in."
+
     @staticmethod
     def is_compatible(feed_url):
-        return 'reddit.com' in feed_url
+        return 'reddit.com/message' in feed_url
+
+    def parse_body(self, entry):
+        return entry['content'][0]['value']
+
+    def parse_title(self, entry):
+        return entry['title'].split(': ')[-1].capitalize()
+
+
+class RedditParser(RSSParser):
+    "Parser for public or private reddit listings (i.e. subreddits, user messages, home feed, etc.)"
+
+    @staticmethod
+    def is_compatible(feed_url):
+        # looks like reddit but not like the inbox feed
+        return 'reddit.com' in feed_url and not 'reddit.com/message' in feed_url
 
     def parse_body(self, entry):
         soup = BeautifulSoup(entry['summary'], 'lxml')
-        link_url = soup.find("a", string="[link]")
-        comments_url = soup.find("a", string="[comments]")
+        link_anchor = soup.find("a", string="[link]")
+        comments_anchor = soup.find("a", string="[comments]")
 
-        if link_url['href'] == comments_url['href']:
+        if link_anchor['href'] == comments_anchor['href']:
             # this looks like it's a local reddit discussion
             # return the summary instead of fetching description
 
             # remove the links from the body first
-            link_url.decompose()
-            comments_url.decompose()
+            link_anchor.decompose()
+            comments_anchor.decompose()
             return str(soup)
 
-        return self.fetch_meta(link_url, 'og:description', 'description')
+        return self.fetch_meta(link_anchor['href'], 'og:description', 'description')
 
     def parse_content_url(self, entry):
         soup = BeautifulSoup(entry['summary'], 'lxml')
@@ -370,6 +389,14 @@ class RedditParser(RSSParser):
     def parse_entry_url(self, entry):
         # this particular feed puts the reddit comments page in the link
         return entry['link']
+
+    def parse_username(self, entry):
+        # instead of showing the username show the subreddit name when available
+        # this is kind of an abuse but yields a more useful UI
+        if entry.get('tags', []):
+            return entry['tags'][0]['label']
+
+        return super().parse_username(entry)
 
 
 class LobstersParser(RSSParser):

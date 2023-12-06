@@ -22,12 +22,14 @@
                 </a>
                 {% endif %}
             </b>
-            <span class="entry-excerpt-metadata is-hidden {% if entry.has_content() %}is-clickable{% endif %}"
+            <span class="entry-excerpt-metadata is-hidden {% if entry.has_content() or entry.has_comments_url() %}is-clickable{% endif %}"
                   {% if entry.has_content() %}
                   hx-get="{{ url_for('entry_view', id=entry.id) }}"
                   hx-trigger="click"
                   hx-target="body"
                   hx-push-url="true"
+                  {% elif entry.has_comments_url() %}
+                  _="on click go to url {{ entry.entry_url }} in new window"
                   {% endif %}>
                 <small>{{ entry | entry_excerpt }}</small>
             </span>

@@ -1,7 +1,7 @@
 <div class="dropdown is-active">
     <div class="dropdown-trigger">
-        <p class="control has-icons-left">
-            <input class="input is-small search" type="search" placeholder="Type or drag URL"
+        <p class="control">
+            <input class="input search" type="search" placeholder="Type or drag URL"
                    autocomplete="off"
                    name="q"
                    hx-get="{{ url_for('autocomplete') }}"
@@ -13,16 +13,13 @@
                           then on keyup[key is 'Escape'] if (next .autocomplete-items) does not match .is-active then blur() me end
                           then on drop set my.value to event.dataTransfer.getData('text') then halt -- set explicitly so text is replaced instead of appended
                           "/>
-            <span class="icon is-small is-left">
-                <i class="fas fa-search"></i>
-            </span>
         </p>
         <div class="autocomplete-items" role="menu"
              _="on keyup[target.value.length < 3] from .search remove .is-active
                     then on keyup[target.value.length >= 3] from .search add .is-active
                     then on drop from .search add .is-active
                     then on paste from .search add .is-active
-                    then on click elsewhere remove .is-active
+                    then on click or click elsewhere remove .is-active
                     then on keyup[key is 'Escape'] elsewhere remove .is-active"
         >
         </div>

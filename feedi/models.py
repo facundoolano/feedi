@@ -9,6 +9,7 @@ import stkclient
 import werkzeug.security as security
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.ext.hybrid import hybrid_property
 
 import feedi.parsers as parsers
 from feedi.requests import get_favicon
@@ -51,6 +52,8 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
 
+    mastodon_accounts = sa.orm.relationship("MastodonAccount", back_populates='user')
+
     @staticmethod
     def hash_password(raw_password):
         return security.generate_password_hash(raw_password)
@@ -60,6 +63,95 @@ class User(UserMixin, db.Model):
 
     def check_password(self, raw_password):
         return security.check_password_hash(self.password, raw_password)
+
+
+class MastodonApp(db.Model):
+    """
+    Represents the feedi app as registered in a particular mastodon instance. This app has associated
+    credentials to generate access tokens for all mastodon accounts in that instance.
+    Credentials are persisted so the app is still available for subsequent account registrations for a given
+    instance.
+    """
+    __tablename__ = 'mastodon_apps'
+    id = sa.Column(sa.Integer, primary_key=True)
+    api_base_url = sa.Column(sa.String, nullable=False)
+    client_id = sa.Column(sa.String, nullable=False)
+    client_secret = sa.Column(sa.String, nullable=False)
+
+    accounts = sa.orm.relationship("MastodonAccount", back_populates="app")
+
+    @classmethod
+    def get_or_create(cls, api_base_url):
+        """
+        If a feedi app was already registered at the given mastodon instance, fetch it from
+        db and return it, otherwise register a new one and store it.
+        """
+        app = db.session.scalar(db.select(MastodonApp).filter_by(api_base_url=api_base_url))
+        if not app:
+            client_id, client_secret = parsers.mastodon.register_app(
+                api_base_url, cls._oauth_callback_url(api_base_url))
+            app = cls(api_base_url=api_base_url,
+                      client_id=client_id,
+                      client_secret=client_secret)
+            db.session.add(app)
+            db.session.commit()
+        return app
+
+    def auth_redirect_url(self):
+        """
+        Get the url to redirect to to request access to a user account in the instance
+        where this app is registered.
+        """
+        return parsers.mastodon.auth_redirect_url(self.api_base_url,
+                                                  self.client_id,
+                                                  self.client_secret,
+                                                  self._oauth_callback_url(self.api_base_url))
+
+    def create_account(self, user_id, oauth_code):
+        "Given an oauth authorization code from this app, create a new mastodon user account."
+        access_token = parsers.mastodon.oauth_login(self.api_base_url,
+                                                    self.client_id,
+                                                    self.client_secret,
+                                                    self._oauth_callback_url(self.api_base_url),
+                                                    oauth_code)
+
+        account_data = parsers.mastodon.fetch_account_data(self.api_base_url, access_token)
+        domain = self.api_base_url.split('//')[-1]
+        username = f"{account_data['username']}@{domain}"
+
+        masto_acct = MastodonAccount(app_id=self.id,
+                                     user_id=user_id,
+                                     username=username,
+                                     access_token=access_token)
+        db.session.add(masto_acct)
+        db.session.commit()
+        return masto_acct
+
+    @staticmethod
+    def _oauth_callback_url(api_base_url):
+        # the callback url contains the api_base_url because we need to know which app a callback belongs to
+        # and we can't use eg. the app id because it needs to be known before creating it, since it's passed
+        # to the registration api call
+        import flask
+        return flask.url_for('mastodon_oauth_callback',
+                             server=api_base_url,
+                             _external=True)
+
+
+class MastodonAccount(db.Model):
+    """
+    Contains an access token for a user account on a specific mastodon instance.
+    The same access token can be used for more than one feed (e.g. home and notifications).
+    """
+    __tablename__ = 'mastodon_accounts'
+    id = sa.Column(sa.Integer, primary_key=True)
+    app_id = sa.orm.mapped_column(sa.ForeignKey("mastodon_apps.id"), nullable=False)
+    user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False)
+    access_token = sa.Column(sa.String, nullable=False)
+    username = sa.Column(sa.String)
+
+    app = sa.orm.relationship("MastodonApp", lazy='joined')
+    user = sa.orm.relationship("User", back_populates='mastodon_accounts')
 
 
 class KindleDevice(db.Model):
@@ -112,14 +204,14 @@ class Feed(db.Model):
     __tablename__ = 'feeds'
 
     TYPE_RSS = 'rss'
-    TYPE_MASTODON_ACCOUNT = 'mastodon'
+    TYPE_MASTODON_HOME = 'mastodon'
     TYPE_MASTODON_NOTIFICATIONS = 'mastodon_notifications'
     TYPE_CUSTOM = 'custom'
 
     id = sa.Column(sa.Integer, primary_key=True)
     user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False, index=True)
 
-    url = sa.Column(sa.String, nullable=False)
+    url = sa.Column(sa.String)
     type = sa.Column(sa.String, nullable=False)
 
     name = sa.Column(sa.String)
@@ -153,8 +245,8 @@ class Feed(db.Model):
         "Return the Feed model subclass for the given feed type."
         subclasses = {
             cls.TYPE_RSS: RssFeed,
-            cls.TYPE_MASTODON_ACCOUNT: MastodonAccount,
-            cls.TYPE_MASTODON_NOTIFICATIONS: MastodonNotifications,
+            cls.TYPE_MASTODON_HOME: MastodonHomeFeed,
+            cls.TYPE_MASTODON_NOTIFICATIONS: MastodonNotificationsFeed,
             cls.TYPE_CUSTOM: CustomFeed
         }
 
@@ -162,6 +254,10 @@ class Feed(db.Model):
         if not subcls:
             raise ValueError(f'unknown type {type}')
         return subcls
+
+    @hybrid_property
+    def is_mastodon(self):
+        return (self.type == Feed.TYPE_MASTODON_HOME) | (self.type == Feed.TYPE_MASTODON_NOTIFICATIONS)
 
     @classmethod
     def from_valuelist(cls, type, name, url, folder):
@@ -308,20 +404,25 @@ class RssFeed(Feed):
         self.icon_url = parsers.rss.fetch_icon(self.url)
 
 
-class MastodonAccount(Feed):
-    access_token = sa.Column(sa.String)
+class MastodonHomeFeed(Feed):
+    mastodon_account_id = sa.orm.mapped_column(sa.ForeignKey("mastodon_accounts.id"), nullable=True)
+    account = sa.orm.relationship("MastodonAccount", lazy='joined')
 
     @classmethod
     def from_valuelist(cls, _type, name, url, folder, access_token):
-        return cls(**dict(name=name, url=url, folder=folder, access_token=access_token))
+        # csv export not supported for mastodon
+        raise NotImplementedError
 
     def to_valuelist(self):
-        return [self.type, self.name, self.url, self.folder, self.access_token]
+        # csv export not supported for mastodon
+        raise NotImplementedError
 
     def _api_args(self):
         from flask import current_app as app
         latest_entry = self.entries.order_by(Entry.remote_updated.desc()).first()
-        args = dict(server_url=self.url, access_token=self.access_token)
+
+        args = dict(server_url=self.account.app.api_base_url,
+                    access_token=self.account.access_token)
         if latest_entry:
             # there's some entry on db, this is not the first time we're syncing
             # get all toots since the last seen one
@@ -335,12 +436,13 @@ class MastodonAccount(Feed):
         return parsers.mastodon.fetch_toots(**self._api_args())
 
     def load_icon(self):
-        self.icon_url = parsers.mastodon.fetch_avatar(self.url, self.access_token)
+        self.icon_url = parsers.mastodon.fetch_account_data(
+            self.account.app.api_base_url, self.account.access_token)['avatar']
 
-    __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_ACCOUNT}
+    __mapper_args__ = {'polymorphic_identity': Feed.TYPE_MASTODON_HOME}
 
 
-class MastodonNotifications(MastodonAccount):
+class MastodonNotificationsFeed(MastodonHomeFeed):
 
     def fetch_entry_data(self, _force=False):
         return parsers.mastodon.fetch_notifications(**self._api_args())

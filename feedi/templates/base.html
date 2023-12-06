@@ -1,8 +1,8 @@
 <!doctype html>
 <html class="has-background-light">
     <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
         <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
         <link rel="stylesheet" href="{{ url_for('static', filename='css/bulma.min.css') }}">
         <link rel="stylesheet" href="{{ url_for('static', filename='css/fontawesome.min.css') }}">
@@ -13,33 +13,7 @@
     <meta name="htmx-config" content='{"refreshOnHistoryMiss": true}'>
     </head>
     <body>
-    <nav class="navbar is-hidden-tablet is-fixed-top is-light" role="navigation" aria-label="main navigation">
-        <div class="navbar-brand">
-            <a class="navbar-item"
-               {% if request.endpoint in ['entry_list', 'favorites'] %}
-               hx-get="{{ url_for('entry_list', **filters) }}"
-               hx-select="#entry-list"
-               hx-target="#entry-list"
-               {% endif %}
-               _="on click if document.documentElement.scrollTop go to top of body smoothly else go to url {{ url_for('entry_list') }}"
-            >
-                <h1 class="title is-4">feedi</h1>
-            </a>
-
-            {% if current_user.is_authenticated %}
-            <div class="navbar-item navbar-autocomplete" href="/">
-                {% include "autocomplete.html" %}
-            </div>
-
-            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
-               _="on click toggle .is-active then toggle .is-active on the next .navbar-menu"
-            >
-                <span aria-hidden="true"></span>
-                <span aria-hidden="true"></span>
-                <span aria-hidden="true"></span>
-            </a>
-            {% endif %}
-        </div>
+    <nav class="navbar is-hidden-tablet is-fixed-bottom is-light" role="navigation" aria-label="main navigation">
         <div class="navbar-menu">
             <div class="navbar-end">
                 {% if shortcut_folders %}
@@ -54,6 +28,34 @@
                 {{ self.sidebar_right() }}
             </div>
         </div>
+        {% block mobile_navbar %}
+        <div class="navbar-brand">
+            <a class="navbar-item"
+               {% if request.endpoint in ['entry_list', 'favorites'] %}
+               hx-get="{{ url_for('entry_list', **filters) }}"
+               hx-select="#entry-list"
+               hx-target="#entry-list"
+               {% endif %}
+               _="on click if document.documentElement.scrollTop go to top of body smoothly else go to url {{ url_for('entry_list') }}"
+            >
+                <h1 class="title is-4">feedi</h1>
+            </a>
+            {% if current_user.is_authenticated %}
+            <div class="navbar-item navbar-autocomplete" href="/">
+                {% include "autocomplete.html" %}
+            </div>
+
+            <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false"
+               _="on click toggle .is-active then toggle .is-active on the previous .navbar-menu"
+            >
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+                <span aria-hidden="true"></span>
+            </a>
+            {% endif %}
+
+        </div>
+        {% endblock %}
     </nav>
     <section class="container">
         <div class="columns">

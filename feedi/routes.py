@@ -16,7 +16,7 @@ from flask_login import current_user, login_required
 import feedi.models as models
 import feedi.tasks as tasks
 from feedi.models import db
-from feedi.parsers import rss
+from feedi.parsers import mastodon, rss
 from feedi.requests import requests
 
 
@@ -143,8 +143,9 @@ def autocomplete():
             ('Discover feed', flask.url_for('feed_add', url=term), 'fas fa-rss'),
         ]
         if current_user.has_kindle:
-            options += [('Send to Kindle', flask.url_for('send_to_kindle',
-                         url=term), 'fas fa-tablet-alt')]
+            options += [('Send to Kindle',
+                         flask.url_for('send_to_kindle', url=term), 'fas fa-tablet-alt',
+                         'POST')]
     else:
         folders = db.session.scalars(
             db.select(models.Feed.folder)
@@ -173,7 +174,10 @@ def autocomplete():
     static_options = [
         ('Home', flask.url_for('entry_list'), 'fas fa-home'),
         ('Favorites', flask.url_for('favorites', favorited=True), 'far fa-star'),
-        ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit')
+        ('Add Feed', flask.url_for('feed_add'), 'fas fa-plus'),
+        ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit'),
+        ('Mastodon login', flask.url_for('mastodon_oauth'), 'fab fa-mastodon'),
+        ('Kindle setup', flask.url_for('kindle_add'), 'fas fa-tablet-alt')
     ]
     for so in static_options:
         if term.lower() in so[0].lower():
@@ -228,6 +232,41 @@ def entry_favorite(id):
     return '', 204
 
 
+@app.put("/mastodon/favorites/<int:id>")
+@login_required
+def mastodon_favorite(id):
+    entry = db.get_or_404(models.Entry, id)
+    if entry.feed.user_id != current_user.id:
+        flask.abort(404)
+
+    if not entry.feed.is_mastodon:
+        flask.abort(400)
+
+    masto_acct = entry.feed.account
+    mastodon.favorite(masto_acct.app.api_base_url,
+                      masto_acct.access_token,
+                      entry.remote_id)
+    return '', 204
+
+
+@app.put("/mastodon/boosts/<int:id>")
+@login_required
+def mastodon_boost(id):
+    entry = db.get_or_404(models.Entry, id)
+    if entry.feed.user_id != current_user.id:
+        flask.abort(404)
+
+    if not entry.feed.is_mastodon:
+        flask.abort(400)
+
+    masto_acct = entry.feed.account
+    mastodon.boost(masto_acct.app.api_base_url,
+                   masto_acct.access_token,
+                   entry.remote_id)
+
+    return '', 204
+
+
 @app.route("/feeds")
 @login_required
 def feed_list():
@@ -270,8 +309,11 @@ def feed_add_submit():
     # FIXME use a forms lib for validations, type coercion, etc
     values = {k: v.strip() for k, v in flask.request.form.items() if v}
 
-    if not values.get('name') or not values.get('url'):
-        return flask.render_template('feed_edit.html', error_msg='Name and url are required fields', **values)
+    if not values.get('name'):
+        return flask.render_template('feed_edit.html', error_msg='name is required', **values)
+
+    if not values.get('url') and not values.get('type', '').startswith('mastodon'):
+        return flask.render_template('feed_edit.html', error_msg='url is required', **values)
 
     name = values.get('name')
     feed = db.session.scalar(db.select(models.Feed).filter_by(
@@ -280,11 +322,17 @@ def feed_add_submit():
         return flask.render_template('feed_edit.html', error_msg=f"A feed with name '{name}' already exists", **values)
 
     feed_cls = models.Feed.resolve(values['type'])
+
+    # FIXME this is an ugly patch
+    if not values['type'].startswith('mastodon') and values.get('mastodon_account_id'):
+        del values['mastodon_account_id']
+
     feed = feed_cls(**values)
     feed.user_id = current_user.id
+    db.session.add(feed)
+    db.session.flush()
 
     feed.load_icon()
-    db.session.add(feed)
     db.session.commit()
 
     # trigger a sync of this feed to fetch its entries.
@@ -379,29 +427,6 @@ def entry_view(id):
     if entry.feed.user_id != current_user.id:
         flask.abort(404)
 
-    dest_url = entry.content_url or entry.entry_url
-    if not dest_url:
-        # this view can't work if no entry or content url
-        return "Entry not readable", 400
-
-    should_redirect = None
-    # TODO we could add support for more here
-    if 'youtube.com' in dest_url or 'vimeo.com' in dest_url:
-        should_redirect = True
-    else:
-        res = requests.get(dest_url)
-        if not res.ok:
-            app.logger.error("Can't open entry url", res)
-            return "Can't open entry url", 500
-        elif res.headers.get('Content-Type', '').startswith('application/'):
-            # if the content type is application eg youtube video or pdf, don't try to render locally
-            should_redirect = True
-
-    if should_redirect:
-        entry.feed.score += 1
-        db.session.commit()
-        return redirect_response(dest_url)
-
     # When requested through htmx (ajax), this page loads layout first, then the content
     # on a separate request. The reason for this is that article fetching is slow, and we
     # don't want the view entry action to freeze the UI without loading indication.
@@ -411,18 +436,28 @@ def entry_view(id):
 
     if 'HX-Request' in flask.request.headers and not 'content' in flask.request.args:
         # if ajax/htmx just load the empty UI and load content asynchronously
-        content = None
+        return flask.render_template("entry_content.html", entry=entry, content=None)
     else:
         entry.feed.score += 1
         db.session.commit()
 
+        dest_url = entry.content_url or entry.entry_url
+        if not dest_url:
+            # this view can't work if no entry or content url
+            return "Entry not readable", 400
+
+        # if it's a video site, just redirect. TODO add more sites
+        if 'youtube.com' in dest_url or 'vimeo.com' in dest_url:
+            return redirect_response(dest_url)
+
         # if full browser load or explicit content request, fetch the article synchronously
         try:
-            content = extract_article(entry.content_url)['content']
+            content = extract_article(dest_url)['content']
+            return flask.render_template("entry_content.html", entry=entry, content=content)
         except:
-            return redirect_response(entry.content_url)
+            pass
 
-    return flask.render_template("entry_content.html", entry=entry, content=content)
+    return redirect_response(dest_url)
 
 
 def redirect_response(url):

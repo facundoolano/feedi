@@ -44,7 +44,9 @@ class AgendaBAParser(CustomParser):
 
         entry_values = []
         for item in items:
-            created = datetime.datetime.fromisoformat(item['created_at'])
+            # keep only the date since the time is unreliable
+            created = datetime.datetime.fromisoformat(item['created_at']).date()
+
             content_url = f'{self.BASE_URL}?contenido={item["id"]}'
             entry_values.append({
                 'remote_id': item['id'],
@@ -88,9 +90,13 @@ class RevistaLenguaParser(CustomParser):
                 'body': item['description'],
                 'media_url': item['image'],
                 'entry_url': item['url'],
-                # this website does very funky things with the html
-                # can't really make them work on the reader
-                'content_url': None,
+                # FIXME this website does very funky things with the html
+                # that can't be parsed in the reader.
+                # can't really set content url as null since that's currently interpreted
+                # as entry_url being a comments url.
+                # we should probably make comments_url more explicit and add a "skip reader"
+                # flag or something like that.
+                'content_url': item['url'],
             })
 
         return entry_values

@@ -1,3 +1,8 @@
+{% if entry.feed.is_mastodon %}
+<a hx-put="{{ url_for('mastodon_boost', id=entry.id )}}" class="dropdown-item"><span class="icon"><i class="fas fa-retweet"></i></span>Masto boost</a>
+<a hx-put="{{ url_for('mastodon_favorite', id=entry.id )}}" class="dropdown-item"><span class="icon"><i class="fas fa-star"></i></span>Masto favorite</a>
+<hr class="dropdown-divider">
+{% endif %}
 {% if entry.has_content() %}
 <a href="{{ entry.content_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-external-link-alt"></i></span> Go to source</a>
 {% endif %}
