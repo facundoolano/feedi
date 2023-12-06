@@ -90,11 +90,6 @@ class RSSParser(CachingRequestsMixin):
             logger.info('skipping empty feed %s %s', self.url, feed.get('debug_message'))
             return None, [], None, None
 
-        # also checking with the internal updated field in case feed doesn't support the standard headers
-        if previous_fetch and 'updated_parsed' in feed and to_datetime(feed['updated_parsed']) <= previous_fetch:
-            logger.info('skipping up to date feed %s', self.url)
-            return None, [], None, None
-
         etag = getattr(feed, 'etag', None)
         modified = getattr(feed, 'modified', None)
 
