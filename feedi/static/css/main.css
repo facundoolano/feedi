@@ -304,7 +304,6 @@ img[src=""] {
     border-radius: 0;
     box-shadow: 0 0 0 0;
     border: 1px solid #dbdbdb;
-    border-top: 0;
     padding: 0;
     background: white;
 }
@@ -312,7 +311,7 @@ img[src=""] {
 @media screen and (max-width: 768px) {
     /* patch autocomplete to dropup on mobile only */
     .autocomplete-items .navbar-dropdown {
-        bottom: 29px;
+        bottom: 40px;
     }
 }
 
