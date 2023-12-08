@@ -120,12 +120,6 @@ class RSSParser(CachingRequestsMixin):
         if self.should_skip(item):
             return
 
-        # don't try to process stuff that hasn't changed recently
-        updated = item.get('updated_parsed', item.get('published_parsed'))
-        if updated and previous_fetch and to_datetime(updated) < previous_fetch:
-            logger.debug('skipping up to date entry %s', item.get('link'))
-            return
-
         # or that's too old
         is_first_load = previous_fetch is None
         published = item.get('published_parsed', item.get('updated_parsed'))
