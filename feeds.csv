@@ -11,9 +11,9 @@ rss,hackernews,https://hnrss.org/newest?points=100,tech,
 rss,acmqueue,https://queue.acm.org/rss/feeds/queuecontent.xml,tech,
 rss,Wikipedia Featured,https://en.wikipedia.org/w/api.php?action=featuredfeed&feed=featured&feedformat=atom,,
 rss,Open Culture,https://www.openculture.com/feed/rss2,mgzn,
-rss,public domain review,https://publicdomainreview.org/rss.xml,mgzn
-rss,EFF,https://www.eff.org/rss/updates.xml,tech
-rss,Rock Paper Shotgun,https://www.rockpapershotgun.com/feed/features,games
-rss,The Verge,https://www.theverge.com/features/rss/index.xml,mgzn
-rss,BBC Culture,https://www.bbc.com/culture/feed.rss,mgzn
-rss,Open Source,https://blog.opensource.org/feed/,tech
+rss,public domain review,https://publicdomainreview.org/rss.xml,mgzn,
+rss,EFF,https://www.eff.org/rss/updates.xml,tech,
+rss,Rock Paper Shotgun,https://www.rockpapershotgun.com/feed/features,games,
+rss,The Verge,https://www.theverge.com/features/rss/index.xml,mgzn,
+rss,BBC Culture,https://www.bbc.com/culture/feed.rss,mgzn,
+rss,Open Source,https://blog.opensource.org/feed/,tech,
