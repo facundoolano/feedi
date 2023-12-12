@@ -2,8 +2,6 @@
 
 feedi is a web feed reader with a minimal interface akin to a Mastodon or Twitter feed.
 
-![](feedi.png)
-
 Features:
 - Easy local and self-hosted environment setup.
 - Mobile optimized UI.
@@ -13,6 +11,12 @@ Features:
 - Smart feed sorting options (highlight infrequent sources, auto mark as read).
 - Local article reading and preview using Mozilla's reader mode.
 - Send to Kindle device support.
+
+
+![](feedi.png)
+
+<br/>
+NOTE: this project is primarily for personal use and experimentation, expect bugs and breaking changes.
 
 ## Documentation
 
@@ -64,15 +68,11 @@ Otherwise, you can manually add sources by clicking the `+ Add Feed` button or n
 You can also import a collection of feeds from an [OPML or CSV file]((#bulk-importexport-feeds-from-csv-and-opml-files)).
 
 ### Browsing the feed
-The interface is arranged as a social-media like scrollable stream of articles (minus the tracking, ads and feed "curation"). Each source feed can optionally be put into a folder, which then constitutes its own filtered stream. Some of the behavior of those streams can be controlled via settings on the right-side of the screen (desktop) or on the navbar manu (mobile).
 
-Although strict chronological sorting of the entries is available, it has the issue that, if you mix news articles and social media streams with slower-paced sources as magazines and blogs, the least frequent (and often more interesting) articles will tend to get buried in the stream and go unnoticed. Because of this, the default feed sorting will feature the least-frequent sources more prominently. There's also a third, more experimental, sorting criteria: showing entries from "most liked" feeds, based on how frequently those have been read.
-
-Since these alternative sorting criteria break the chronological order of entries, it means that some older, better scored entries will precede newer ones. To prevent the same content being displayed every time you open the feed, the app will track "already viewed" entries as you scroll and hide them next time you load it.
-This is considered preferrable to having to manually mark entries as read,
-not just because it's less work but because the app is [not arranged](https://www.oliverburkeman.com/river) around the idea of [clearing an inbox](https://danq.me/2023/07/29/rss-zero/). You can, of course, pin entries to the top of the feed or mark them as favorites to go back to them later. You can also just disable the hiding of already seen entries.
-
-Another peculiarity of the feed metaphor is that some entries are more content-centric articles (eg. blog posts) and some more user-centric updates (eg. Mastodon toots). The entry parsers are implemented to choose between user or content display depending on what info is available from the source.
+- Sources can be put into folders, accesible on the left sidebar (desktop) or on the navbar menu (mobile).
+- The feed behavior can be tweaked with the controls on the right sidebar (desktop) or on the navbar menu:
+- Entries are auto-marked as viewed as the user scrolls down the feed. By default, already seen entries are skipped next time the app is open.
+- The default sorting puts least frequent sources at the top. Alternatively, there are are strict chronological sorting and an experimental "best score" sorting (based on previous user interactions).
 
 ### Reading articles
 There are different ways to interact with a feed entry:
@@ -82,6 +82,10 @@ There are different ways to interact with a feed entry:
 - If you click on the content or press Enter when focusing on the entry, the article content will be fetch and displayed on the local reader. This will be a stripped-down version of the article (removing some site links, ads and paywalls) powered by the [mozilla/readability](https://github.com/mozilla/readability) library. Note that for this to work you need node >= 20 installed when setting up the project.
   -  The reader can also be used to preview arbitrary articles by dragging their url to the searchbox.
 
+### Deleting old articles
+
+Entries get deleted automatically some days after their publication ([defaulting to 7](https://github.com/facundoolano/feedi/blob/f9aaa582d8e690ab8d64baf3286ada8fb64e9f45/feedi/config/default.py#L10)).
+Pinned and favorited entries are never deleted. Additionally, a minimum of entries ([defaulting to 5](https://github.com/facundoolano/feedi/blob/f9aaa582d8e690ab8d64baf3286ada8fb64e9f45/feedi/config/default.py#L11)) is kept for all sources, regardless of their publication date.
 
 ## Advanced features
 ### Bulk import/export feeds from csv and OPML files
