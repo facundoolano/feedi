@@ -14,8 +14,6 @@ Features:
 - Local article reading and preview using Mozilla's reader mode.
 - Send to Kindle device support.
 
-See the documentation below and the [devlog](DEVLOG.md) for notes about its design and implementation.
-
 ## Documentation
 
 - [Installation](#installation)
