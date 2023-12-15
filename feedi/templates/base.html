@@ -12,7 +12,8 @@
     <title>feedi {% block title %}{% endblock %}</title>
     <meta name="htmx-config" content='{"refreshOnHistoryMiss": true}'>
     </head>
-    <body>
+    <body
+        _="on htmx:responseError alert('The server responded with an error')">
     <nav class="navbar is-hidden-tablet is-fixed-bottom is-light" role="navigation" aria-label="main navigation">
         <div class="navbar-menu">
             <div class="navbar-end">
