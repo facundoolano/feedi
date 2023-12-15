@@ -256,6 +256,7 @@ img[src=""] {
 
 .entry-content iframe {
     width: 100%;
+    aspect-ratio: 16 / 9;
 }
 
 /* FIXME mobile-only, do this properly with sass */
