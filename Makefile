@@ -29,6 +29,11 @@ docker:
 	docker build -t feedi .
 	docker run -p 5000:5000 -v ${shell pwd}/instance:/app/instance feedi
 
+docker-flask: CONTAINER_ID=${shell docker ps --filter "ancestor=feedi" -q}
+docker-flask:
+	docker exec -it $(CONTAINER_ID) /bin/sh -c "FLASK_ENV=development flask --app feedi/app.py $(CMD)"
+
+
 shell:
 	DISABLE_CRON_TASKS=1 $(flask) shell
 
