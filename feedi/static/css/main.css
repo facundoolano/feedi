@@ -262,6 +262,10 @@ img[src=""] {
 }
 
 /* feeds sidebar */
+.feeds-sidebar {
+    min-width: 80%;
+}
+
 .feeds-sidebar li, .feed-sidebar .dropdown-item  {
     font-size: 0.9rem;
 }
