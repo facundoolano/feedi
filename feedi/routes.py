@@ -47,15 +47,6 @@ def entry_list(**filters):
     (entries, next_page) = fetch_entries_page(page, current_user.id, ordering, hide_seen, is_mixed_feed_list,
                                               **filters)
 
-    if 'feed_name' in filters:
-        # increase score when viewing a feed
-        update = db.update(models.Feed)\
-                   .where(models.Feed.user_id == current_user.id,
-                          models.Feed.name == filters['feed_name'])\
-                   .values(score=models.Feed.score + 1)
-        db.session.execute(update)
-        db.session.commit()
-
     if page:
         # if it's a paginated request, render a single page of the entry list
         return flask.render_template('entry_list_page.html',
@@ -201,7 +192,6 @@ def entry_pin(id):
         entry.pinned = None
     else:
         entry.pinned = datetime.datetime.utcnow()
-        entry.feed.score += 2
     db.session.commit()
 
     # get the new list of pinned based on filters
@@ -226,7 +216,6 @@ def entry_favorite(id):
         entry.favorited = None
     else:
         entry.favorited = datetime.datetime.utcnow()
-        entry.feed.score += 2
 
     db.session.commit()
     return '', 204
@@ -438,9 +427,6 @@ def entry_view(id):
         # if ajax/htmx just load the empty UI and load content asynchronously
         return flask.render_template("entry_content.html", entry=entry, content=None)
     else:
-        entry.feed.score += 1
-        db.session.commit()
-
         dest_url = entry.content_url or entry.entry_url
         if not dest_url:
             # this view can't work if no entry or content url
@@ -457,7 +443,7 @@ def entry_view(id):
         except:
             pass
 
-    return redirect_response(dest_url)
+        return redirect_response(dest_url)
 
 
 def redirect_response(url):

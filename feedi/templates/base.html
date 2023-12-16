@@ -148,17 +148,12 @@
                                    <button class="button {% if not session.ordering or session.ordering == "frequency" %} is-selected is-info {% endif %}" title="Least frequent"
                                            hx-put="{{ url_for('update_setting', setting='ordering', value='frequency') }}"
                                            _="on htmx:afterRequest go to the top of the body then reload() the location of the window">
-                                       <span class="icon"><i class="fas fa-history fa-lg"></i></span>
+                                       <span class="icon"><i class="far fa-calendar-check fa-lg"></i></span>
                                    </button>
                                    <button class="button {% if session.ordering == "recency" %} is-selected is-info {% endif %}" title="Most recent"
                                            hx-put="{{ url_for('update_setting', setting='ordering', value='recency') }}"
                                            _="on htmx:afterRequest go to the top of the body then reload() the location of the window">
                                        <span class="icon"><i class="far fa-clock fa-lg"></i></span>
-                                   </button>
-                                   <button class="button {% if session.ordering == "score" %} is-selected is-info {% endif %}" title="Best score"
-                                           hx-put="{{ url_for('update_setting', setting='ordering', value='score') }}"
-                                           _="on htmx:afterRequest go to the top of the body then reload() the location of the window">
-                                       <span class="icon "><i class="far fa-thumbs-up fa-lg"></i></span>
                                    </button>
                                </div>
                            </label>
