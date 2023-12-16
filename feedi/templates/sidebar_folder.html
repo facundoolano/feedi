@@ -1,9 +1,9 @@
 <li>
     <div class="level is-marginless">
-        <div class="level-left  {% if filters.folder == name %}is-active"{% endif %}">
+        <div class="level-left  {% if filters.folder == folder %}is-active"{% endif %}">
         <div class="level-item">
-            <a href="{{ url_for('entry_list', folder=name )}}">
-                <icon class="icon"><i class="far fa-folder-open"></i></icon> {{ name }}</a>
+            <a href="{{ url_for('entry_list', folder=folder )}}">
+                <icon class="icon"><i class="far fa-folder-open"></i></icon> {{ folder }}</a>
         </div>
     </div>
   </div>

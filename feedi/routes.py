@@ -630,26 +630,16 @@ def toggle_setting(setting):
 @app.context_processor
 def sidebar_feeds():
     """
-    For regular browser request (i.e. no ajax requests triggered by htmx),
-    fetch folders and quick access feeds to make available to any template needing to render the sidebar.
+    Fetch folders to make available to any template needing to render the sidebar.
     """
     if current_user.is_authenticated:
-        shortcut_feeds = db.session.scalars(db.select(models.Feed)
-                                            .filter_by(user_id=current_user.id)
-                                            .order_by(models.Feed.score.desc())
-                                            .limit(5)).all()
+        folders = db.session.scalars(db.select(models.Feed.folder)
+                                     .filter_by(user_id=current_user.id)
+                                     .filter(models.Feed.folder != None,
+                                             models.Feed.folder != '')
+                                     .group_by(models.Feed.folder)
+                                     .order_by(sa.func.count(models.Feed.folder).desc())).all()
 
-        in_folder = db.session.scalars(db.select(models.Feed)
-                                       .filter_by(user_id=current_user.id)
-                                       .filter(models.Feed.folder != None,
-                                               models.Feed.folder != '')
-                                       .order_by(models.Feed.score.desc())).all()
-
-        folders = defaultdict(list)
-        for feed in in_folder:
-            if len(folders[feed.folder]) < 5:
-                folders[feed.folder].append(feed)
-
-        return dict(shortcut_feeds=shortcut_feeds, shortcut_folders=folders, filters={})
+        return dict(shortcut_folders=folders, filters={})
 
     return {}
