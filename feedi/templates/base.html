@@ -74,7 +74,10 @@
                         {% if shortcut_folders %}
                         <hr class="dropdown-divider"/>
                         {% for folder in shortcut_folders %}
-                            {% include "sidebar_folder.html" %}
+                        <li>
+                            <a class="level-left {% if filters.folder == folder %}is-active"{% endif %}" href="{{ url_for('entry_list', folder=folder ) }}">
+                                <icon class="icon"><i class="far fa-folder-open"></i></icon> {{ folder }}</a>
+                        </li>
                           {% endfor %}
                         {% endif %}
                         <hr class="dropdown-divider"/>
