@@ -63,14 +63,9 @@
             <div class="column is-hidden-touch">
                 {% block sidebar_left %}
                 <aside class="menu feeds-sidebar">
-                    <ul class="menu-list">
-                        <li>
-                        <div class="level-left">
-                            <div class="level-item">
-                                <a href="{{ url_for('entry_list') }}"><icon class="icon"><i class="fas fa-home"></i></icon> home</a>
-                            </div>
-                        </div>
-                        </li>
+                    <a  class="navbar-item" href="{{ url_for('entry_list') }}"><h1 class="title is-4">feedi</h1></a>
+                        <ul class="menu-list">
+
                         {% if shortcut_folders %}
                         <hr class="dropdown-divider"/>
                         {% for folder in shortcut_folders %}
