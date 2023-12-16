@@ -77,19 +77,12 @@
                             {% include "sidebar_folder.html" %}
                           {% endfor %}
                         {% endif %}
-                        {% if shortcut_feeds %}
-                        <hr class="dropdown-divider"/>
-                        {% endif %}
-                        {% with feeds=shortcut_feeds %}
-                          {% include "sidebar_feed_list.html" %}
-                        {% endwith %}
-
                         <hr class="dropdown-divider"/>
                         <li>
                             <div class="level-left {% if filters.favorited %}is-active{% endif %}">
                                 <div class="level-item">
                                     <a href="{{ url_for('favorites') }}"><icon class="icon"><i class="far fa-star"></i></icon>
-                                        Favorites</a>
+                                        favorites</a>
                                 </div>
                             </div>
                         </li>

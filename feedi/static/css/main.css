@@ -188,11 +188,6 @@ but we only want it for mobile*/
     color: inherit!important;
 }
 
-.folder-feed-list {
-    border-left:0!important;
-    margin:.25em!important;
-}
-
 .view-settings-buttons button, .ordering-settings-buttons button {
     padding-left: 1rem;
     padding-right: 1rem;
@@ -291,13 +286,6 @@ img[src=""] {
 
 .feeds-sidebar .icon {
     height: 1rem;
-}
-
-.folder-collapsed {
-    height:0;
-    margin-top:0!important;
-    margin-bottom:0!important;
-    visibility: hidden;
 }
 
 .navbar-menu {
