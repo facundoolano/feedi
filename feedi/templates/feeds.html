@@ -6,6 +6,16 @@
         <h3>Feeds</h3>
     </div>
     <table class="table is-hoverable is-fullwidth">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Name</th>
+                <th>Folder</th>
+                <th>Freq</th>
+                <th></th>
+                <th></th>
+            </tr>
+        </thead>
         <tbody>
             {% for (feed, freq) in feeds %}
             <tr>
@@ -20,7 +30,7 @@
                     <a href="{{ url_for('entry_list', feed_name=feed.name )}}">{{ feed.name }}</a>
                 </td>
                 <td>{% if feed.folder %}<span class="icon"><i class="far fa-folder-open"></i></span> {{ feed.folder }}{% endif %}</td>
-                <td>F{{freq}}</td>
+                <td>{{freq}}</td>
                 <td class="is-narrow"><a hx-delete="{{ url_for('feed_delete', feed_name=feed.name )}}" title="delete" _="on htmx:afterRequest remove the closest <tr/>"
                                       ><span class="icon"><i class="far fa-trash-alt"></i></span></a></td>
                 <td class="is-narrow"><a href="{{ url_for('feed_edit', feed_name=feed.name )}}" title="edit"><span class="icon"><i class="fas fa-edit"></i></span></a></td>
