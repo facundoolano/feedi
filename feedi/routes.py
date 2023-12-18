@@ -259,8 +259,12 @@ def mastodon_boost(id):
 @app.route("/feeds")
 @login_required
 def feed_list():
-    feeds = db.session.scalars(db.select(models.Feed).filter(
-        models.Feed.user_id == current_user.id))
+    subquery = models.Feed.frequency_rank_query()
+    feeds = db.session.execute(db.select(models.Feed, subquery.c.rank)
+                               .filter(models.Feed.user_id == current_user.id)
+                               .join(subquery, models.Feed.id == subquery.c.id)
+                               .order_by(subquery.c.rank.desc())
+                               )
     return flask.render_template('feeds.html', feeds=feeds)
 
 
