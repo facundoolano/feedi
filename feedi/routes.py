@@ -260,7 +260,7 @@ def mastodon_boost(id):
 @login_required
 def feed_list():
     subquery = models.Feed.frequency_rank_query()
-    feeds = db.session.execute(db.select(models.Feed, subquery.c.rank, sa.func.count(1))
+    feeds = db.session.execute(db.select(models.Feed, subquery.c.rank, sa.func.count(1), sa.func.max(models.Entry.remote_updated))
                                .filter(models.Feed.user_id == current_user.id)
                                .join(subquery, models.Feed.id == subquery.c.id)
                                .join(models.Entry, models.Feed.id == models.Entry.feed_id)

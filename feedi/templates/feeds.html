@@ -10,13 +10,14 @@
             <tr>
                 <th></th>
                 <th></th>
+                <th>Updated</th>
                 <th>Count</th>
                 <th>Rank</th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
-            {% for (feed, freq, entries) in feeds %}
+            {% for (feed, freq, entries, last_seen) in feeds %}
             <tr>
                 <td>
                     <a href="{{ url_for('entry_list', feed_name=feed.name )}}">
@@ -31,6 +32,7 @@
                     </a>
                 </td>
                 <td>{% if feed.folder %}<span class="icon"><i class="far fa-folder-open"></i></span> {{ feed.folder }}{% endif %}</td>
+                <td>{{last_seen | humanize}}</td>
                 <td>{{entries}}</td>
                 <td>{{freq}}</td>
                 <td class="is-narrow">
