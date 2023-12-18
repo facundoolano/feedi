@@ -325,7 +325,7 @@ class Feed(db.Model):
             (sa.func.count(cls.id) / days_since_creation < 1 / 7, 1),  # once week or less
             (sa.func.count(cls.id) / days_since_creation < 1, 2),  # once a day or less
             (sa.func.count(cls.id) / days_since_creation < 5, 3),  # 5 times a day or less
-            (sa.func.count(cls.id) / days_since_creation < 15, 4),  # 15 times a day or less
+            (sa.func.count(cls.id) / days_since_creation < 20, 4),  # 20 times a day or less
             else_=5  # more
         )
 
