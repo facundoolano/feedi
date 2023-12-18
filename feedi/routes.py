@@ -47,15 +47,6 @@ def entry_list(**filters):
     (entries, next_page) = fetch_entries_page(page, current_user.id, ordering, hide_seen, is_mixed_feed_list,
                                               **filters)
 
-    if 'feed_name' in filters:
-        # increase score when viewing a feed
-        update = db.update(models.Feed)\
-                   .where(models.Feed.user_id == current_user.id,
-                          models.Feed.name == filters['feed_name'])\
-                   .values(score=models.Feed.score + 1)
-        db.session.execute(update)
-        db.session.commit()
-
     if page:
         # if it's a paginated request, render a single page of the entry list
         return flask.render_template('entry_list_page.html',
@@ -201,7 +192,6 @@ def entry_pin(id):
         entry.pinned = None
     else:
         entry.pinned = datetime.datetime.utcnow()
-        entry.feed.score += 2
     db.session.commit()
 
     # get the new list of pinned based on filters
@@ -226,7 +216,6 @@ def entry_favorite(id):
         entry.favorited = None
     else:
         entry.favorited = datetime.datetime.utcnow()
-        entry.feed.score += 2
 
     db.session.commit()
     return '', 204
@@ -438,9 +427,6 @@ def entry_view(id):
         # if ajax/htmx just load the empty UI and load content asynchronously
         return flask.render_template("entry_content.html", entry=entry, content=None)
     else:
-        entry.feed.score += 1
-        db.session.commit()
-
         dest_url = entry.content_url or entry.entry_url
         if not dest_url:
             # this view can't work if no entry or content url
@@ -457,7 +443,7 @@ def entry_view(id):
         except:
             pass
 
-    return redirect_response(dest_url)
+        return redirect_response(dest_url)
 
 
 def redirect_response(url):
@@ -630,26 +616,16 @@ def toggle_setting(setting):
 @app.context_processor
 def sidebar_feeds():
     """
-    For regular browser request (i.e. no ajax requests triggered by htmx),
-    fetch folders and quick access feeds to make available to any template needing to render the sidebar.
+    Fetch folders to make available to any template needing to render the sidebar.
     """
     if current_user.is_authenticated:
-        shortcut_feeds = db.session.scalars(db.select(models.Feed)
-                                            .filter_by(user_id=current_user.id)
-                                            .order_by(models.Feed.score.desc())
-                                            .limit(5)).all()
+        folders = db.session.scalars(db.select(models.Feed.folder)
+                                     .filter_by(user_id=current_user.id)
+                                     .filter(models.Feed.folder != None,
+                                             models.Feed.folder != '')
+                                     .group_by(models.Feed.folder)
+                                     .order_by(sa.func.count(models.Feed.folder).desc())).all()
 
-        in_folder = db.session.scalars(db.select(models.Feed)
-                                       .filter_by(user_id=current_user.id)
-                                       .filter(models.Feed.folder != None,
-                                               models.Feed.folder != '')
-                                       .order_by(models.Feed.score.desc())).all()
-
-        folders = defaultdict(list)
-        for feed in in_folder:
-            if len(folders[feed.folder]) < 5:
-                folders[feed.folder].append(feed)
-
-        return dict(shortcut_feeds=shortcut_feeds, shortcut_folders=folders, filters={})
+        return dict(shortcut_folders=folders, filters={})
 
     return {}

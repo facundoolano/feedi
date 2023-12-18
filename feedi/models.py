@@ -228,8 +228,6 @@ class Feed(db.Model):
                                          doc="The original feed data received from the feed, as JSON"))
 
     folder = sa.Column(sa.String, index=True)
-    score = sa.Column(sa.Integer, default=0, nullable=False,
-                      doc="counts how many times articles of this feed have been interacted with. ")
 
     __mapper_args__ = {'polymorphic_on': type,
                        'polymorphic_identity': 'feed'}
@@ -347,20 +345,6 @@ class Feed(db.Model):
                   .join(subquery, subquery.c.id == self.id)
         return db.session.scalar(query)
 
-    @classmethod
-    def averaged_score_query(cls):
-        return db.select(cls.id, sa.func.round(cls.score * 100.0 / sa.func.count(cls.id)).label('avg_score'))\
-            .join(Entry)\
-            .group_by(cls)\
-            .subquery()
-
-    def averaged_score(self):
-        subquery = self.averaged_score_query()
-        query = db.select(subquery.c.avg_score)\
-                  .select_from(Feed)\
-                  .join(subquery, subquery.c.id == self.id)
-        return db.session.scalar(query)
-
 
 class RssFeed(Feed):
     etag = sa.Column(
@@ -464,9 +448,6 @@ class Entry(db.Model):
 
     "Sort entries in reverse chronological order."
     ORDER_RECENCY = 'recency'
-
-    "Sort entries based on the parent's Feeds.score value."
-    ORDER_SCORE = 'score'
 
     "Sort entries based on the post frequency of the parent feed."
     ORDER_FREQUENCY = 'frequency'
@@ -601,19 +582,6 @@ class Entry(db.Model):
         if ordering == cls.ORDER_RECENCY:
             # reverse chronological order
             return query.order_by(cls.remote_updated.desc())
-
-        elif ordering == cls.ORDER_SCORE:
-            subquery = Feed.averaged_score_query()
-
-            # order by score but within 8-hour buckets, so we don't get everything from the top score feed
-            # first, then the 2nd, etc.
-            return query.join(Feed)\
-                        .join(subquery, Feed.id == subquery.c.id)\
-                        .order_by(
-                            sa.func.DATE(cls.remote_updated).desc(),
-                            sa.func.round(sa.func.extract('hour', cls.remote_updated) / 8).desc(),
-                            subquery.c.avg_score.desc(),
-                            cls.remote_updated.desc())
 
         elif ordering == cls.ORDER_FREQUENCY:
             # Order entries by least frequent feeds first then reverse-chronologically for entries in the same

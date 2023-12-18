@@ -78,18 +78,6 @@
         </div>
 
         {% if feed %}
-        <div class="field is-grouped">
-            <div class="control">
-                <label class="label">Score</label>
-                <input class="input" name="score" type="text" value="{{ feed.score }}">
-            </div>
-            <div class="control">
-                <label class="label">Avg. score</label>
-                <input class="input" name="score" type="text" value="{{ feed.averaged_score() }}">
-            </div>
-        </div>
-        <p class="help">A count of views, pins, favorites and deletes of entries of this feed. It can be overridden to tweak the "best score" sorting.</p>
-
         <div class="field">
             <label class="label">Frequency rank</label>
             <p class="help">This is a ranking based on how frequently new entries arrive through this feed. It's used by the Least frequent sorting.</p>
