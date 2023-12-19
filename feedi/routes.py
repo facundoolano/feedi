@@ -557,6 +557,10 @@ def extract_article(url):
         for img in soup.findAll('img', attrs={data_attr: True}):
             img.attrs = {'src': img[data_attr]}
 
+    # prevent video iframes to force dimensions
+    for iframe in soup.findAll('iframe', height=True):
+        del iframe['height']
+
     article['content'] = str(soup)
 
     return article
