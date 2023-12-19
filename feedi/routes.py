@@ -260,13 +260,13 @@ def mastodon_boost(id):
 @login_required
 def feed_list():
     subquery = models.Feed.frequency_rank_query()
-    feeds = db.session.execute(db.select(models.Feed, subquery.c.rank, sa.func.count(1), sa.func.max(models.Entry.remote_updated))
+    feeds = db.session.execute(db.select(models.Feed, subquery.c.rank, sa.func.count(1), sa.func.max(models.Entry.remote_updated).label('updated'))
                                .filter(models.Feed.user_id == current_user.id)
-                               .join(subquery, models.Feed.id == subquery.c.id)
-                               .join(models.Entry, models.Feed.id == models.Entry.feed_id)
+                               .join(subquery, models.Feed.id == subquery.c.id, isouter=True)
+                               .join(models.Entry, models.Feed.id == models.Entry.feed_id, isouter=True)
                                .group_by(models.Feed)
-                               .order_by(subquery.c.rank.desc())
-                               )
+                               .order_by(sa.text('rank desc'), sa.text('updated desc')))
+
     return flask.render_template('feeds.html', feeds=feeds)
 
 

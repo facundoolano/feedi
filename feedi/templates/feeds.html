@@ -32,9 +32,10 @@
                     </a>
                 </td>
                 <td>{% if feed.folder %}<span class="icon"><i class="far fa-folder-open"></i></span> {{ feed.folder }}{% endif %}</td>
-                <td>{{last_seen | humanize}}</td>
+
+                <td>{% if last_seen %}{{last_seen | humanize}}{% endif %}</td>
                 <td>{{entries}}</td>
-                <td>{{freq}}</td>
+                <td>{{freq or ''}}</td>
                 <td class="is-narrow">
                     <span class="level-left">
                     <a class="level-item" hx-delete="{{ url_for('feed_delete', feed_name=feed.name )}}" title="delete" _="on htmx:afterRequest remove the closest <tr/>"
