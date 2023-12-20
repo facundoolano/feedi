@@ -95,6 +95,13 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
             # NOTE: ideally we'd like to include more info in the embed, not just the preview image. e.g. title, description.
             entry['media_url'] = toot['card'].get('image')
 
+        # show (read-only) poll options
+        if toot.get('poll'):
+            entry['body'] += '<ul>'
+            for option in toot['poll']['options']:
+                entry['body'] += f'<li>{option["title"]}</li>'
+            entry['body'] += '</ul>'
+
         entries.append(entry)
 
     return entries
