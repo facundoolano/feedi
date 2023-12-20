@@ -5,11 +5,12 @@
                    autocomplete="off"
                    name="q"
                    hx-get="{{ url_for('autocomplete') }}"
-                   hx-trigger="keyup[target.value.length >= 3] changed delay:200ms, search, drop delay:50ms, paste delay:50ms"
+                   hx-trigger="keyup[target.value.length >= 3] changed delay:50ms, search, drop delay:50ms, paste delay:50ms"
                    hx-target="next .autocomplete-items"
+                   hx-sync="this:replace"
                    _="on keydown[key is 'k' and metaKey] elsewhere focus() me then halt
                           then on keydown[key is 'ArrowDown' or (key is 'n' and ctrlKey)] focus() on the next .autocomplete-item halt
-                          then on keyup[key is 'Enter'] click() on the next .autocomplete-item
+                          then on keyup[key is 'Enter'] wait 300ms then click() on the next .autocomplete-item
                           then on keyup[key is 'Escape'] if (next .autocomplete-items) does not match .is-active then blur() me end
                           then on drop set my.value to event.dataTransfer.getData('text') then halt -- set explicitly so text is replaced instead of appended
                           "/>
