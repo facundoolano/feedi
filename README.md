@@ -28,6 +28,7 @@ NOTE: this project is primarily for personal use and experimentation, expect bug
     - [Adding sources](#adding-sources)
     - [Browsing the feed](#browsing-the-feed)
     - [Reading articles](#reading-articles)
+    - [Deleting old articles](#deleting-old-articles)
 - [Advanced features](#advanced-features)
     - [Bulk import/export feeds from csv and OPML files](#bulk-importexport-feeds-from-csv-and-opml-files)
     - [Mastodon account setup](#mastodon-account-setup)
@@ -62,13 +63,15 @@ Alternatively, you can build and run the app in a docker container with `make do
 
 ## Basic usage
 ### Adding sources
-By default, your feed will be empty. You can load some content from a set of [default websites](feeds.csv) if you want to get a quick feel of how the app works:
+By default, your feed will be empty. You can load content in a number of ways:
 
-    make feed-load feed-sync
+* Manually adding a feed by clicking the `+ Add Feed` button or navigating to `/feeds/new`.
+* Discovering a website RSS feed by pasting or dragging its url to the search input.
+* Loading a set of default websites included in [this repo](feeds.csv) by running: `make feed-load feed-sync`.
+* Importing a collection of feeds from an [OPML or CSV file]((#bulk-importexport-feeds-from-csv-and-opml-files)).
+* Logging into a [mastodon account](#mastodon-account-setup).
 
-Otherwise, you can manually add sources by clicking the `+ Add Feed` button or navigating to `http://localhost:5000/feeds/new`. When you first add a feed, the app  will fetch its most recent articles, then it will check periodically for new content (every 30 minutes [by default](https://github.com/facundoolano/feedi/blob/15add28488c5800eef2dbcb43adf1355da9133c3/feedi/config/default.py#L5)) .
-
-You can also import a collection of feeds from an [OPML or CSV file]((#bulk-importexport-feeds-from-csv-and-opml-files)).
+When you first add a feed, the app  will fetch its most recent articles, then it will check periodically for new content (every 30 minutes [by default](https://github.com/facundoolano/feedi/blob/15add28488c5800eef2dbcb43adf1355da9133c3/feedi/config/default.py#L5)).
 
 ### Browsing the feed
 
