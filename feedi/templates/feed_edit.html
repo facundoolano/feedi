@@ -97,7 +97,7 @@
                 <p class="control"><button class="button is-danger"
                                            type="button"
                                            hx-delete="{{ url_for('feed_delete', feed_name=feed.name )}}"
-                                           _="on htmx:afterRequest go to url '{{ url_for('feed_list')}}'" >Delete</button></p>
+                                           _="on htmx:afterRequest go to url {{ url_for('entry_list') }}" >Delete</button></p>
                 {% endif  %}
             </div>
             <div class="field is-grouped level-right">
