@@ -295,10 +295,11 @@ def discover_feed(url):
     for path in common_paths:
         rss_url = make_absolute(url, path)
         res = requests.get(rss_url)
-        if res.ok and res.headers.get('Content-Type', '').endswith('xml'):
+        mime = res.headers.get('Content-Type', '').split(';')[0]
+        if res.ok and mime.endswith('xml'):
             return rss_url, title
 
-    return feed_url, title
+    return None, title
 
 
 def make_absolute(url, path):
