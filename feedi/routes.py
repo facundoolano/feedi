@@ -564,6 +564,7 @@ def extract_article(url, local_links=False):
     if local_links:
         for a in soup.findAll('a', href=True):
             a['href'] = flask.url_for('preview_content', url=a['href'])
+            del a['target']
 
     article['content'] = str(soup)
 

@@ -70,6 +70,7 @@ def sanitize_content(html, truncate=True):
 
         # open links in local reader
         a['href'] = flask.url_for('preview_content', url=a['href'])
+        del a['target']
 
     return str(soup)
 
