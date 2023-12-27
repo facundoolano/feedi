@@ -444,7 +444,7 @@ def entry_view(id):
 
         # if full browser load or explicit content request, fetch the article synchronously
         try:
-            content = extract_article(dest_url)['content']
+            content = extract_article(dest_url, local_links=True)['content']
             return flask.render_template("entry_content.html", entry=entry, content=content)
         except:
             pass
@@ -475,7 +475,7 @@ def preview_content():
     """
     url = flask.request.args['url']
     try:
-        article = extract_article(url)
+        article = extract_article(url, local_links=True)
     except:
         return flask.redirect(url)
 
@@ -539,7 +539,7 @@ def compress_article(outfilename, article):
         zip.writestr('article.html', str(soup))
 
 
-def extract_article(url):
+def extract_article(url, local_links=False):
     # The mozilla/readability npm package shows better results at extracting the
     # article content than all the python libraries I've tried... even than the readabilipy
     # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
@@ -560,6 +560,10 @@ def extract_article(url):
     # prevent video iframes to force dimensions
     for iframe in soup.findAll('iframe', height=True):
         del iframe['height']
+
+    if local_links:
+        for a in soup.findAll('a', href=True):
+            a['href'] = flask.url_for('preview_content', url=a['href'])
 
     article['content'] = str(soup)
 
