@@ -14,10 +14,13 @@ deps: venv
 	$(venv) pip install -r requirements.txt
 
 deps-dev: deps
-	$(venv) pip install ipython ipdb flask-shell-ipython
+	$(venv) pip install -r requirements-dev.txt
 
 node_modules:
 	npm install || true
+
+test:
+	$(venv) pytest
 
 # Serve the app in development mode
 run:

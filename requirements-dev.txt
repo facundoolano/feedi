@@ -1,0 +1,7 @@
+-r requirements.txt
+ipython
+ipdb
+flask-shell-ipython
+pytest==7.4.3
+responses==0.24.1
+feedgen==1.0.0
