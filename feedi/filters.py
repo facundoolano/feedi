@@ -66,11 +66,12 @@ def sanitize_content(html, truncate=True):
 
     for a in soup.find_all('a', href=True):
         # prevent link clicks triggering the container's click event
-        a['_'] = "on click halt the event's bubbling"
-
-        # open links in local reader
-        a['href'] = flask.url_for('preview_content', url=a['href'])
-        del a['target']
+        # add kb modifiers to open in reader
+        a['_'] = f"""
+        on click[shiftKey and not metaKey] go to url {flask.url_for("preview_content", url=a["href"])} then halt
+        then on click[shiftKey and metaKey] go to url {flask.url_for("preview_content", url=a["href"])} in new window then halt
+        then on click halt the event's bubbling
+        """
 
     return str(soup)
 
