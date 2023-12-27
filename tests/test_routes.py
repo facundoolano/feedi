@@ -1,15 +1,18 @@
 import os
 
+import feedgen.feed as feedgen
+import feedi.app as feedi_app
 import pytest
-from feedi.app import create_app
+import responses  # this should come after app import
 from feedi.models import db
 
 
+@responses.activate
 @pytest.fixture()
 def app():
     assert os.getenv('FLASK_ENV') == 'testing', "not running in testing mode"
 
-    app = create_app()
+    app = feedi_app.create_app()
     yield app
 
     # clean up / reset resources
@@ -24,6 +27,9 @@ def client(app):
 
 def test_feed_add(client):
     # setup a feed rss url with a couple of items
+    mock_feed('feed1.com', [{'title': 'my-first-article', 'date': '2023-10-01'},
+                            {'title': 'my-second-article', 'date': '2023-10-10'}
+                            ])
 
     # create a new feed with a form post
 
@@ -60,3 +66,26 @@ def test_folder():
 def test_sync_while_between_pages():
     # TODO
     pass
+
+
+def mock_feed(domain, items):
+    base_url = f'https://{domain}'
+    feed_url = f'{base_url}/feed'
+
+    fg = feedgen.FeedGenerator()
+    fg.id(base_url)
+    fg.link(href=feed_url)
+    fg.title(f'{domain} feed')
+    fg.description(f'{domain} feed')
+
+    for item in items:
+        entry = fg.add_entry()
+        entry.id()
+        entry.link(href=f'{base_url}/{item["title"]}')
+        entry.title(item['title'])
+        entry.author({"name": 'John Doe'})
+        entry.published(item['date'] + ' 00:00Z')
+
+    rssfeed = fg.rss_str()
+    responses.add(responses.get(feed_url, body=rssfeed,
+                  headers={'Content-Type': 'application/xml'}))
