@@ -1,3 +1,4 @@
+import datetime
 import os
 import uuid
 
@@ -12,9 +13,9 @@ from feedi.models import db
 def app():
     assert os.getenv('FLASK_ENV') == 'testing', "not running in testing mode"
 
-    httpretty.enable(allow_net_connect=False, verbose=True)
-
     app = feedi_app.create_app()
+
+    httpretty.enable(allow_net_connect=False, verbose=True)
 
     yield app
 
@@ -28,6 +29,7 @@ def app():
 @pytest.fixture
 def client(app):
     "Return a test client authenticated with a fresh user."
+
     email = f'user-{uuid.uuid4()}@mail.com'
     with app.app_context():
         # kind of lousy to interact with DB directly, but need to work around
@@ -43,6 +45,7 @@ def client(app):
         '/auth/login', data={'email': email, 'password': 'password'}, follow_redirects=True)
     assert response.status_code == 200
 
+    httpretty.reset()
     return client
 
 
@@ -68,9 +71,25 @@ def test_feed_add(client):
 
 
 def test_home(client):
-    response = client.get('/')
+    feed_domain = 'feed1.com'
+
+    now = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=3)
+    feed_url = mock_feed(feed_domain, [{'title': 'old-article1', 'date': '2023-10-01 00:00Z'},
+                                       {'title': 'old-article2', 'date': '2023-10-10 00:00Z'},
+                                       {'title': 'recent-article', 'date': now},
+                                       {'title': 'earlier-article',
+                                           'date': now - datetime.timedelta(hours=1)}])
+
+    response = client.post('/feeds/new', data={'type': 'rss',
+                                               'name': feed_domain, 'url': feed_url}, follow_redirects=True)
     assert response.status_code == 200
-    # TODO
+
+    response = client.get('/')
+
+    assert 'recent-article' in response.text, 'recent articles are included in home feed'
+    assert 'earlier-article' in response.text, 'recent articles are included in home feed'
+    assert response.text.find(
+        'recent-article') < response.text.find('earlier-article'), 'same feed articles should be sorted by publication date'
 
 
 def test_home_freq_sort():
@@ -121,11 +140,15 @@ def mock_feed(domain, items):
         mock_request(entry_url, body='<p>content!</p>')
 
     rssfeed = fg.rss_str()
+    mock_request(base_url)
+    mock_request(f'{base_url}/favicon.ico', ctype='image/x-icon')
     mock_request(feed_url, body=rssfeed, ctype='application/rss+xml')
 
     return feed_url
 
 
 def mock_request(url, body='', ctype='application/html'):
+    httpretty.register_uri(httpretty.HEAD, url, adding_headers={
+                           'Content-Type': ctype}, priority=1)
     httpretty.register_uri(httpretty.GET, url, body=body, adding_headers={
-                           'Content-Type': ctype})
+                           'Content-Type': ctype}, priority=1)
