@@ -58,7 +58,7 @@
                           {% endif %}>
                          <div class="content" tabindex="-1">
                          {% if entry.feed.type == 'mastodon' %}
-                         {{ entry.body | safe }}
+                         {{ entry.body | sanitize(truncate=False) | safe }}
                          {% else %}
                          {{ entry.body | sanitize | safe }}
                              {% endif %}

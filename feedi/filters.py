@@ -2,6 +2,7 @@
 import datetime
 import urllib
 
+import flask
 from bs4 import BeautifulSoup
 from flask import current_app as app
 
@@ -51,10 +52,10 @@ def contains_feed_name(feed_list, selected_name):
 
 
 @app.template_filter('sanitize')
-def sanitize_content(html):
+def sanitize_content(html, truncate=True):
     # poor man's line truncating: reduce the amount of characters and let bs4 fix the html
     soup = BeautifulSoup(html, 'lxml')
-    if len(html) > 500:
+    if len(html) > 500 and truncate:
         html = html[:500] + '…'
         soup = BeautifulSoup(html, 'lxml')
 
@@ -63,9 +64,14 @@ def sanitize_content(html):
             soup.html.body.unwrap()
         soup.html.unwrap()
 
-    for a in soup.find_all('a'):
+    for a in soup.find_all('a', href=True):
         # prevent link clicks triggering the container's click event
-        a['_'] = "on click halt the event's bubbling"
+        # add kb modifiers to open in reader
+        a['_'] = f"""
+        on click[shiftKey and not metaKey] go to url {flask.url_for("preview_content", url=a["href"])} then halt
+        then on click[shiftKey and metaKey] go to url {flask.url_for("preview_content", url=a["href"])} in new window then halt
+        then on click halt the event's bubbling
+        """
 
     return str(soup)
 
