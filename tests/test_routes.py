@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from tests.setup import app, client, create_feed
 
 
@@ -58,16 +60,32 @@ def test_folders(client):
 
 
 def test_home_freq_sort():
-    pass
+    # feed1: 1 post 12 hs ago
+    # feed2: 20 posts < 12 hs ago
 
+    # home shows f1 post first
+    # the rest are in chronological order
 
-def test_home_recency_sort():
+    # feed3: 1 post 13 hs ago
+    # home shows f1, f3, f2
+
+    # change session to prefer recency sort
+    # home shows f2, f1, f3
     pass
 
 
 def test_home_pagination():
-    pass
+    # create a couple of feeds with ENTRY PAGE SIZE * 2 entries
+    # get home, verify it has PAGE SIZE entries sorted chronologically
 
+    # extract next page link
+    # fetch next page
+    # verify it contains the next N entries, sorted chronologically
 
-def test_auto_mark_viewed():
+    # get home again
+    # verify the first page is excluded this time (items where marked as viewed)
+
+    # change session to include already viewed
+    # get home again
+    # verify the first page is included again
     pass
