@@ -7,7 +7,7 @@ import pytest
 from feedi.models import db
 
 
-@pytest.fixture()
+@pytest.fixture(scope='module')
 def app():
     assert os.getenv('FLASK_ENV') == 'testing', "not running in testing mode"
 
@@ -21,24 +21,25 @@ def app():
 
     # clean up / reset resources
     with app.app_context():
-        db.session.flush()
-        # FIXME
-        # db.drop_all()
+        db.drop_all()
 
 
-@pytest.fixture()
+@pytest.fixture(scope='module')
 def client(app):
-    return app.test_client()
+    client = app.test_client()
 
+    # FIXME do something to reset the user every time
 
-def test_feed_add(client):
     # get the index to force a default login
     response = client.get('/', follow_redirects=True)
     assert response.status_code == 200
+    return client
 
+
+def test_feed_add(client):
     feed_domain = 'feed1.com'
-    feed_url = mock_feed(feed_domain, [{'title': 'my-first-article', 'date': '2023-10-01'},
-                                       {'title': 'my-second-article', 'date': '2023-10-10'}])
+    feed_url = mock_feed(feed_domain, [{'title': 'my-first-article', 'date': '2023-10-01 00:00Z'},
+                                       {'title': 'my-second-article', 'date': '2023-10-10 00:00Z'}])
 
     # create a new feed with a form post
     response = client.post('/feeds/new', data={
@@ -56,8 +57,10 @@ def test_feed_add(client):
         'my-second-article') < response.text.find('my-first-article'), 'articles should be sorted by publication date'
 
 
-def test_home():
-    pass
+def test_home(client):
+    response = client.get('/')
+    assert response.status_code == 200
+    # TODO
 
 
 def test_home_freq_sort():
@@ -102,16 +105,13 @@ def mock_feed(domain, items):
         entry.link(href=entry_url)
         entry.title(item['title'])
         entry.author({"name": 'John Doe'})
-        entry.published(item['date'] + ' 00:00Z')
-        entry.updated(item['date'] + ' 00:00Z')
+        entry.published(item['date'])
+        entry.updated(item['date'])
 
         mock_request(entry_url, body='<p>content!</p>')
 
     rssfeed = fg.rss_str()
     mock_request(feed_url, body=rssfeed, ctype='application/rss+xml')
-    mock_request(
-        base_url, body='<html><head><link rel="icon" type="image/x-icon" href="/favicon.ico"></head></html>')
-    mock_request(f'{base_url}/favicon.ico', ctype='image/x-icon')
 
     return feed_url
 
