@@ -79,6 +79,17 @@ def test_feed_add(client):
         'my-second-article') < response.text.find('my-first-article'), 'articles should be sorted by publication date'
 
 
+def test_folders():
+    # feed1, feed2 -> folder 1
+    # feed3 -> folder 2
+    # feed4 -> no folder
+
+    # get home
+    # get folder1
+    # get folder2
+    pass
+
+
 def test_home_freq_sort():
     pass
 
@@ -92,15 +103,6 @@ def test_home_pagination():
 
 
 def test_auto_mark_viewed():
-    pass
-
-
-def test_folder():
-    pass
-
-
-def test_sync_while_between_pages():
-    # TODO
     pass
 
 
