@@ -621,10 +621,11 @@ def update_setting(setting, value):
 
 
 # TODO improve this views to accept only valid values
+# also the default is dubious
 @app.post("/session/<setting>")
 @login_required
 def toggle_setting(setting):
-    flask.session[setting] = not flask.session.get(setting, False)
+    flask.session[setting] = not flask.session.get(setting, True)
     return '', 204
 
 

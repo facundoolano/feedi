@@ -1,4 +1,5 @@
 import datetime as dt
+import re
 
 from tests.setup import app, client, create_feed
 
@@ -92,18 +93,41 @@ def test_home_sorting(client):
     assert 'f1-a1' not in response.text
 
 
-def test_home_pagination():
-    # create a couple of feeds with ENTRY PAGE SIZE * 2 entries
-    # get home, verify it has PAGE SIZE entries sorted chronologically
+def test_home_pagination(app, client):
+    now = dt.datetime.now(dt.timezone.utc)
+    items = []
+    per_page = app.config['ENTRY_PAGE_SIZE']
+    for i in range(0, per_page * 3):
+        items.append({'title': f'f1-a{i}', 'date': now - dt.timedelta(hours=3, minutes=i)})
+    create_feed(client, 'feed1.com', items)
 
-    # extract next page link
-    # fetch next page
-    # verify it contains the next N entries, sorted chronologically
+    # home includes a first page of results, sorted by pub date
+    response = client.get('/')
+    assert 'f1-a0' in response.text
+    assert f'f1-a{per_page - 1}' in response.text
+    assert f'f1-a{per_page}' not in response.text
+    assert response.text.find('f1-a0') < response.text.find(f'f1-a{per_page - 1}')
 
-    # get home again
-    # verify the first page is excluded this time (items where marked as viewed)
+    next_page = re.search(r'page=([^&"]+)', response.text).group(1)
+    response = client.get(f'/?page={next_page}')
+    assert f'f1-a{per_page - 1}' not in response.text
+    assert f'f1-a{per_page}' in response.text
+    assert f'f1-a{per_page * 2 - 1}' in response.text
+    assert f'f1-a{per_page * 2}' not in response.text
 
-    # change session to include already viewed
-    # get home again
-    # verify the first page is included again
-    pass
+    # get home again without page, verify the first page was marked as already seen
+    response = client.get('/')
+    assert f'f1-a{per_page - 1}' not in response.text
+    assert f'f1-a{per_page}' in response.text
+    assert f'f1-a{per_page * 2 - 1}' in response.text
+    assert f'f1-a{per_page * 2}' not in response.text
+
+    # change settings to include already seen
+    response = client.post('/session/hide_seen')
+    assert response.status_code == 204
+
+    # get home again, verify first page is included again
+    response = client.get('/')
+    assert 'f1-a0' in response.text
+    assert f'f1-a{per_page - 1}' in response.text
+    assert f'f1-a{per_page}' not in response.text
