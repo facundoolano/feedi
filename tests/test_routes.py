@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+import datetime as dt
 
 from tests.setup import app, client, create_feed
 
@@ -59,19 +59,37 @@ def test_folders(client):
                'f1-a1', 'f1-a2', 'f2-a1', 'f2-a2', 'f4-a1', 'f4-a2']])
 
 
-def test_home_freq_sort():
+def test_home_sorting(client):
     # feed1: 1 post 12 hs ago
+    date12h = dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=12)
+    create_feed(client, 'feed1.com', [{'title': 'f1-a1', 'date': date12h}])
+
     # feed2: 20 posts < 12 hs ago
+    items = []
+    for i in range(1, 21):
+        items.append({'title': f'f2-a{i}', 'date': date12h + dt.timedelta(hours=1, minutes=i)})
+    create_feed(client, 'feed2.com', items)
 
     # home shows f1 post first
     # the rest are in chronological order
+    response = client.get('/')
+    assert response.text.find('f1-a1') < response.text.find('f2-a20')
+    assert response.text.find('f2-a20') < response.text.find('f2-a12')
 
     # feed3: 1 post 13 hs ago
-    # home shows f1, f3, f2
+    date13h = date12h - dt.timedelta(hours=1)
+    create_feed(client, 'feed3.com', [{'title': 'f3-a1', 'date': date13h}])
 
-    # change session to prefer recency sort
-    # home shows f2, f1, f3
-    pass
+    response = client.get('/')
+    assert response.text.find('f1-a1') < response.text.find('f3-a1')
+    assert response.text.find('f3-a1') < response.text.find('f2-a13')
+
+    # change the sorting settings and request home again
+    client.put('/session/ordering/recency')
+    response = client.get('/')
+    assert response.text.find('f2-a20') < response.text.find('f2-a12')
+    assert 'f3-a1' not in response.text
+    assert 'f1-a1' not in response.text
 
 
 def test_home_pagination():

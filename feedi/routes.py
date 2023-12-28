@@ -628,6 +628,7 @@ def toggle_setting(setting):
     return '', 204
 
 
+# TODO rename to shortcut_folders
 @app.context_processor
 def sidebar_feeds():
     """
