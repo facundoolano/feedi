@@ -2,22 +2,28 @@ import os
 
 import feedgen.feed as feedgen
 import feedi.app as feedi_app
+import httpretty
 import pytest
-import responses  # this should come after app import
 from feedi.models import db
 
 
-@responses.activate
 @pytest.fixture()
 def app():
     assert os.getenv('FLASK_ENV') == 'testing', "not running in testing mode"
 
+    httpretty.enable(allow_net_connect=False, verbose=True)
+
     app = feedi_app.create_app()
+
     yield app
+
+    httpretty.disable()
 
     # clean up / reset resources
     with app.app_context():
-        db.drop_all()
+        db.session.flush()
+        # FIXME
+        # db.drop_all()
 
 
 @pytest.fixture()
@@ -26,17 +32,28 @@ def client(app):
 
 
 def test_feed_add(client):
-    # setup a feed rss url with a couple of items
-    mock_feed('feed1.com', [{'title': 'my-first-article', 'date': '2023-10-01'},
-                            {'title': 'my-second-article', 'date': '2023-10-10'}
-                            ])
+    # get the index to force a default login
+    response = client.get('/', follow_redirects=True)
+    assert response.status_code == 200
+
+    feed_domain = 'feed1.com'
+    feed_url = mock_feed(feed_domain, [{'title': 'my-first-article', 'date': '2023-10-01'},
+                                       {'title': 'my-second-article', 'date': '2023-10-10'}])
 
     # create a new feed with a form post
+    response = client.post('/feeds/new', data={
+        'type': 'rss',
+        'name': feed_domain,
+        'url': feed_url
+    }, follow_redirects=True)
 
-    # assert it redirects to feed's feed
+    assert response.status_code == 200
+    assert response.request.path == f'/feeds/{feed_domain}/entries', 'feed submit should redirect to entry list'
 
-    # assert it displays the items sorted by publish date
-    assert 1 == 1, "1 equals 1"
+    assert 'my-first-article' in response.text, 'article should be included in entry list'
+    assert 'my-second-article' in response.text, 'article should be included in entry list'
+    assert response.text.find(
+        'my-second-article') < response.text.find('my-first-article'), 'articles should be sorted by publication date'
 
 
 def test_home():
@@ -79,13 +96,26 @@ def mock_feed(domain, items):
     fg.description(f'{domain} feed')
 
     for item in items:
+        entry_url = f'{base_url}/{item["title"]}'
         entry = fg.add_entry()
         entry.id()
-        entry.link(href=f'{base_url}/{item["title"]}')
+        entry.link(href=entry_url)
         entry.title(item['title'])
         entry.author({"name": 'John Doe'})
         entry.published(item['date'] + ' 00:00Z')
+        entry.updated(item['date'] + ' 00:00Z')
+
+        mock_request(entry_url, body='<p>content!</p>')
 
     rssfeed = fg.rss_str()
-    responses.add(responses.get(feed_url, body=rssfeed,
-                  headers={'Content-Type': 'application/xml'}))
+    mock_request(feed_url, body=rssfeed, ctype='application/rss+xml')
+    mock_request(
+        base_url, body='<html><head><link rel="icon" type="image/x-icon" href="/favicon.ico"></head></html>')
+    mock_request(f'{base_url}/favicon.ico', ctype='image/x-icon')
+
+    return feed_url
+
+
+def mock_request(url, body='', ctype='application/html'):
+    httpretty.register_uri(httpretty.GET, url, body=body, adding_headers={
+                           'Content-Type': ctype})

@@ -20,7 +20,7 @@ node_modules:
 	npm install || true
 
 test:
-	$(venv) FLASK_ENV=testing pytest
+	$(venv) FLASK_ENV=testing pytest --disable-warnings
 
 # Serve the app in development mode
 run:
