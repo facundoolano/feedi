@@ -131,3 +131,69 @@ def test_home_pagination(app, client):
     assert 'f1-a0' in response.text
     assert f'f1-a{per_page - 1}' in response.text
     assert f'f1-a{per_page}' not in response.text
+
+
+def test_sync_between_pages(client):
+    # TODO verify pagination behaves reasonably if new feeds/entries
+    # are added between fetching one page and the next
+    pass
+
+
+def test_content_updated(client):
+    # TODO verify the db entry reflects changes if source feed changes
+    pass
+
+
+def test_favorites(client):
+    # TODO
+    pass
+
+
+def test_pinned(client):
+    # TODO
+    pass
+
+
+def test_entries_not_mixed_between_users(client):
+    # TODO
+    pass
+
+
+def test_sync_old_entries(client):
+    # TODO
+    # verify that RSS_SKIP_OLDER_THAN_DAYS is honored
+
+    # verify that if the feed doesn't have enough entries
+    # RSS_MINIMUM_ENTRY_AMOUNT is honored, regardless of entry age
+    pass
+
+
+def test_view_entry_content(client):
+    # TODO
+    pass
+
+
+def test_discover_feed(client):
+    # TODO
+    pass
+
+
+def test_feed_list(client):
+    # TODO
+    pass
+
+
+def test_feed_edit(client):
+    # TODO
+    pass
+
+
+def test_feed_delete(client):
+    # TODO
+    pass
+
+
+def test_mastodon_feed(client):
+    # TODO mock mastodon api requests
+    # check that entries show up in feed
+    pass
