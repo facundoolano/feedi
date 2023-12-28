@@ -69,27 +69,14 @@ def test_feed_add(client):
     assert response.text.find(
         'my-second-article') < response.text.find('my-first-article'), 'articles should be sorted by publication date'
 
-
-def test_home(client):
-    feed_domain = 'feed1.com'
-
-    now = datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(hours=3)
-    feed_url = mock_feed(feed_domain, [{'title': 'old-article1', 'date': '2023-10-01 00:00Z'},
-                                       {'title': 'old-article2', 'date': '2023-10-10 00:00Z'},
-                                       {'title': 'recent-article', 'date': now},
-                                       {'title': 'earlier-article',
-                                           'date': now - datetime.timedelta(hours=1)}])
-
-    response = client.post('/feeds/new', data={'type': 'rss',
-                                               'name': feed_domain, 'url': feed_url}, follow_redirects=True)
+    # check same entries show up in home feed
+    response = client.get('/')
     assert response.status_code == 200
 
-    response = client.get('/')
-
-    assert 'recent-article' in response.text, 'recent articles are included in home feed'
-    assert 'earlier-article' in response.text, 'recent articles are included in home feed'
+    assert 'my-first-article' in response.text, 'article should be included in entry list'
+    assert 'my-second-article' in response.text, 'article should be included in entry list'
     assert response.text.find(
-        'recent-article') < response.text.find('earlier-article'), 'same feed articles should be sorted by publication date'
+        'my-second-article') < response.text.find('my-first-article'), 'articles should be sorted by publication date'
 
 
 def test_home_freq_sort():
