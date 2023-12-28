@@ -1,4 +1,5 @@
 import os
+import uuid
 
 import feedgen.feed as feedgen
 import feedi.app as feedi_app
@@ -24,15 +25,24 @@ def app():
         db.drop_all()
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture
 def client(app):
+    "Return a test client authenticated with a fresh user."
+    email = f'user-{uuid.uuid4()}@mail.com'
+    with app.app_context():
+        # kind of lousy to interact with DB directly, but need to work around
+        # user registering not exposed to the web
+        from feedi import models
+        user = models.User(email=email)
+        user.set_password('password')
+        db.session.add(user)
+        db.session.commit()
+
     client = app.test_client()
-
-    # FIXME do something to reset the user every time
-
-    # get the index to force a default login
-    response = client.get('/', follow_redirects=True)
+    response = client.post(
+        '/auth/login', data={'email': email, 'password': 'password'}, follow_redirects=True)
     assert response.status_code == 200
+
     return client
 
 
