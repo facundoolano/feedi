@@ -593,8 +593,10 @@ class Entry(db.Model):
             # if bigger, more chances to bury recent stuff under old unseen infrequent posts
             recency_bucket_date = datetime.datetime.utcnow() - datetime.timedelta(hours=24)
 
+            # isouter = true so that if a feed with only old stuff is added, entries still show up
+            # even without having a freq rank
             return query.join(Feed)\
-                        .join(subquery, Feed.id == subquery.c.id)\
+                        .join(subquery, Feed.id == subquery.c.id, isouter=True)\
                         .order_by(
                             (cls.remote_updated >= recency_bucket_date).desc(),
                             subquery.c.rank,
