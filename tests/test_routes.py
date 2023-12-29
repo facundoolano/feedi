@@ -1,7 +1,7 @@
 import datetime as dt
 import re
 
-from tests.conftest import create_feed
+from tests.conftest import create_feed, mock_feed
 
 
 def test_feed_add(client):
@@ -133,15 +133,46 @@ def test_home_pagination(app, client):
     assert f'f1-a{per_page}' not in response.text
 
 
-def test_sync_between_pages(client):
-    # TODO verify pagination behaves reasonably if new feeds/entries
-    # are added between fetching one page and the next
+def test_sync_old_entries(client):
+    # TODO
+    # verify that RSS_SKIP_OLDER_THAN_DAYS is honored
+
+    # verify that if the feed doesn't have enough entries
+    # RSS_MINIMUM_ENTRY_AMOUNT is honored, regardless of entry age
     pass
 
 
 def test_sync_updates(client):
-    # TODO verify new entries are added
-    # TODO verify the db entry reflects changes if source feed changes
+    feed_domain = 'feed1.com'
+    response = create_feed(client, feed_domain, [{'title': 'my-first-article', 'date': '2023-10-01 00:00Z',
+                                                  'description': 'initial description'},
+                                                 {'title': 'my-second-article', 'date': '2023-10-10 00:00Z'}])
+
+    assert 'my-first-article' in response.text
+    assert 'initial description' in response.text
+    assert 'my-second-article' in response.text
+
+    mock_feed(feed_domain, [{'title': 'my-first-article', 'date': '2023-10-01 00:00Z',
+                             'description': 'updated description'},
+                            {'title': 'my-second-article', 'date': '2023-10-10 00:00Z'},
+                            {'title': 'my-third-article', 'date': '2023-10-11 00:00Z'}])
+
+    # force resync
+    response = client.post(f'/feeds/{feed_domain}/entries')
+    assert response.status_code == 200
+
+    # verify changes took effect
+    response = client.get('/')
+    assert 'my-first-article' in response.text
+    assert 'updated description' in response.text
+    assert 'initial description' not in response.text
+    assert 'my-second-article' in response.text
+    assert 'my-third-article' in response.text
+
+
+def test_sync_between_pages(client):
+    # TODO verify pagination behaves reasonably if new feeds/entries
+    # are added between fetching one page and the next
     pass
 
 
@@ -207,15 +238,6 @@ def test_pinned(client):
 
 def test_entries_not_mixed_between_users(client):
     # TODO
-    pass
-
-
-def test_sync_old_entries(client):
-    # TODO
-    # verify that RSS_SKIP_OLDER_THAN_DAYS is honored
-
-    # verify that if the feed doesn't have enough entries
-    # RSS_MINIMUM_ENTRY_AMOUNT is honored, regardless of entry age
     pass
 
 
