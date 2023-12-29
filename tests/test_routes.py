@@ -1,7 +1,7 @@
 import datetime as dt
 import re
 
-from tests.conftest import create_feed
+from tests.conftest import create_feed, mock_feed
 
 
 def test_feed_add(client):
@@ -133,38 +133,111 @@ def test_home_pagination(app, client):
     assert f'f1-a{per_page}' not in response.text
 
 
-def test_sync_between_pages(client):
-    # TODO verify pagination behaves reasonably if new feeds/entries
-    # are added between fetching one page and the next
-    pass
-
-
-def test_content_updated(client):
-    # TODO verify the db entry reflects changes if source feed changes
-    pass
-
-
-def test_favorites(client):
-    # TODO
-    pass
-
-
-def test_pinned(client):
-    # TODO
-    pass
-
-
-def test_entries_not_mixed_between_users(client):
-    # TODO
-    pass
-
-
 def test_sync_old_entries(client):
     # TODO
     # verify that RSS_SKIP_OLDER_THAN_DAYS is honored
 
     # verify that if the feed doesn't have enough entries
     # RSS_MINIMUM_ENTRY_AMOUNT is honored, regardless of entry age
+    pass
+
+
+def test_sync_updates(client):
+    feed_domain = 'feed1.com'
+    response = create_feed(client, feed_domain, [{'title': 'my-first-article', 'date': '2023-10-01 00:00Z',
+                                                  'description': 'initial description'},
+                                                 {'title': 'my-second-article', 'date': '2023-10-10 00:00Z'}])
+
+    assert 'my-first-article' in response.text
+    assert 'initial description' in response.text
+    assert 'my-second-article' in response.text
+
+    mock_feed(feed_domain, [{'title': 'my-first-article', 'date': '2023-10-01 00:00Z',
+                             'description': 'updated description'},
+                            {'title': 'my-second-article', 'date': '2023-10-10 00:00Z'},
+                            {'title': 'my-third-article', 'date': '2023-10-11 00:00Z'}])
+
+    # force resync
+    response = client.post(f'/feeds/{feed_domain}/entries')
+    assert response.status_code == 200
+
+    # verify changes took effect
+    response = client.get('/')
+    assert 'my-first-article' in response.text
+    assert 'updated description' in response.text
+    assert 'initial description' not in response.text
+    assert 'my-second-article' in response.text
+    assert 'my-third-article' in response.text
+
+
+def test_sync_between_pages(client):
+    # TODO verify pagination behaves reasonably if new feeds/entries
+    # are added between fetching one page and the next
+    pass
+
+
+def test_favorites(client):
+    feed_domain = 'feed1.com'
+    response = create_feed(client, feed_domain, [{'title': 'my-first-article', 'date': '2023-10-01 00:00Z'},
+                                                 {'title': 'my-second-article', 'date': '2023-10-10 00:00Z'}])
+
+    a2_favorite = re.search(r'/favorites/(\d+)', response.text).group(0)
+    response = client.put(a2_favorite)
+    assert response.status_code == 204
+
+    response = client.get('/favorites')
+    assert 'my-first-article' not in response.text
+    assert 'my-second-article' in response.text
+
+
+def test_pinned(client):
+    response = create_feed(client, 'feed1.com', [{'title': 'f1-a1', 'date': '2023-10-01 00:00Z'},
+                                                 {'title': 'f1-a2', 'date': '2023-10-10 00:00Z'}],
+                           folder='folder1')
+    f1a2_pin_url = re.search(r'/pinned/(\d+)', response.text).group(0)
+
+    response = create_feed(client, 'feed2.com', [{'title': 'f2-a1', 'date': '2023-10-01 00:00Z'},
+                                                 {'title': 'f2-a2', 'date': '2023-10-10 00:00Z'}])
+    f2_a2_pin_url = re.search(r'/pinned/(\d+)', response.text).group(0)
+
+    response = client.get('/')
+    assert 'f1-a2' in response.text
+    assert 'f2-a2' in response.text
+    response = client.get('/folder/folder1')
+    assert 'f1-a2' in response.text
+    assert 'f2-a2' not in response.text
+
+    # add some pages of more entries in both feeds, to ensure the older ones are pushed out of the page
+    now = dt.datetime.now(dt.timezone.utc)
+    for i in range(1, 20):
+        date = now - dt.timedelta(hours=1, minutes=1)
+        create_feed(client, f'f{i}-folder1.com', [{'title': 'article1', 'date': date}],
+                    folder='folder1')
+
+    # verify the old entries where pushed out of home and folder
+    response = client.get('/')
+    assert 'f1-a2' not in response.text
+    assert 'f2-a2' not in response.text
+    response = client.get('/folder/folder1')
+    assert 'f1-a2' not in response.text
+
+    # pin the old entries
+    response = client.put(f1a2_pin_url)
+    assert response.status_code == 200
+    response = client.put(f2_a2_pin_url)
+    assert response.status_code == 200
+
+    # verify they are pinned to the home and folder
+    response = client.get('/')
+    assert 'f1-a2' in response.text
+    assert 'f2-a2' in response.text
+    response = client.get('/folder/folder1')
+    assert 'f1-a2' in response.text
+    assert 'f2-a2' not in response.text
+
+
+def test_entries_not_mixed_between_users(client):
+    # TODO
     pass
 
 

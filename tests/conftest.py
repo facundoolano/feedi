@@ -76,9 +76,10 @@ def mock_feed(domain, items):
         entry.id()
         entry.link(href=entry_url)
         entry.title(item['title'])
-        entry.author({"name": 'John Doe'})
+        entry.author({"name": item.get('author', 'John Doe')})
         entry.published(item['date'])
         entry.updated(item['date'])
+        entry.description(item.get('description', 'default description'))
 
         mock_request(entry_url, body='<p>content!</p>')
 
