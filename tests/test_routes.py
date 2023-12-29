@@ -145,8 +145,17 @@ def test_content_updated(client):
 
 
 def test_favorites(client):
-    # TODO
-    pass
+    feed_domain = 'feed1.com'
+    response = create_feed(client, feed_domain, [{'title': 'my-first-article', 'date': '2023-10-01 00:00Z'},
+                                                 {'title': 'my-second-article', 'date': '2023-10-10 00:00Z'}])
+
+    a2_favorite = re.search(r'/favorites/(\d+)', response.text).group(0)
+    response = client.put(a2_favorite)
+    assert response.status_code == 204
+
+    response = client.get('/favorites')
+    assert 'my-first-article' not in response.text
+    assert 'my-second-article' in response.text
 
 
 def test_pinned(client):
