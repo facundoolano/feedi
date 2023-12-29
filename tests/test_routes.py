@@ -139,7 +139,8 @@ def test_sync_between_pages(client):
     pass
 
 
-def test_content_updated(client):
+def test_sync_updates(client):
+    # TODO verify new entries are added
     # TODO verify the db entry reflects changes if source feed changes
     pass
 
@@ -159,8 +160,49 @@ def test_favorites(client):
 
 
 def test_pinned(client):
-    # TODO
-    pass
+    response = create_feed(client, 'feed1.com', [{'title': 'f1-a1', 'date': '2023-10-01 00:00Z'},
+                                                 {'title': 'f1-a2', 'date': '2023-10-10 00:00Z'}],
+                           folder='folder1')
+    f1a2_pin_url = re.search(r'/pinned/(\d+)', response.text).group(0)
+
+    response = create_feed(client, 'feed2.com', [{'title': 'f2-a1', 'date': '2023-10-01 00:00Z'},
+                                                 {'title': 'f2-a2', 'date': '2023-10-10 00:00Z'}])
+    f2_a2_pin_url = re.search(r'/pinned/(\d+)', response.text).group(0)
+
+    response = client.get('/')
+    assert 'f1-a2' in response.text
+    assert 'f2-a2' in response.text
+    response = client.get('/folder/folder1')
+    assert 'f1-a2' in response.text
+    assert 'f2-a2' not in response.text
+
+    # add some pages of more entries in both feeds, to ensure the older ones are pushed out of the page
+    now = dt.datetime.now(dt.timezone.utc)
+    for i in range(1, 20):
+        date = now - dt.timedelta(hours=1, minutes=1)
+        create_feed(client, f'f{i}-folder1.com', [{'title': 'article1', 'date': date}],
+                    folder='folder1')
+
+    # verify the old entries where pushed out of home and folder
+    response = client.get('/')
+    assert 'f1-a2' not in response.text
+    assert 'f2-a2' not in response.text
+    response = client.get('/folder/folder1')
+    assert 'f1-a2' not in response.text
+
+    # pin the old entries
+    response = client.put(f1a2_pin_url)
+    assert response.status_code == 200
+    response = client.put(f2_a2_pin_url)
+    assert response.status_code == 200
+
+    # verify they are pinned to the home and folder
+    response = client.get('/')
+    assert 'f1-a2' in response.text
+    assert 'f2-a2' in response.text
+    response = client.get('/folder/folder1')
+    assert 'f1-a2' in response.text
+    assert 'f2-a2' not in response.text
 
 
 def test_entries_not_mixed_between_users(client):
