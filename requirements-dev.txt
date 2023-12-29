@@ -5,3 +5,4 @@ flask-shell-ipython
 pytest==7.4.3
 httpretty==1.1.4
 feedgen==1.0.0
+flake8
