@@ -49,7 +49,7 @@ def huey_task(*huey_args):
                 try:
                     f(*args, **kwargs)
                     app.logger.info("FINISHED %s %s %s", f.__name__, fargs, fkwargs)
-                except:
+                except Exception:
                     app.logger.error("ERRORED %s %s %s", f.__name__, fargs, fkwargs)
 
         return decorator
@@ -73,7 +73,7 @@ def sync_all_feeds():
     for name, task in tasks:
         try:
             task.get()
-        except:
+        except Exception:
             app.logger.exception("failure during async task %s", name)
             continue
 
@@ -182,8 +182,7 @@ def csv_dump(file, user):
     with open(file, 'w') as csv_file:
         feed_writer = csv.writer(csv_file)
         for feed in db.session.execute(db.select(models.Feed)
-                                       .filter_by(user_id=user.id)
-                                       .filter(models.Feed.is_mastodon == False)).scalars():
+                                       .filter_by(user_id=user.id, is_mastodon=False)).scalars():
             feed_writer.writerow(feed.to_valuelist())
             app.logger.info('written %s', feed)
 
@@ -222,7 +221,7 @@ def opml_dump(file, user):
                                    ).scalars():
         if feed.folder:
             # to represent folder structure we put the feed in nested outlines
-            if not feed.folder in folder_outlines:
+            if feed.folder in folder_outlines:
                 folder_outlines[feed.folder] = document.add_outline(feed.folder)
             target = folder_outlines[feed.folder]
         else:

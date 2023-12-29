@@ -149,7 +149,8 @@ class RSSParser(CachingRequestsMixin):
     @staticmethod
     def _matches(entry, filters):
         """
-        Check a filter expression (e.g. "author=John Doe") against the parsed entry and return whether it matches the condition.
+        Check a filter expression (e.g. "author=John Doe") against the parsed entry and return whether
+        it matches the condition.
         """
         # this is very brittle and ad hoc but gets the job done
         filters = filters.split(',')
@@ -158,7 +159,7 @@ class RSSParser(CachingRequestsMixin):
             field = field.lower().strip()
             value = value.lower().strip()
 
-            if not value in entry.get(field, '').lower():
+            if value not in entry.get(field, '').lower():
                 return False
 
         return True
@@ -319,7 +320,7 @@ def pretty_print(url):
 def to_datetime(struct_time):
     try:
         return datetime.datetime.fromtimestamp(time.mktime(struct_time))
-    except:
+    except Exception:
         logger.error("Failure in date parsing, received %s", struct_time)
         raise
 
@@ -354,7 +355,7 @@ class RedditParser(RSSParser):
     @staticmethod
     def is_compatible(feed_url):
         # looks like reddit but not like the inbox feed
-        return 'reddit.com' in feed_url and not 'reddit.com/message' in feed_url
+        return 'reddit.com' in feed_url and 'reddit.com/message' not in feed_url
 
     def parse_body(self, entry):
         soup = BeautifulSoup(entry['summary'], 'lxml')

@@ -7,7 +7,6 @@ import httpretty
 import pytest
 from feedi.models import db
 
-### SETUP ##
 
 @pytest.fixture(scope='module')
 def app():
@@ -47,8 +46,6 @@ def client(app):
 
     httpretty.reset()
     return client
-
-### HELPERS ###
 
 
 def create_feed(client, domain, items, folder=None):

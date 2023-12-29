@@ -26,7 +26,7 @@ def get_favicon(url):
 
     try:
         favicons = favicon.get(url)
-    except:
+    except Exception:
         logger.exception("error fetching favicon: %s", url)
         return
 

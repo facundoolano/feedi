@@ -22,6 +22,10 @@ node_modules:
 test:
 	$(venv) FLASK_ENV=testing pytest --disable-warnings
 
+lint:
+	$(venv) flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude venv,migrations
+	$(venv) flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude venv,migrations
+
 # Serve the app in development mode
 run:
 	$(flask) run --debug --reload -h 0.0.0.0

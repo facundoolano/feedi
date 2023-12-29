@@ -5,7 +5,6 @@ import shutil
 import subprocess
 import tempfile
 import zipfile
-from collections import defaultdict
 
 import flask
 import sqlalchemy as sa
@@ -260,7 +259,8 @@ def mastodon_boost(id):
 @login_required
 def feed_list():
     subquery = models.Feed.frequency_rank_query()
-    feeds = db.session.execute(db.select(models.Feed, subquery.c.rank, sa.func.count(1), sa.func.max(models.Entry.remote_updated).label('updated'))
+    feeds = db.session.execute(db.select(models.Feed, subquery.c.rank, sa.func.count(1),
+                                         sa.func.max(models.Entry.remote_updated).label('updated'))
                                .filter(models.Feed.user_id == current_user.id)
                                .join(subquery, models.Feed.id == subquery.c.id, isouter=True)
                                .join(models.Entry, models.Feed.id == models.Entry.feed_id, isouter=True)
@@ -287,8 +287,8 @@ def feed_add():
 
     folders = db.session.scalars(
         db.select(models.Feed.folder)
-        .filter(models.Feed.folder != None,
-                models.Feed.folder != '')
+        .filter(models.Feed.folder.isnot(None),
+                models.Feed.folder.isnot(''))
         .filter_by(user_id=current_user.id).distinct())
 
     return flask.render_template('feed_edit.html',
@@ -350,8 +350,8 @@ def feed_edit(feed_name):
 
     folders = db.session.scalars(
         db.select(models.Feed.folder)
-        .filter(models.Feed.folder != None,
-                models.Feed.folder != '')
+        .filter(models.Feed.folder.isnot(None),
+                models.Feed.folder.isnot(''))
         .filter_by(user_id=current_user.id).distinct()).all()
 
     return flask.render_template('feed_edit.html', feed=feed, folders=folders)
@@ -429,7 +429,7 @@ def entry_view(id):
     # browser behavior. I don't like it, but I couldn't figure out how to preserve the feed
     # page/scrolling position on back button unless I jump to view content via htmx
 
-    if 'HX-Request' in flask.request.headers and not 'content' in flask.request.args:
+    if 'HX-Request' in flask.request.headers and 'content' not in flask.request.args:
         # if ajax/htmx just load the empty UI and load content asynchronously
         return flask.render_template("entry_content.html", entry=entry, content=None)
     else:
@@ -446,7 +446,7 @@ def entry_view(id):
         try:
             content = extract_article(dest_url, local_links=True)['content']
             return flask.render_template("entry_content.html", entry=entry, content=content)
-        except:
+        except Exception:
             pass
 
         return redirect_response(dest_url)
@@ -476,7 +476,7 @@ def preview_content():
     url = flask.request.args['url']
     try:
         article = extract_article(url, local_links=True)
-    except:
+    except Exception:
         return flask.redirect(url)
 
     # put together entry stub for the template
@@ -638,8 +638,8 @@ def sidebar_feeds():
     if current_user.is_authenticated:
         folders = db.session.scalars(db.select(models.Feed.folder)
                                      .filter_by(user_id=current_user.id)
-                                     .filter(models.Feed.folder != None,
-                                             models.Feed.folder != '')
+                                     .filter(models.Feed.folder.isnot(None),
+                                             models.Feed.folder.isnot(''))
                                      .group_by(models.Feed.folder)
                                      .order_by(sa.func.count(models.Feed.folder).desc())).all()
 

@@ -1,7 +1,7 @@
 import datetime as dt
 import re
 
-from tests.setup import app, client, create_feed
+from tests.conftest import create_feed
 
 
 def test_feed_add(client):

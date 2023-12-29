@@ -352,8 +352,8 @@ class RssFeed(Feed):
     modified_header = sa.Column(
         sa.String, doc="Last-modified received on last parsed rss, to prevent re-fetching if it hasn't changed.")
 
-    filters = sa.Column(
-        sa.String, doc="a comma separated list of conditions that feed source entries need to meet to be included in the feed.")
+    filters = sa.Column(sa.String, doc="a comma separated list of conditions that feed source entries need to meet \
+                        to be included in the feed.")
 
     __mapper_args__ = {'polymorphic_identity': Feed.TYPE_RSS}
 
@@ -470,12 +470,14 @@ class Entry(db.Model):
     avatar_url = sa.Column(
         sa.String, doc="The url of the avatar image to be displayed for the entry.")
 
-    body = sa.Column(
-        sa.String, doc="The content to be displayed in the feed preview. HTML is supported. For article entries, it would be an excerpt of the full article content.")
+    body = sa.Column(sa.String, doc="The content to be displayed in the feed preview. HTML is supported. \
+    For article entries, it would be an excerpt of the full article content.")
     entry_url = sa.Column(
         sa.String, doc="The URL of this entry in the source. For link aggregators this would be the comments page.")
     content_url = sa.Column(
-        sa.String, doc="The URL where the full content can be fetched or read. For link aggregators this would be the article redirect url. An empty content URL implies that the entry can't be read locally.")
+        sa.String, doc="The URL where the full content can be fetched or read. \
+        For link aggregators this would be the article redirect url. \
+        An empty content URL implies that the entry can't be read locally.")
     media_url = sa.Column(sa.String, doc="URL of a media attachement or preview.")
 
     created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
