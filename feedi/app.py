@@ -2,14 +2,14 @@
 
 from gevent import monkey
 
-monkey.patch_all()  # nopep8
-import logging
-import os
+monkey.patch_all()  # noqa
+import logging  # noqa
+import os  # noqa
 
-import flask
-from werkzeug.serving import is_running_from_reloader
+import flask  # noqa: E402
+from werkzeug.serving import is_running_from_reloader  # noqa: E402
 
-import feedi.models as models
+import feedi.models as models  # noqa: E402
 
 
 def create_app():
@@ -18,7 +18,7 @@ def create_app():
     app.logger.info('Starting app with FLASK_ENV=%s', os.getenv('FLASK_ENV'))
 
     with app.app_context():
-        from . import auth, filters, routes, tasks
+        from . import auth, filters, routes, tasks  # noqa
 
         models.init_db(app)
 
