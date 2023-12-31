@@ -20,7 +20,7 @@
                 {% if shortcut_folders %}
                 {% for folder in shortcut_folders %}
                 <a class="dropdown-item {% if filters.folder == folder %}is-active"{% endif %}" href="{{ url_for('entry_list', folder=folder ) }}">
-                    <icon class="icon"><i class="far fa-folder-open"></i></icon> {{ folder }}</a>
+                    <icon class="icon"><i class="far {% if filters.folder == folder %}fa-folder-open{% else %}fa-folder{% endif %}"></i></icon> {{ folder }}</a>
                 {% endfor %}
                 <a class="dropdown-item {% if filters.favorited %}is-active{% endif %}" href="{{ url_for('favorites') }}">
                     <icon class="icon"><i class="far fa-star"></i></icon> favorites</a>
@@ -71,7 +71,7 @@
                         {% for folder in shortcut_folders %}
                         <li>
                             <a class="level-left {% if filters.folder == folder %}is-active"{% endif %}" href="{{ url_for('entry_list', folder=folder ) }}">
-                                <icon class="icon"><i class="far fa-folder-open"></i></icon> {{ folder }}</a>
+                                <icon class="icon"><i class="far {% if filters.folder == folder %}fa-folder-open{% else %}fa-folder{% endif %}"></i></icon> {{ folder }}</a>
                         </li>
                           {% endfor %}
                         {% endif %}

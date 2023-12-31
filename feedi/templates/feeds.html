@@ -31,7 +31,7 @@
                         </span>
                     </a>
                 </td>
-                <td>{% if feed.folder %}<span class="icon"><i class="far fa-folder-open"></i></span> {{ feed.folder }}{% endif %}</td>
+                <td>{% if feed.folder %}<span class="icon"><i class="far fa-folder"></i></span> {{ feed.folder }}{% endif %}</td>
 
                 <td>{% if last_seen %}{{last_seen | humanize}}{% endif %}</td>
                 <td>{{entries}}</td>
