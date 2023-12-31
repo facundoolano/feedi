@@ -142,7 +142,7 @@ def autocomplete():
             .filter(models.Feed.folder.icontains(term),
                     models.Feed.user_id == current_user.id).distinct()
         ).all()
-        options += [(f, flask.url_for('entry_list', folder=f), 'far fa-folder-open')
+        options += [(f, flask.url_for('entry_list', folder=f), 'far fa-folder')
                     for f in folders]
 
         feed_names = db.session.scalars(
