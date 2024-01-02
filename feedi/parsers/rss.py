@@ -219,7 +219,7 @@ class RSSParser(CachingRequestsMixin):
         return str(soup)
 
     def parse_content_full(self, _entry):
-        # TODO
+        # by default skip the full content parsing since it's too expensive to do on every article
         return None
 
     def parse_media_url(self, entry):
