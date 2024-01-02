@@ -138,7 +138,7 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
             'avatar_url': notification['account']['avatar'],
             'username': notification['account']['acct'],
             'display_name': display_name(notification),
-            'body': body}
+            'content_short': body}
 
         # NOTE: we could attempt to render the source toot in the body as the mastodon web ui does,
         # but I'm guessing that more often than not that would result in useless messages spamming the feed.

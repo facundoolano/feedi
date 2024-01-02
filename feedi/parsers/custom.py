@@ -55,7 +55,7 @@ class AgendaBAParser(CustomParser):
                 'username': item['additions'].split(';')[0].split('Por ')[-1],
                 'display_date': created,
                 'sort_date': created,
-                'body': item['synopsis'],
+                'content_short': item['synopsis'],
                 'media_url': item['image']['url'],
                 'target_url': content_url,
                 'raw_data': json.dumps(item)
@@ -87,7 +87,7 @@ class RevistaLenguaParser(CustomParser):
                 'username': item['editor'],
                 'display_date': datetime.datetime.fromisoformat(item['dateCreated']),
                 'sort_date': datetime.datetime.fromisoformat(item['dateModified']),
-                'body': item['description'],
+                'content_short': item['description'],
                 'media_url': item['image'],
                 'target_url': item['url'],
                 # this website does very funky things with the html that can't be parsed in the reader.
@@ -121,7 +121,7 @@ class EternaCadenciaParser(CustomParser):
                 'username': author,
                 'display_date': date,
                 'sort_date': date,
-                'body': article.find(class_='newsSummary').text,
+                'content_short': article.find(class_='newsSummary').text,
                 'media_url': article.find('img')['src'],
                 'target_url': content_url,
                 'content_url': content_url,
@@ -158,7 +158,7 @@ class PioneerWorksParser(CustomParser):
                 'username': article['byline'],
                 'display_date': pub_date,
                 'sort_date': pub_date,
-                'body': self.fetch_meta(article_url, 'og:description', 'description'),
+                'content_short': self.fetch_meta(article_url, 'og:description', 'description'),
                 'media_url': self.fetch_meta(article_url, 'og:image', 'twitter:image'),
                 'content_url': article_url,
             })
