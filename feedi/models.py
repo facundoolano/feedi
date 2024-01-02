@@ -589,7 +589,8 @@ class Entry(db.Model):
             # Poor Text Search™
             query = query.filter(cls.title.contains(text) |
                                  cls.username.contains(text) |
-                                 cls.body.contains(text))
+                                 cls.content_short.contains(text) |
+                                 cls.content_full.contains(text))
 
         return query
 
