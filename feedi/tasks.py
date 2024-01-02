@@ -17,6 +17,7 @@ from huey.contrib.mini import MiniHuey
 
 import feedi.models as models
 import feedi.parsers as parsers
+from feedi import scraping
 from feedi.app import create_huey_app
 from feedi.models import db
 
@@ -50,7 +51,7 @@ def huey_task(*huey_args):
                     f(*args, **kwargs)
                     app.logger.info("FINISHED %s %s %s", f.__name__, fargs, fkwargs)
                 except Exception:
-                    app.logger.error("ERRORED %s %s %s", f.__name__, fargs, fkwargs)
+                    app.logger.exception("ERRORED %s %s %s", f.__name__, fargs, fkwargs)
 
         return decorator
 
@@ -83,6 +84,27 @@ def sync_feed(feed_id, _feed_name, force=False):
     db_feed = db.session.get(models.Feed, feed_id)
     db_feed.sync_with_remote(force=force)
     db.session.commit()
+
+
+@feed_cli.command('prefetch')
+@huey_task(crontab(minute=app.config['CONTENT_PREFETCH_MINUTES']))
+def content_prefetch():
+    # fetching and cleaning up the article html is too expensive to do on all articles,
+    # but we can prefetch the first few pages of the homepage to improve the experience
+    for user_id in db.session.scalars(db.select(models.User.id)):
+        start_at = datetime.datetime.utcnow()
+        query = models.Entry.sorted_by(
+            user_id, models.Entry.ORDER_FREQUENCY, start_at, hide_seen=True) \
+            .filter(models.Entry.content_full == None, models.Entry.content_url.isnot(None))\
+            .limit(15)
+
+        for entry in db.session.scalars(query):
+            try:
+                app.logger.debug('Prefetching %s', entry.content_url)
+                entry.content_full = scraping.extract(entry.content_url)['content']
+                db.session.commit()
+            except Exception:
+                app.logger.debug('skipping errored prefetch of %s', entry.content_url)
 
 
 @feed_cli.command('purge')
