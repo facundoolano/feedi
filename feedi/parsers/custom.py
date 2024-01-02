@@ -57,7 +57,6 @@ class AgendaBAParser(CustomParser):
                 'sort_date': created,
                 'body': item['synopsis'],
                 'media_url': item['image']['url'],
-                'content_url': content_url,
                 'target_url': content_url,
                 'raw_data': json.dumps(item)
             })
