@@ -13,7 +13,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import feedi.parsers as parsers
-from feedi.requests import get_favicon
+from feedi.scraping import get_favicon
 
 # TODO consider adding explicit support for url columns
 
