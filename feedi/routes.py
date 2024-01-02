@@ -438,7 +438,8 @@ def entry_view(id):
             return redirect_response(entry.target_url)
 
         # if full browser load or explicit content request, fetch the article synchronously
-        if entry.fetch_content():
+        entry.fetch_content()
+        if entry.content_full:
             return flask.render_template("entry_content.html", entry=entry, content=entry.content_full)
 
         return redirect_response(entry.target_url)

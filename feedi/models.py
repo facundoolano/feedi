@@ -549,9 +549,8 @@ class Entry(db.Model):
             try:
                 self.content_full = scraping.extract(self.content_url)['content']
                 db.session.commit()
-                return True
             except Exception:
-                return False
+                pass
 
     @classmethod
     def _filtered_query(cls, user_id, hide_seen=False, favorited=None,
