@@ -56,7 +56,7 @@ class RSSParser(CachingRequestsMixin):
     """
 
     FIELDS = ['title', 'avatar_url', 'username', 'body', 'media_url', 'remote_id',
-              'remote_created', 'remote_updated', 'entry_url', 'content_url', 'header']
+              'remote_created', 'remote_updated', 'comments_url', 'target_url', 'content_url', 'header']
 
     @staticmethod
     def is_compatible(_feed_url):
@@ -170,8 +170,12 @@ class RSSParser(CachingRequestsMixin):
     def parse_content_url(self, entry):
         return entry['link']
 
-    def parse_entry_url(self, entry):
-        return entry.get('comments') or self.parse_content_url(entry)
+    def parse_target_url(self, entry):
+        # assume that whatever is identified as content url is the safe default for target
+        return self.parse_content_url(entry)
+
+    def parse_comments_url(self, entry):
+        return entry.get('comments')
 
     def parse_username(self, entry):
         # TODO if missing try to get from meta?
@@ -377,7 +381,7 @@ class RedditParser(RSSParser):
         soup = BeautifulSoup(entry['summary'], 'lxml')
         return soup.find("a", string="[link]")['href']
 
-    def parse_entry_url(self, entry):
+    def parse_comments_url(self, entry):
         # this particular feed puts the reddit comments page in the link
         return entry['link']
 
@@ -396,7 +400,7 @@ class LobstersParser(RSSParser):
         return 'lobste.rs' in feed_url
 
     def parse_body(self, entry):
-        # skip link-only posts
+        # fill summary from source for link-only posts
         if 'Comments' in entry['summary']:
             url = self.parse_content_url(entry)
             return self.fetch_meta(url, 'og:description', 'description')
@@ -413,7 +417,7 @@ class HackerNewsParser(RSSParser):
         return 'news.ycombinator.com' in feed_url or 'hnrss.org' in feed_url
 
     def parse_body(self, entry):
-        # skip link-only posts
+        # fill summary from source for link-only posts
         if 'Article URL' in entry['summary']:
             url = self.parse_content_url(entry)
             return self.fetch_meta(url, 'og:description', 'description')
@@ -443,11 +447,12 @@ class GithubFeedParser(RSSParser):
     def parse_media_url(self, _entry):
         return None
 
-    def parse_entry_url(self, _entry):
-        return None
-
     def parse_content_url(self, _entry):
         # don't open this in the local reader
+        return None
+
+    def parse_target_url(self, _entry):
+        # don't open github
         return None
 
 
@@ -480,7 +485,7 @@ class GoodreadsFeedParser(RSSParser):
     def parse_media_url(self, _entry):
         return None
 
-    def parse_entry_url(self, entry):
+    def parse_target_url(self, entry):
         return entry['link']
 
     def parse_content_url(self, _entry):

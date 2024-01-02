@@ -2,6 +2,7 @@
 
 import datetime
 import json
+import urllib
 
 import sqlalchemy as sa
 import sqlalchemy.dialects.sqlite as sqlite
@@ -472,12 +473,19 @@ class Entry(db.Model):
 
     body = sa.Column(sa.String, doc="The content to be displayed in the feed preview. HTML is supported. \
     For article entries, it would be an excerpt of the full article content.")
-    entry_url = sa.Column(
-        sa.String, doc="The URL of this entry in the source. For link aggregators this would be the comments page.")
+
+    target_url = sa.Column(
+        sa.String, doc="The URL to open when accessing the entry at its source. \
+        NULL is interpreted as the entry cannot be open at the source.")
+
     content_url = sa.Column(
-        sa.String, doc="The URL where the full content can be fetched or read. \
-        For link aggregators this would be the article redirect url. \
-        An empty content URL implies that the entry can't be read locally.")
+        sa.String, doc="The URL to fetch the full entry content from, for reading locally. \
+        NULL is interpreted as the entry cannot be read locally.")
+
+    comments_url = sa.Column(
+        sa.String, doc="The URL to fetch the full entry content from, for reading locally. \
+        NULL is interpreted as the entry cannot be read locally.")
+
     media_url = sa.Column(sa.String, doc="URL of a media attachement or preview.")
 
     created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
@@ -502,27 +510,31 @@ class Entry(db.Model):
     def __repr__(self):
         return f'<Entry {self.feed_id}/{self.remote_id}>'
 
-    def has_content(self):
+    @property
+    def is_external_link(self):
         """
-        Returns True if this entry has associated content (with a title and a remote url).
-        This would be the case for blogs, news sites, etc., but not for mastodon toots or
-        notification streams.
+        Return True if the target url seems to be external to the source, e.g. a link submitted to a link aggregator,
+        or a preview url. This is handy to decide whether a new RSS feed may be discoverable from an entry. This will
+        incorrectly return True if the rss feed is hosted at a different domain than the actual source site it exposes.
         """
-        return self.title and self.content_url
+        if not self.target_url:
+            return False
 
+        if not self.feed:
+            return True
+
+        if not self.feed.url:
+            return False
+
+        return urllib.parse.urlparse(self.target_url).netloc != urllib.parse.urlparse(self.feed.url)
+
+    @property
     def has_distinct_user(self):
         """
         Returns True if this entry has a recognizable author, particularly that
         it has an avatar and a name that can be displayed instead of a generic feed icon.
         """
         return self.avatar_url and (self.display_name or self.username)
-
-    def has_comments_url(self):
-        """
-        Returns True if this entry has a distinct comments/discussion endpoint,
-        separate from the content site. (E.g. link agreggators and mastodon toots).
-        """
-        return self.entry_url and self.content_url != self.entry_url
 
     @classmethod
     def _filtered_query(cls, user_id, hide_seen=False, favorited=None,

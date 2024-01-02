@@ -57,7 +57,7 @@ class AgendaBAParser(CustomParser):
                 'body': item['synopsis'],
                 'media_url': item['image']['url'],
                 'content_url': content_url,
-                'entry_url': content_url,
+                'target_url': content_url,
                 'raw_data': json.dumps(item)
             })
 
@@ -89,14 +89,9 @@ class RevistaLenguaParser(CustomParser):
                 'remote_updated': datetime.datetime.fromisoformat(item['dateModified']),
                 'body': item['description'],
                 'media_url': item['image'],
-                'entry_url': item['url'],
-                # FIXME this website does very funky things with the html
-                # that can't be parsed in the reader.
-                # can't really set content url as null since that's currently interpreted
-                # as entry_url being a comments url.
-                # we should probably make comments_url more explicit and add a "skip reader"
-                # flag or something like that.
-                'content_url': item['url'],
+                'target_url': item['url'],
+                # this website does very funky things with the html that can't be parsed in the reader.
+                'content_url': None,
             })
 
         return entry_values
@@ -128,7 +123,7 @@ class EternaCadenciaParser(CustomParser):
                 'remote_updated': date,
                 'body': article.find(class_='newsSummary').text,
                 'media_url': article.find('img')['src'],
-                'entry_url': content_url,
+                'target_url': content_url,
                 'content_url': content_url,
             })
 

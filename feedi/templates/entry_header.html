@@ -7,12 +7,16 @@
         </div>
         <p>
             <b class="entry-title">
-                {% if entry.has_content() %}
-                <a _="on click[shiftKey and not metaKey] or keydown[key is 'Enter' and not metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' then halt
+                {% if entry.title %}
+                <a _="{% if entry.content_url %}on click[shiftKey and not metaKey] or keydown[key is 'Enter' and not metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' then halt
                    then on click[shiftKey and metaKey] or keydown[key is 'Enter' and metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' in new window then halt
-                   then on keydown[key is 'Enter' and not metaKey and not shiftKey] from the closest .feed-entry go to url '{{ entry.content_url }}' in new window then halt"
-                   href="{{ entry.content_url }}" target="_blank">{{ entry.title | safe }}</a>
-                {% elif entry.has_distinct_user() %}
+                   {% endif %}
+                   {% if entry.target_url %}
+                   then on keydown[key is 'Enter' and not metaKey and not shiftKey] from the closest .feed-entry go to url '{{ entry.target_url }}' in new window then halt
+                   {% endif %}"
+                   {% if entry.target_url %}href="{{ entry.target_url }}" target="_blank"{% endif %}
+                >{{ entry.title | safe }}</a>
+                {% elif entry.has_distinct_user %}
                 <a href="{{ url_for('entry_list', username=entry.username ) }}">
                     {{ entry.display_name or entry.username }}
                 </a>
@@ -22,20 +26,20 @@
                 </a>
                 {% endif %}
             </b>
-            <span class="entry-excerpt-metadata is-hidden {% if entry.has_content() or entry.has_comments_url() %}is-clickable{% endif %}"
-                  {% if entry.has_content() %}
+            <span class="entry-excerpt-metadata is-hidden {% if entry.content_url or entry.target_url %}is-clickable{% endif %}"
+                  {% if entry.content_url %}
                   hx-get="{{ url_for('entry_view', id=entry.id) }}"
                   hx-trigger="click"
                   hx-target="body"
                   hx-push-url="true"
-                  {% elif entry.has_comments_url() %}
-                  _="on click go to url {{ entry.entry_url }} in new window"
+                  {% elif entry.target_url %}
+                  _="on click go to url {{ entry.target_url }} in new window"
                   {% endif %}>
                 <small>{{ entry | entry_excerpt }}</small>
             </span>
             <span class="entry-metadata">
                 <br/>
-                <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.content_url %}· {{ entry.content_url | url_domain}}{% endif %}</small>
+                <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.target_url %}· {{ entry.target_url | url_domain}}{% endif %}</small>
             </span>
         </p>
     </div>
@@ -74,9 +78,9 @@
            _="on click toggle .toggled
                      then on keyup[key is 'f'] from the closest .feed-entry trigger click on me"
         ><i class="fas fa-star"></i></a>
-        {% if entry.has_comments_url() %}
+        {% if entry.comments_url %}
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="Comment"
-           href="{{ entry.entry_url}}" target="_blank"
+           href="{{ entry.comments_url}}" target="_blank"
         ><i class="fas fa-comment-alt"></i></a>
         {% endif %}
         <div class="dropdown is-right"

@@ -83,9 +83,9 @@ def entry_excerpt(entry):
     if not entry.body:
         return ''
 
-    if entry.has_content():
+    if entry.content_url and entry.title:
         title = entry.title
-    elif entry.has_distinct_user():
+    elif entry.has_distinct_user:
         title = entry.display_name or entry.username
     else:
         title = entry.feed.name
