@@ -1,5 +1,9 @@
+import json
 import logging
+import shutil
+import subprocess
 import urllib
+import zipfile
 
 import favicon
 from bs4 import BeautifulSoup
@@ -67,3 +71,61 @@ def extract_meta(soup, *tags):
             meta_tag = soup.find("meta", {attr: tag}, content=True)
             if meta_tag:
                 return meta_tag['content']
+
+
+def extract(url, local_links=False):
+    # The mozilla/readability npm package shows better results at extracting the
+    # article content than all the python libraries I've tried... even than the readabilipy
+    # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
+    # for parsing the article sadly this adds a dependency to node and a few npm pacakges
+    r = subprocess.run(["feedi/extract_article.js", url],
+                       capture_output=True, text=True, check=True)
+
+    article = json.loads(r.stdout)
+
+    # load lazy images by replacing putting the data-src into src and stripping other attrs
+    soup = BeautifulSoup(article['content'], 'lxml')
+
+    LAZY_DATA_ATTRS = ['data-src', 'data-lazy-src', 'data-td-src-property', 'data-srcset']
+    for data_attr in LAZY_DATA_ATTRS:
+        for img in soup.findAll('img', attrs={data_attr: True}):
+            img.attrs = {'src': img[data_attr]}
+
+    # prevent video iframes to force dimensions
+    for iframe in soup.findAll('iframe', height=True):
+        del iframe['height']
+
+    if local_links:
+        for a in soup.findAll('a', href=True):
+            a['href'] = flask.url_for('preview_content', url=a['href'])
+            del a['target']
+
+    article['content'] = str(soup)
+
+    return article
+
+
+def compress(outfilename, article):
+    """
+    Extract the article content, convert it to a valid html doc, localize its images and write
+    everything as a zip in the given file (which should be open for writing).
+    """
+
+    # pass it through bs4 so it's a well-formed html (otherwise kindle will reject it)
+    soup = BeautifulSoup(article['content'], 'lxml')
+
+    with zipfile.ZipFile(outfilename, 'w', compression=zipfile.ZIP_DEFLATED) as zip:
+        for img in soup.findAll('img'):
+            img_url = img['src']
+            img_filename = 'article_files/' + img['src'].split('/')[-1].split('?')[0]
+
+            # update each img src url to point to the local copy of the file
+            img['src'] = img_filename
+
+            # TODO webp images aren't supported, convert to png or jpg
+
+            # download the image into the zip, inside the files subdir
+            with requests.get(img_url, stream=True) as img_src, zip.open(img_filename, mode='w') as img_dest:
+                shutil.copyfileobj(img_src.raw, img_dest)
+
+        zip.writestr('article.html', str(soup))
