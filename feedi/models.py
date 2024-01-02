@@ -2,6 +2,7 @@
 
 import datetime
 import json
+import urllib
 
 import sqlalchemy as sa
 import sqlalchemy.dialects.sqlite as sqlite
@@ -509,6 +510,25 @@ class Entry(db.Model):
     def __repr__(self):
         return f'<Entry {self.feed_id}/{self.remote_id}>'
 
+    @property
+    def is_external_link(self):
+        """
+        Return True if the target url seems to be external to the source, e.g. a link submitted to a link
+        aggregator, or a preview url. This is handy to decide whether a new RSS feed may be discoverable from an entry.
+        This will incorrectly return True if the rss feed is hosted at a different domain than the actual source site it exposes.
+        """
+        if not self.target_url:
+            return False
+
+        if not self.feed:
+            return True
+
+        if not self.feed.url:
+            return False
+
+        return urllib.parse.urlparse(self.target_url).netloc != urllib.parse.urlparse(self.feed.url)
+
+    @property
     def has_distinct_user(self):
         """
         Returns True if this entry has a recognizable author, particularly that

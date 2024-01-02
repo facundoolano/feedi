@@ -15,8 +15,7 @@
 {% endif %}
 <a class="dropdown-item" _="on click writeText('{{ entry.content_url }}') into the navigator's clipboard"><span class="icon"><i class="fas fa-link"></i></span> Copy URL</a>
 
-<!-- FIXME think through the right logic for this  -->
-{% if not entry.feed %}
+{% if entry.is_external_link %}
 <a href="{{ url_for('feed_add', url=entry.content_url) }}" class="dropdown-item"><span class="icon"><i class="fas fa-rss"></i></span> Discover feed</a>
 {% endif %}
 {% if current_user.has_kindle %}
