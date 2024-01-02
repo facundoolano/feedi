@@ -165,7 +165,7 @@ class RSSParser(CachingRequestsMixin):
         return True
 
     def parse_title(self, entry):
-        return entry['title']
+        return entry.get('title') or self.fetch_meta(self.parse_content_url(entry), 'og:title')
 
     def parse_content_url(self, entry):
         return entry['link']
