@@ -101,7 +101,7 @@ def delete_old_entries():
     # filter feeds that have old entries
     feeds_q = db.select(models.Feed.id, models.Feed.name)\
         .join(models.Feed.entries)\
-        .filter(models.Entry.remote_updated < older_than_date,
+        .filter(models.Entry.sort_date < older_than_date,
                 models.Entry.favorited.is_(None),
                 models.Entry.pinned.is_(None)
                 )\
@@ -110,14 +110,14 @@ def delete_old_entries():
 
     for (feed_id, feed_name) in db.session.execute(feeds_q).all():
         # of the ones that have old entries, get the date of the nth entry (overall, not just within the old ones)
-        min_remote_updated = db.session.scalar(
-            db.select(models.Entry.remote_updated)
+        min_sort_date = db.session.scalar(
+            db.select(models.Entry.sort_date)
             .filter_by(feed_id=feed_id)
-            .order_by(models.Entry.remote_updated.desc())
+            .order_by(models.Entry.sort_date.desc())
             .limit(1)
             .offset(minimum - 1))
 
-        if not min_remote_updated:
+        if not min_sort_date:
             continue
 
         # delete all entries from that feed that are older than RSS_SKIP_OLDER_THAN_DAYS
@@ -127,8 +127,8 @@ def delete_old_entries():
                   models.Entry.favorited.is_(None),
                   models.Entry.pinned.is_(None),
                   models.Entry.feed_id == feed_id,
-                  models.Entry.remote_updated < min_remote_updated,
-                  models.Entry.remote_updated < older_than_date)
+                  models.Entry.sort_date < min_sort_date,
+                  models.Entry.sort_date < older_than_date)
 
         res = db.session.execute(q)
         db.session.commit()

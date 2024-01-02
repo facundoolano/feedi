@@ -56,7 +56,7 @@ class RSSParser(CachingRequestsMixin):
     """
 
     FIELDS = ['title', 'avatar_url', 'username', 'body', 'media_url', 'remote_id',
-              'remote_created', 'remote_updated', 'comments_url', 'target_url', 'content_url', 'header']
+              'display_date', 'sort_date', 'comments_url', 'target_url', 'content_url', 'header']
 
     @staticmethod
     def is_compatible(_feed_url):
@@ -238,13 +238,13 @@ class RSSParser(CachingRequestsMixin):
     def parse_remote_id(self, entry):
         return entry.get('id', entry['link'])
 
-    def parse_remote_created(self, entry):
+    def parse_display_date(self, entry):
         dt = to_datetime(entry.get('published_parsed', entry.get('updated_parsed')))
         if dt > datetime.datetime.utcnow():
             raise ValueError(f"publication date is in the future {dt}")
         return dt
 
-    def parse_remote_updated(self, entry):
+    def parse_sort_date(self, entry):
         dt = to_datetime(entry['updated_parsed'])
         if dt > datetime.datetime.utcnow():
             raise ValueError("publication date is in the future")

@@ -62,7 +62,7 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
         # the updated date is taken from the base toot, so if if it's a reblog it will be the time
         # it was reblogged. This will be used for sorting entries in the timeline.
         # in that case the created date, the one displayed, will be taken from the reblogged toot
-        entry['remote_updated'] = toot['edited_at'] or toot['created_at']
+        entry['sort_date'] = toot['edited_at'] or toot['created_at']
 
         if toot.get('in_reply_to_id') and not toot.get('reblog'):
             # we don't want to show replies as standalone toots in the timeline, unless they are reblogs
@@ -78,7 +78,7 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
         entry['display_name'] = display_name(toot)
         entry['body'] = toot['content']
         entry['remote_id'] = toot['id']
-        entry['remote_created'] = toot['created_at']
+        entry['display_date'] = toot['created_at']
 
         # we don't want toots to be expanded on the local reader, so we exclude content_url
         # this could change if we started to add stuff like displaying (or adding) comments
@@ -132,8 +132,8 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
 
         entry = {
             'remote_id': notification['id'],
-            'remote_updated': notification['created_at'],
-            'remote_created': notification['created_at'],
+            'sort_date': notification['created_at'],
+            'display_date': notification['created_at'],
             'raw_data': json.dumps(notification, default=str),
             'avatar_url': notification['account']['avatar'],
             'username': notification['account']['acct'],

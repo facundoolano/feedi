@@ -332,7 +332,7 @@ class Feed(db.Model):
 
         return db.select(cls.id, rank_func.label('rank'))\
             .join(Entry)\
-            .filter(Entry.remote_updated >= retention_date)\
+            .filter(Entry.sort_date >= retention_date)\
             .group_by(cls)\
             .subquery()
 
@@ -404,7 +404,7 @@ class MastodonHomeFeed(Feed):
 
     def _api_args(self):
         from flask import current_app as app
-        latest_entry = self.entries.order_by(Entry.remote_updated.desc()).first()
+        latest_entry = self.entries.order_by(Entry.sort_date.desc()).first()
 
         args = dict(server_url=self.account.app.api_base_url,
                     access_token=self.account.access_token)
@@ -598,7 +598,7 @@ class Entry(db.Model):
 
         if ordering == cls.ORDER_RECENCY:
             # reverse chronological order
-            return query.order_by(cls.remote_updated.desc())
+            return query.order_by(cls.sort_date.desc())
 
         elif ordering == cls.ORDER_FREQUENCY:
             # Order entries by least frequent feeds first then reverse-chronologically for entries in the same
@@ -615,8 +615,8 @@ class Entry(db.Model):
             return query.join(Feed)\
                         .join(subquery, Feed.id == subquery.c.id, isouter=True)\
                         .order_by(
-                            (cls.remote_updated >= recency_bucket_date).desc(),
+                            (cls.sort_date >= recency_bucket_date).desc(),
                             subquery.c.rank,
-                            cls.remote_updated.desc())
+                            cls.sort_date.desc())
         else:
             raise ValueError('unknown ordering %s' % ordering)
