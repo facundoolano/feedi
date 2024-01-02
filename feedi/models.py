@@ -474,6 +474,9 @@ class Entry(db.Model):
     content_short = sa.Column(sa.String, doc="The content to be displayed in the feed preview. HTML is supported. \
     For article entries, it would be an excerpt of the full article content.")
 
+    content_full = sa.orm.deferred(sa.Column(
+        sa.String, doc="The content to be displayed in the reader, e.g. the cleaned full article HTML."))
+
     target_url = sa.Column(
         sa.String, doc="The URL to open when accessing the entry at its source. \
         NULL is interpreted as the entry cannot be open at the source.")
