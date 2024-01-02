@@ -7,7 +7,6 @@
         </div>
         <p>
             <b class="entry-title">
-                <!-- FIXME  -->
                 {% if entry.title %}
                 <a _="{% if entry.content_url %}on click[shiftKey and not metaKey] or keydown[key is 'Enter' and not metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' then halt
                    then on click[shiftKey and metaKey] or keydown[key is 'Enter' and metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' in new window then halt
