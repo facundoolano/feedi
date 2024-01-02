@@ -48,8 +48,8 @@
                      </div>
                      {% endif %}
                      {% if entry.body %}
-                     <div class="column {% if entry.has_content() %}is-clickable{% endif %}"
-                          {% if entry.has_content() %}
+                     <div class="column {% if entry.content_url %}is-clickable{% endif %}"
+                          {% if entry.content_url %}
                           hx-get="{{ url_for('entry_view', id=entry.id) }}"
                           hx-trigger="click"
                           hx-target="body"

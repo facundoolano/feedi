@@ -509,30 +509,12 @@ class Entry(db.Model):
     def __repr__(self):
         return f'<Entry {self.feed_id}/{self.remote_id}>'
 
-    # FIXME remove
-    def has_content(self):
-        """
-        Returns True if this entry has associated content (with a title and a remote url).
-        This would be the case for blogs, news sites, etc., but not for mastodon toots or
-        notification streams.
-        """
-        return self.title and self.content_url
-
-    # FIXME review if still necessary
     def has_distinct_user(self):
         """
         Returns True if this entry has a recognizable author, particularly that
         it has an avatar and a name that can be displayed instead of a generic feed icon.
         """
         return self.avatar_url and (self.display_name or self.username)
-
-    # FIXME remove
-    def has_comments_url(self):
-        """
-        Returns True if this entry has a distinct comments/discussion endpoint,
-        separate from the content site. (E.g. link agreggators and mastodon toots).
-        """
-        return self.comments_url is not None
 
     @classmethod
     def _filtered_query(cls, user_id, hide_seen=False, favorited=None,

@@ -7,7 +7,7 @@
         </div>
         <p>
             <b class="entry-title">
-                {% if entry.has_content() %}
+                {% if entry.content_url %}
                 <a _="on click[shiftKey and not metaKey] or keydown[key is 'Enter' and not metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' then halt
                    then on click[shiftKey and metaKey] or keydown[key is 'Enter' and metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' in new window then halt
                    then on keydown[key is 'Enter' and not metaKey and not shiftKey] from the closest .feed-entry go to url '{{ entry.content_url }}' in new window then halt"
