@@ -424,7 +424,7 @@ def entry_view(id):
     # browser behavior. I don't like it, but I couldn't figure out how to preserve the feed
     # page/scrolling position on back button unless I jump to view content via htmx
 
-    if 'HX-Request' in flask.request.headers and 'content' not in flask.request.args:
+    if 'HX-Request' in flask.request.headers and 'content' not in flask.request.args and not entry.content_full:
         # if ajax/htmx just load the empty UI and load content asynchronously
         return flask.render_template("entry_content.html", entry=entry, content=None)
     else:
@@ -438,8 +438,11 @@ def entry_view(id):
 
         # if full browser load or explicit content request, fetch the article synchronously
         try:
-            content = scraping.extract(entry.content_url)['content']
-            return flask.render_template("entry_content.html", entry=entry, content=content)
+            if not entry.content_full:
+                entry.content_full = scraping.extract(entry.content_url)['content']
+                db.session.commit()
+
+            return flask.render_template("entry_content.html", entry=entry, content=entry.content_full)
         except Exception:
             pass
 
