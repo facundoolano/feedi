@@ -55,8 +55,8 @@ class RSSParser(CachingRequestsMixin):
     for custom feed presentation.
     """
 
-    FIELDS = ['title', 'avatar_url', 'username', 'body', 'media_url', 'remote_id',
-              'display_date', 'sort_date', 'comments_url', 'target_url', 'content_url', 'header']
+    FIELDS = ['title', 'avatar_url', 'username', 'content_short', 'content_full', 'media_url', 'remote_id',
+              'display_date', 'sort_date', 'comments_url', 'target_url', 'content_url', 'header',]
 
     @staticmethod
     def is_compatible(_feed_url):
@@ -197,7 +197,7 @@ class RSSParser(CachingRequestsMixin):
             logger.debug('found entry-level avatar %s', url)
             return url
 
-    def parse_body(self, entry):
+    def parse_content_short(self, entry):
         summary = entry.get('summary')
         if summary:
             summary = html.unescape(summary)
@@ -217,6 +217,10 @@ class RSSParser(CachingRequestsMixin):
         # return the rest of the html untouched, assuming any truncating will be done
         # on the view side if necessary (so it applies regardless of the parser implementation)
         return str(soup)
+
+    def parse_content_full(self, _entry):
+        # TODO
+        return None
 
     def parse_media_url(self, entry):
         # first try to get it in standard feed fields
@@ -346,7 +350,7 @@ class RedditInboxParser(RSSParser):
     def is_compatible(feed_url):
         return 'reddit.com/message' in feed_url
 
-    def parse_body(self, entry):
+    def parse_content_short(self, entry):
         return entry['content'][0]['value']
 
     def parse_title(self, entry):
@@ -361,7 +365,7 @@ class RedditParser(RSSParser):
         # looks like reddit but not like the inbox feed
         return 'reddit.com' in feed_url and 'reddit.com/message' not in feed_url
 
-    def parse_body(self, entry):
+    def parse_content_short(self, entry):
         soup = BeautifulSoup(entry['summary'], 'lxml')
         link_anchor = soup.find("a", string="[link]")
         comments_anchor = soup.find("a", string="[comments]")
@@ -399,7 +403,7 @@ class LobstersParser(RSSParser):
     def is_compatible(feed_url):
         return 'lobste.rs' in feed_url
 
-    def parse_body(self, entry):
+    def parse_content_short(self, entry):
         # fill summary from source for link-only posts
         if 'Comments' in entry['summary']:
             url = self.parse_content_url(entry)
@@ -416,7 +420,7 @@ class HackerNewsParser(RSSParser):
     def is_compatible(feed_url):
         return 'news.ycombinator.com' in feed_url or 'hnrss.org' in feed_url
 
-    def parse_body(self, entry):
+    def parse_content_short(self, entry):
         # fill summary from source for link-only posts
         if 'Article URL' in entry['summary']:
             url = self.parse_content_url(entry)
@@ -432,7 +436,7 @@ class GithubFeedParser(RSSParser):
     def is_compatible(feed_url):
         return 'github.com' in feed_url and 'private.atom' in feed_url
 
-    def parse_body(self, entry):
+    def parse_content_short(self, entry):
         return entry['title']
 
     def parse_username(self, entry):
@@ -464,7 +468,7 @@ class GoodreadsFeedParser(RSSParser):
     def is_compatible(feed_url):
         return 'goodreads.com' in feed_url and '/home/index_rss' in feed_url
 
-    def parse_body(self, entry):
+    def parse_content_short(self, entry):
         # some updates come with escaped html entities
         summary = html.unescape(entry['summary'])
         soup = BeautifulSoup(summary, 'lxml')
@@ -502,7 +506,7 @@ class RevistaCrisisParser(RSSParser):
     def should_skip(entry):
         return 'publi' in entry['title'] or entry['title'].lower().startswith('crisis en el aire')
 
-    def parse_body(self, entry):
+    def parse_content_short(self, entry):
         return self.fetch_meta(entry['link'], 'og:description', 'description')
 
 
@@ -511,7 +515,7 @@ class ACMQueueParser(RSSParser):
     def is_compatible(feed_url):
         return 'queue.acm.org' in feed_url
 
-    def parse_body(self, entry):
+    def parse_content_short(self, entry):
         content = self.request(entry['link'])
         soup = BeautifulSoup(content, 'lxml')
         title = soup.find('h1')
@@ -531,7 +535,7 @@ class WikiFeaturedParser(RSSParser):
     def is_compatible(feed_url):
         return 'wikipedia.org' in feed_url and 'featuredfeed' in feed_url
 
-    def parse_body(self, entry):
+    def parse_content_short(self, entry):
         soup = BeautifulSoup(entry['summary'], 'lxml')
         return str(soup.find('p'))
 
@@ -545,7 +549,7 @@ class IndieBlogParser(RSSParser):
     def is_compatible(_feed_url):
         return 'indieblog.page' in _feed_url
 
-    def parse_body(self, entry):
+    def parse_content_short(self, entry):
         soup = BeautifulSoup(entry['summary'], 'lxml')
         body = soup.blockquote
         body.name = 'p'

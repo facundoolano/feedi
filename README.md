@@ -162,7 +162,7 @@ class LobstersParser(BaseParser):
     def is_compatible(_feed_url, feed_data):
         return 'lobste.rs' in feed_data['feed'].get('link', '')
 
-    def parse_body(self, entry):
+    def parse_content_short(self, entry):
         # A 'Comments' link is only present on external link submissions
         if 'Comments' in entry['summary']:
             url = self.parse_content_url(entry)

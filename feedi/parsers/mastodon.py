@@ -76,7 +76,7 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
         entry['avatar_url'] = toot['account']['avatar']
         entry['username'] = toot['account']['acct']
         entry['display_name'] = display_name(toot)
-        entry['body'] = toot['content']
+        entry['content_short'] = toot['content']
         entry['remote_id'] = toot['id']
         entry['display_date'] = toot['created_at']
 
@@ -97,10 +97,10 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
 
         # show (read-only) poll options
         if toot.get('poll'):
-            entry['body'] += '<ul>'
+            entry['content_short'] += '<ul>'
             for option in toot['poll']['options']:
-                entry['body'] += f'<li>{option["title"]}</li>'
-            entry['body'] += '</ul>'
+                entry['content_short'] += f'<li>{option["title"]}</li>'
+            entry['content_short'] += '</ul>'
 
         entries.append(entry)
 

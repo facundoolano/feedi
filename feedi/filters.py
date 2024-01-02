@@ -80,7 +80,7 @@ def sanitize_content(html, truncate=True):
 # to make the text hide on overflow
 @app.template_filter('entry_excerpt')
 def entry_excerpt(entry):
-    if not entry.body:
+    if not entry.content_short:
         return ''
 
     if entry.content_url and entry.title:
@@ -90,7 +90,7 @@ def entry_excerpt(entry):
     else:
         title = entry.feed.name
 
-    body_text = BeautifulSoup(entry.body, 'lxml').text
+    body_text = BeautifulSoup(entry.content_short, 'lxml').text
 
     # truncate according to display title length so all entries
     # have aproximately the same length
