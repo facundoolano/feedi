@@ -7,11 +7,11 @@
         </div>
         <p>
             <b class="entry-title">
-                {% if entry.content_url %}
+                {% if entry.content_url or entry.target_url %}
                 <a _="on click[shiftKey and not metaKey] or keydown[key is 'Enter' and not metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' then halt
                    then on click[shiftKey and metaKey] or keydown[key is 'Enter' and metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' in new window then halt
-                   then on keydown[key is 'Enter' and not metaKey and not shiftKey] from the closest .feed-entry go to url '{{ entry.content_url }}' in new window then halt"
-                   href="{{ entry.content_url }}" target="_blank">{{ entry.title | safe }}</a>
+                   then on keydown[key is 'Enter' and not metaKey and not shiftKey] from the closest .feed-entry go to url '{{ entry.target_url }}' in new window then halt"
+                   href="{{ entry.target_url }}" target="_blank">{{ entry.title | safe }}</a>
                 {% elif entry.has_distinct_user() %}
                 <a href="{{ url_for('entry_list', username=entry.username ) }}">
                     {{ entry.display_name or entry.username }}
@@ -35,7 +35,7 @@
             </span>
             <span class="entry-metadata">
                 <br/>
-                <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.content_url %}· {{ entry.content_url | url_domain}}{% endif %}</small>
+                <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.target_url %}· {{ entry.target_url | url_domain}}{% endif %}</small>
             </span>
         </p>
     </div>

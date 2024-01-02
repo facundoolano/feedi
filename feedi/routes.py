@@ -480,6 +480,7 @@ def preview_content():
 
     # put together entry stub for the template
     entry = models.Entry(content_url=url,
+                         target_url=url,
                          title=article['title'],
                          username=article['byline'])
     return flask.render_template("content_preview.html", content=article['content'], entry=entry)
