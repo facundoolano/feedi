@@ -73,7 +73,7 @@ def extract_meta(soup, *tags):
                 return meta_tag['content']
 
 
-def extract(url, local_links=False):
+def extract(url):
     # The mozilla/readability npm package shows better results at extracting the
     # article content than all the python libraries I've tried... even than the readabilipy
     # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
@@ -94,11 +94,6 @@ def extract(url, local_links=False):
     # prevent video iframes to force dimensions
     for iframe in soup.findAll('iframe', height=True):
         del iframe['height']
-
-    if local_links:
-        for a in soup.findAll('a', href=True):
-            a['href'] = flask.url_for('preview_content', url=a['href'])
-            del a['target']
 
     article['content'] = str(soup)
 

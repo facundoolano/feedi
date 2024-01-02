@@ -438,7 +438,7 @@ def entry_view(id):
 
         # if full browser load or explicit content request, fetch the article synchronously
         try:
-            content = scraping.extract(entry.content_url, local_links=True)['content']
+            content = scraping.extract(entry.content_url)['content']
             return flask.render_template("entry_content.html", entry=entry, content=content)
         except Exception:
             pass
@@ -469,7 +469,7 @@ def preview_content():
     """
     url = flask.request.args['url']
     try:
-        article = scraping.extract(url, local_links=True)
+        article = scraping.extract(url)
     except Exception:
         return flask.redirect(url)
 
