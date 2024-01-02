@@ -85,7 +85,7 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
         # result['content_url'] = toot['url']
 
         # use server-local urls
-        entry['entry_url'] = status_url(server_url, toot)
+        entry['target_url'] = status_url(server_url, toot)
 
         # for media we only support images for now and will take just the first one
         media = [m['preview_url'] for m in toot['media_attachments'] if m['type'] == 'image']
@@ -142,11 +142,11 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
 
         # NOTE: we could attempt to render the source toot in the body as the mastodon web ui does,
         # but I'm guessing that more often than not that would result in useless messages spamming the feed.
-        # leaving it empty and relying on the entry_url / title link to get to the source status
+        # leaving it empty and relying on the target_url / title link to get to the source status
         if notification['type'] in ['follow', 'follow_request']:
-            entry['entry_url'] = user_url(server_url, notification)
+            entry['target_url'] = user_url(server_url, notification)
         else:
-            entry['entry_url'] = status_url(server_url, notification['status'])
+            entry['target_url'] = status_url(server_url, notification['status'])
 
         entries.append(entry)
 

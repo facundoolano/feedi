@@ -3,11 +3,11 @@
 <a hx-put="{{ url_for('mastodon_favorite', id=entry.id )}}" class="dropdown-item"><span class="icon"><i class="fas fa-star"></i></span>Masto favorite</a>
 <hr class="dropdown-divider">
 {% endif %}
-{% if entry.has_content() %}
+{% if entry.content_url %}
 <a href="{{ entry.content_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-external-link-alt"></i></span> Go to source</a>
 {% endif %}
-{% if entry.has_comments_url() %}
-<a href="{{ entry.entry_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="far fa-comment-alt"></i></span> Go to comments</a>
+{% if entry.comments_url %}
+<a href="{{ entry.comments_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="far fa-comment-alt"></i></span> Go to comments</a>
 {% endif %}
 {% if entry.content_url %}
 {% if entry.id and request.path != url_for('entry_view', id=entry.id) %}
@@ -15,7 +15,8 @@
 {% endif %}
 <a class="dropdown-item" _="on click writeText('{{ entry.content_url }}') into the navigator's clipboard"><span class="icon"><i class="fas fa-link"></i></span> Copy URL</a>
 
-{% if not entry.entry_url or entry.content_url != entry.entry_url %}
+<!-- FIXME think through the right logic for this  -->
+{% if not entry.feed %}
 <a href="{{ url_for('feed_add', url=entry.content_url) }}" class="dropdown-item"><span class="icon"><i class="fas fa-rss"></i></span> Discover feed</a>
 {% endif %}
 {% if current_user.has_kindle %}

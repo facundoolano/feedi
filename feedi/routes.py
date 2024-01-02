@@ -433,23 +433,22 @@ def entry_view(id):
         # if ajax/htmx just load the empty UI and load content asynchronously
         return flask.render_template("entry_content.html", entry=entry, content=None)
     else:
-        dest_url = entry.content_url or entry.entry_url
-        if not dest_url:
+        if not entry.content_url and not entry.target_url:
             # this view can't work if no entry or content url
             return "Entry not readable", 400
 
         # if it's a video site, just redirect. TODO add more sites
-        if 'youtube.com' in dest_url or 'vimeo.com' in dest_url:
-            return redirect_response(dest_url)
+        if 'youtube.com' in entry.content_url or 'vimeo.com' in entry.content_url:
+            return redirect_response(entry.target_url)
 
         # if full browser load or explicit content request, fetch the article synchronously
         try:
-            content = extract_article(dest_url, local_links=True)['content']
+            content = extract_article(entry.content_url, local_links=True)['content']
             return flask.render_template("entry_content.html", entry=entry, content=content)
         except Exception:
             pass
 
-        return redirect_response(dest_url)
+        return redirect_response(entry.target_url)
 
 
 def redirect_response(url):

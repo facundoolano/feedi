@@ -34,9 +34,9 @@
         ><i class="fas fa-star"></i></a>
         {% endif %}
 
-        {% if entry.has_comments_url() %}
+        {% if entry.comments_url %}
         <a class="is-white icon is-rounded level-item" title="Comment"
-           href="{{ entry.entry_url}}" target="_blank">
+           href="{{ entry.comments_url}}" target="_blank">
             <i class="fas fa-comment-alt"></i>
         </a>
         {% else %}
