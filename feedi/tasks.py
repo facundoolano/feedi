@@ -17,7 +17,6 @@ from huey.contrib.mini import MiniHuey
 
 import feedi.models as models
 import feedi.parsers as parsers
-from feedi import scraping
 from feedi.app import create_huey_app
 from feedi.models import db
 
@@ -95,16 +94,12 @@ def content_prefetch():
         start_at = datetime.datetime.utcnow()
         query = models.Entry.sorted_by(
             user_id, models.Entry.ORDER_FREQUENCY, start_at, hide_seen=True) \
-            .filter(models.Entry.content_full == None, models.Entry.content_url.isnot(None))\
+            .filter(models.Entry.content_full.is_(None), models.Entry.content_url.isnot(None))\
             .limit(15)
 
         for entry in db.session.scalars(query):
-            try:
-                app.logger.debug('Prefetching %s', entry.content_url)
-                entry.content_full = scraping.extract(entry.content_url)['content']
-                db.session.commit()
-            except Exception:
-                app.logger.debug('skipping errored prefetch of %s', entry.content_url)
+            app.logger.debug('Prefetching %s', entry.content_url)
+            entry.prefetch()
 
 
 @feed_cli.command('purge')

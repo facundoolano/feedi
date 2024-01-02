@@ -13,7 +13,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import feedi.parsers as parsers
-from feedi.scraping import get_favicon
+from feedi import scraping
 
 # TODO consider adding explicit support for url columns
 
@@ -303,7 +303,7 @@ class Feed(db.Model):
 
     def load_icon(self):
         ""
-        self.icon_url = get_favicon(self.url)
+        self.icon_url = scraping.get_favicon(self.url)
 
     @classmethod
     def frequency_rank_query(cls):
@@ -543,6 +543,15 @@ class Entry(db.Model):
         it has an avatar and a name that can be displayed instead of a generic feed icon.
         """
         return self.avatar_url and (self.display_name or self.username)
+
+    def fetch_content(self):
+        if self.content_url and not self.content_full:
+            try:
+                self.content_full = scraping.extract(self.content_url)['content']
+                db.session.commit()
+                return True
+            except Exception:
+                return False
 
     @classmethod
     def _filtered_query(cls, user_id, hide_seen=False, favorited=None,

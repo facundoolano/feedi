@@ -185,6 +185,7 @@ def entry_pin(id):
     if entry.pinned:
         entry.pinned = None
     else:
+        entry.fetch_content()
         entry.pinned = datetime.datetime.utcnow()
     db.session.commit()
 
@@ -437,14 +438,8 @@ def entry_view(id):
             return redirect_response(entry.target_url)
 
         # if full browser load or explicit content request, fetch the article synchronously
-        try:
-            if not entry.content_full:
-                entry.content_full = scraping.extract(entry.content_url)['content']
-                db.session.commit()
-
+        if entry.fetch_content():
             return flask.render_template("entry_content.html", entry=entry, content=entry.content_full)
-        except Exception:
-            pass
 
         return redirect_response(entry.target_url)
 
