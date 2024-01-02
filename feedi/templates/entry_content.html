@@ -80,7 +80,7 @@
         <div class="media-content">
             <a href="{{ entry.target_url }}" target="_blank"><strong>{{ entry.title }}</strong></a>
             <br/>
-            <small class="has-text-grey-light"><span title="{{ entry.remote_updated.isoformat() }}">{{ entry.remote_created | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.target_url %}· {{ entry.target_url | url_domain}}{% endif %}</small>
+            <small class="has-text-grey-light"><span title="{{ entry.display_date.isoformat() }}">{{ entry.display_date | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.target_url %}· {{ entry.target_url | url_domain}}{% endif %}</small>
         </div>
         <div class="media-right">
             <div class="level entry-quick-actions">

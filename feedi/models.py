@@ -332,7 +332,7 @@ class Feed(db.Model):
 
         return db.select(cls.id, rank_func.label('rank'))\
             .join(Entry)\
-            .filter(Entry.remote_updated >= retention_date)\
+            .filter(Entry.sort_date >= retention_date)\
             .group_by(cls)\
             .subquery()
 
@@ -404,7 +404,7 @@ class MastodonHomeFeed(Feed):
 
     def _api_args(self):
         from flask import current_app as app
-        latest_entry = self.entries.order_by(Entry.remote_updated.desc()).first()
+        latest_entry = self.entries.order_by(Entry.sort_date.desc()).first()
 
         args = dict(server_url=self.account.app.api_base_url,
                     access_token=self.account.access_token)
@@ -491,8 +491,13 @@ class Entry(db.Model):
     created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
     updated = sa.Column(sa.TIMESTAMP, nullable=False,
                         default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
-    remote_created = sa.Column(sa.TIMESTAMP, nullable=False)
-    remote_updated = sa.Column(sa.TIMESTAMP, nullable=False)
+    display_date = sa.Column(sa.TIMESTAMP, nullable=False,
+                             doc="The date that will displayed as the publication date of the entry. \
+                             Typically the publication or creation date informed at the source.")
+
+    sort_date = sa.Column(sa.TIMESTAMP, nullable=False,
+                          doc="The date that determines an entry's chronological order. \
+                          Typically the updated date informed at the source.")
 
     viewed = sa.Column(sa.TIMESTAMP, index=True)
     favorited = sa.Column(sa.TIMESTAMP, index=True)
@@ -505,7 +510,7 @@ class Entry(db.Model):
         sa.String, doc="an html line to put above the title, such as 'user reblogged'.")
 
     __table_args__ = (sa.UniqueConstraint("feed_id", "remote_id"),
-                      sa.Index("entry_updated_ts", remote_updated.desc()))
+                      sa.Index("entry_sort_ts", sort_date.desc()))
 
     def __repr__(self):
         return f'<Entry {self.feed_id}/{self.remote_id}>'
@@ -595,7 +600,7 @@ class Entry(db.Model):
 
         if ordering == cls.ORDER_RECENCY:
             # reverse chronological order
-            return query.order_by(cls.remote_updated.desc())
+            return query.order_by(cls.sort_date.desc())
 
         elif ordering == cls.ORDER_FREQUENCY:
             # Order entries by least frequent feeds first then reverse-chronologically for entries in the same
@@ -612,8 +617,8 @@ class Entry(db.Model):
             return query.join(Feed)\
                         .join(subquery, Feed.id == subquery.c.id, isouter=True)\
                         .order_by(
-                            (cls.remote_updated >= recency_bucket_date).desc(),
+                            (cls.sort_date >= recency_bucket_date).desc(),
                             subquery.c.rank,
-                            cls.remote_updated.desc())
+                            cls.sort_date.desc())
         else:
             raise ValueError('unknown ordering %s' % ordering)
