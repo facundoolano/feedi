@@ -7,11 +7,16 @@
         </div>
         <p>
             <b class="entry-title">
-                {% if entry.content_url or entry.target_url %}
-                <a _="on click[shiftKey and not metaKey] or keydown[key is 'Enter' and not metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' then halt
+                <!-- FIXME  -->
+                {% if entry.title %}
+                <a _="{% if entry.content_url %}on click[shiftKey and not metaKey] or keydown[key is 'Enter' and not metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' then halt
                    then on click[shiftKey and metaKey] or keydown[key is 'Enter' and metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' in new window then halt
-                   then on keydown[key is 'Enter' and not metaKey and not shiftKey] from the closest .feed-entry go to url '{{ entry.target_url }}' in new window then halt"
-                   href="{{ entry.target_url }}" target="_blank">{{ entry.title | safe }}</a>
+                   {% endif %}
+                   {% if entry.target_url %}
+                   then on keydown[key is 'Enter' and not metaKey and not shiftKey] from the closest .feed-entry go to url '{{ entry.target_url }}' in new window then halt
+                   {% endif %}"
+                   {% if entry.target_url %}href="{{ entry.target_url }}" target="_blank"{% endif %}
+                >{{ entry.title | safe }}</a>
                 {% elif entry.has_distinct_user %}
                 <a href="{{ url_for('entry_list', username=entry.username ) }}">
                     {{ entry.display_name or entry.username }}
