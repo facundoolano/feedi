@@ -491,11 +491,13 @@ class Entry(db.Model):
     created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
     updated = sa.Column(sa.TIMESTAMP, nullable=False,
                         default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
-    display_date = sa.Column(sa.TIMESTAMP, nullable=False, doc="The date that will displayed as the publication date of the entry. \
-    Typically the publication or creation date informed at the source.")
+    display_date = sa.Column(sa.TIMESTAMP, nullable=False,
+                             doc="The date that will displayed as the publication date of the entry. \
+                             Typically the publication or creation date informed at the source.")
 
-    sort_date = sa.Column(sa.TIMESTAMP, nullable=False, doc="The date that determines an entry's chronological order. \
-    Typically the updated date informed at the source.")
+    sort_date = sa.Column(sa.TIMESTAMP, nullable=False,
+                          doc="The date that determines an entry's chronological order. \
+                          Typically the updated date informed at the source.")
 
     viewed = sa.Column(sa.TIMESTAMP, index=True)
     favorited = sa.Column(sa.TIMESTAMP, index=True)
