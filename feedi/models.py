@@ -491,8 +491,11 @@ class Entry(db.Model):
     created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
     updated = sa.Column(sa.TIMESTAMP, nullable=False,
                         default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
-    remote_created = sa.Column(sa.TIMESTAMP, nullable=False)
-    remote_updated = sa.Column(sa.TIMESTAMP, nullable=False)
+    display_date = sa.Column(sa.TIMESTAMP, nullable=False, doc="The date that will displayed as the publication date of the entry. \
+    Typically the publication or creation date informed at the source.")
+
+    sort_date = sa.Column(sa.TIMESTAMP, nullable=False, doc="The date that determines an entry's chronological order. \
+    Typically the updated date informed at the source.")
 
     viewed = sa.Column(sa.TIMESTAMP, index=True)
     favorited = sa.Column(sa.TIMESTAMP, index=True)
@@ -505,7 +508,7 @@ class Entry(db.Model):
         sa.String, doc="an html line to put above the title, such as 'user reblogged'.")
 
     __table_args__ = (sa.UniqueConstraint("feed_id", "remote_id"),
-                      sa.Index("entry_updated_ts", remote_updated.desc()))
+                      sa.Index("entry_sort_ts", sort_date.desc()))
 
     def __repr__(self):
         return f'<Entry {self.feed_id}/{self.remote_id}>'
