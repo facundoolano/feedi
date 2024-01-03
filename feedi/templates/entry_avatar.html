@@ -6,4 +6,7 @@
     <a href="{{ url_for('entry_list', feed_name=entry.feed.name ) }}">
         <img class="is-rounded feed-avatar" {% if entry.feed.icon_url %}src="{{ entry.feed.icon_url }}"{% endif %} alt="{{ entry.feed.name.0.upper() }}" title="{{ entry.feed.name }}">
     </a>
+    {% else %}
+    {% set domain = entry.target_url | url_domain %}
+    <img class="is-rounded feed-avatar" alt="{{ domain.0.upper() }}" title="{{ domain }}">
     {% endif %}
