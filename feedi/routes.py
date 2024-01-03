@@ -179,8 +179,7 @@ def entry_pin(id):
     entries, respecting the url filters.
     """
     entry = db.get_or_404(models.Entry, id)
-    # FIXME
-    if entry.feed and entry.feed.user_id != current_user.id:
+    if entry.user_id != current_user.id:
         flask.abort(404)
 
     if entry.pinned:
@@ -205,8 +204,7 @@ def entry_pin(id):
 def entry_favorite(id):
     "Toggle the favorite status of the given entry."
     entry = db.get_or_404(models.Entry, id)
-    # FIXME
-    if entry.feed and entry.feed.user_id != current_user.id:
+    if entry.user_id != current_user.id:
         flask.abort(404)
 
     if entry.favorited:
@@ -417,8 +415,7 @@ def entry_view(id):
     Fetch the entry content from the source and display it for reading locally.
     """
     entry = db.get_or_404(models.Entry, id)
-    # FIXME check entry user id
-    if entry.feed and entry.feed.user_id != current_user.id:
+    if entry.user_id != current_user.id:
         flask.abort(404)
 
     # When requested through htmx (ajax), this page loads layout first, then the content
@@ -474,17 +471,12 @@ def preview_content():
 
     # TODO sanitize?
     url = flask.request.args['url']
-    # FIXME filter by user id
     entry = db.session.scalar(db.select(models.Entry)
-                              .join(models.Feed, isouter=True)
-                              .filter(models.Entry.content_url == url)
-                              .filter((models.Entry.feed_id.is_(None)) |
-                                      (models.Feed.user_id == current_user.id)))
+                              .filter_by(content_url=url, user_id=current_user.id))
 
     if not entry:
         values = html.fetch(url, full_content=True)
-        # FIXME current user
-        entry = models.Entry(**values)
+        entry = models.Entry(user_id=current_user.id, **values)
         db.session.add(entry)
         db.session.commit()
     return flask.redirect(flask.url_for('entry_view', id=entry.id))
@@ -547,8 +539,7 @@ def raw_entry(id):
     entry = db.get_or_404(models.Entry, id,
                           options=[sa.orm.undefer(models.Entry.raw_data)])
 
-    # FIXME
-    if entry.feed and entry.feed.user_id != current_user.id:
+    if entry.user_id != current_user.id:
         flask.abort(404)
 
     return app.response_class(

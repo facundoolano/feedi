@@ -458,7 +458,6 @@ class Entry(db.Model):
     id = sa.Column(sa.Integer, primary_key=True)
 
     feed_id = sa.orm.mapped_column(sa.ForeignKey("feeds.id"))
-    # FIXME is it ok that this is nullable?
     user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False, index=True)
     feed = sa.orm.relationship("Feed", back_populates="entries")
     remote_id = sa.Column(sa.String, nullable=False,
@@ -561,8 +560,7 @@ class Entry(db.Model):
         Return a base Entry query applying any combination of filters.
         """
 
-        # FIXME consider orphan entries here
-        query = db.select(cls).filter(cls.feed.has(user_id=user_id))
+        query = db.select(cls).filter_by(user_id=user_id)
 
         if older_than:
             query = query.filter(cls.created < older_than)
