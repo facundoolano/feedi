@@ -458,6 +458,8 @@ class Entry(db.Model):
     id = sa.Column(sa.Integer, primary_key=True)
 
     feed_id = sa.orm.mapped_column(sa.ForeignKey("feeds.id"))
+    # FIXME is it ok that this is nullable?
+    user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False, index=True)
     feed = sa.orm.relationship("Feed", back_populates="entries")
     remote_id = sa.Column(sa.String, nullable=False,
                           doc="The identifier of this entry in its source feed.")
