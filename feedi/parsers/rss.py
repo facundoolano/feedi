@@ -9,8 +9,9 @@ import urllib
 
 import feedparser
 from bs4 import BeautifulSoup
+from feedi import scraping
 from feedi.requests import USER_AGENT, requests
-from feedi.scraping import CachingRequestsMixin, extract_meta, get_favicon
+from feedi.scraping import CachingRequestsMixin
 
 logger = logging.getLogger(__name__)
 
@@ -34,7 +35,7 @@ def fetch_icon(url):
     # prefer link inside rss as the base url
     feed = feedparser.parse(url)
     feed_link = feed['feed'].get('link', url)
-    icon_url = get_favicon(feed_link)
+    icon_url = scraping.get_favicon(feed_link)
     if icon_url:
         logger.debug("using feed icon: %s", icon_url)
         return icon_url
@@ -279,7 +280,7 @@ def discover_feed(url):
     soup = BeautifulSoup(res.content, 'lxml')
 
     # resolve title
-    title = extract_meta(soup, 'og:site_name', 'og:title')
+    title = scraping.extract_meta(soup, 'og:site_name', 'og:title')
     if not title:
         title = soup.find('title')
         if title:
