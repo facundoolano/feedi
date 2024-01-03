@@ -153,6 +153,19 @@ def delete_old_entries():
         if res.rowcount:
             app.logger.info("Deleted %s old entries from %s/%s", res.rowcount, feed_id, feed_name)
 
+    # Delete old standalone entries (without associated feed)
+    q = db.delete(models.Entry)\
+        .where(
+        models.Entry.feed_id.is_(None),
+        models.Entry.favorited.is_(None),
+        models.Entry.pinned.is_(None),
+        models.Entry.sort_date < older_than_date)
+
+    res = db.session.execute(q)
+    db.session.commit()
+    if res.rowcount:
+        app.logger.info("Deleted %s old standalone entries from", res.rowcount)
+
 
 @feed_cli.command('debug')
 @click.argument('url')
