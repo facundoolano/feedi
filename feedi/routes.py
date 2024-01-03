@@ -440,6 +440,7 @@ def entry_view(id):
         # if full browser load or explicit content request, fetch the article synchronously
         entry.fetch_content()
         if entry.content_full:
+            entry.viewed = entry.viewed or datetime.datetime.utcnow()
             db.session.commit()
             return flask.render_template("entry_content.html", entry=entry, content=entry.content_full)
 
