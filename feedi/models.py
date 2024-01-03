@@ -288,6 +288,7 @@ class Feed(db.Model):
             # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
             values['updated'] = utcnow
             values['feed_id'] = self.id
+            values['user_id'] = self.user_id
             db.session.execute(
                 sqlite.insert(Entry).
                 values(**values).
