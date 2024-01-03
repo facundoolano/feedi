@@ -100,6 +100,7 @@ def content_prefetch():
         for entry in db.session.scalars(query):
             app.logger.debug('Prefetching %s', entry.content_url)
             entry.fetch_content()
+            db.session.commit()
 
 
 @feed_cli.command('purge')

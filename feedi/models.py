@@ -548,7 +548,6 @@ class Entry(db.Model):
         if self.content_url and not self.content_full:
             try:
                 self.content_full = scraping.extract(self.content_url)['content']
-                db.session.commit()
             except Exception:
                 pass
 
