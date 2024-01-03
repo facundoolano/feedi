@@ -76,7 +76,7 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
         entry['avatar_url'] = toot['account']['avatar']
         entry['username'] = toot['account']['acct']
         entry['display_name'] = display_name(toot)
-        entry['body'] = toot['content']
+        entry['content_short'] = toot['content']
         entry['remote_id'] = toot['id']
         entry['display_date'] = toot['created_at']
 
@@ -97,10 +97,10 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
 
         # show (read-only) poll options
         if toot.get('poll'):
-            entry['body'] += '<ul>'
+            entry['content_short'] += '<ul>'
             for option in toot['poll']['options']:
-                entry['body'] += f'<li>{option["title"]}</li>'
-            entry['body'] += '</ul>'
+                entry['content_short'] += f'<li>{option["title"]}</li>'
+            entry['content_short'] += '</ul>'
 
         entries.append(entry)
 
@@ -138,7 +138,7 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
             'avatar_url': notification['account']['avatar'],
             'username': notification['account']['acct'],
             'display_name': display_name(notification),
-            'body': body}
+            'content_short': body}
 
         # NOTE: we could attempt to render the source toot in the body as the mastodon web ui does,
         # but I'm guessing that more often than not that would result in useless messages spamming the feed.

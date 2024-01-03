@@ -24,7 +24,7 @@
              <div class="column">
                  {% include "entry_header.html" %}
 
-                 {% if (entry.body or entry.media_url) %}
+                 {% if (entry.content_short or entry.media_url) %}
                  <div class="columns body-container">
                      {% if entry.media_url %}
                      <div class="column is-one-quarter media-url-container">
@@ -47,7 +47,7 @@
                          </div>
                      </div>
                      {% endif %}
-                     {% if entry.body %}
+                     {% if entry.content_short %}
                      <div class="column {% if entry.content_url %}is-clickable{% endif %}"
                           {% if entry.content_url %}
                           hx-get="{{ url_for('entry_view', id=entry.id) }}"
@@ -58,9 +58,9 @@
                           {% endif %}>
                          <div class="content" tabindex="-1">
                          {% if entry.feed.type == 'mastodon' %}
-                         {{ entry.body | sanitize(truncate=False) | safe }}
+                         {{ entry.content_short | sanitize(truncate=False) | safe }}
                          {% else %}
-                         {{ entry.body | sanitize | safe }}
+                         {{ entry.content_short | sanitize | safe }}
                              {% endif %}
                          </div>
 

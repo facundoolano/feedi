@@ -13,7 +13,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.ext.hybrid import hybrid_property
 
 import feedi.parsers as parsers
-from feedi.requests import get_favicon
+from feedi import scraping
 
 # TODO consider adding explicit support for url columns
 
@@ -303,7 +303,7 @@ class Feed(db.Model):
 
     def load_icon(self):
         ""
-        self.icon_url = get_favicon(self.url)
+        self.icon_url = scraping.get_favicon(self.url)
 
     @classmethod
     def frequency_rank_query(cls):
@@ -471,8 +471,11 @@ class Entry(db.Model):
     avatar_url = sa.Column(
         sa.String, doc="The url of the avatar image to be displayed for the entry.")
 
-    body = sa.Column(sa.String, doc="The content to be displayed in the feed preview. HTML is supported. \
+    content_short = sa.Column(sa.String, doc="The content to be displayed in the feed preview. HTML is supported. \
     For article entries, it would be an excerpt of the full article content.")
+
+    content_full = sa.orm.deferred(sa.Column(
+        sa.String, doc="The content to be displayed in the reader, e.g. the cleaned full article HTML."))
 
     target_url = sa.Column(
         sa.String, doc="The URL to open when accessing the entry at its source. \
@@ -541,6 +544,14 @@ class Entry(db.Model):
         """
         return self.avatar_url and (self.display_name or self.username)
 
+    def fetch_content(self):
+        if self.content_url and not self.content_full:
+            try:
+                self.content_full = scraping.extract(self.content_url)['content']
+                db.session.commit()
+            except Exception:
+                pass
+
     @classmethod
     def _filtered_query(cls, user_id, hide_seen=False, favorited=None,
                         feed_name=None, username=None, folder=None,
@@ -577,7 +588,8 @@ class Entry(db.Model):
             # Poor Text Search™
             query = query.filter(cls.title.contains(text) |
                                  cls.username.contains(text) |
-                                 cls.body.contains(text))
+                                 cls.content_short.contains(text) |
+                                 cls.content_full.contains(text))
 
         return query
 

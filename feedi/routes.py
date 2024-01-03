@@ -1,22 +1,17 @@
 import datetime
-import json
 import pathlib
-import shutil
-import subprocess
 import tempfile
-import zipfile
 
 import flask
 import sqlalchemy as sa
-from bs4 import BeautifulSoup
 from flask import current_app as app
 from flask_login import current_user, login_required
 
 import feedi.models as models
 import feedi.tasks as tasks
+from feedi import scraping
 from feedi.models import db
 from feedi.parsers import mastodon, rss
-from feedi.requests import requests
 
 
 @app.route("/users/<username>")
@@ -190,6 +185,7 @@ def entry_pin(id):
     if entry.pinned:
         entry.pinned = None
     else:
+        entry.fetch_content()
         entry.pinned = datetime.datetime.utcnow()
     db.session.commit()
 
@@ -429,7 +425,7 @@ def entry_view(id):
     # browser behavior. I don't like it, but I couldn't figure out how to preserve the feed
     # page/scrolling position on back button unless I jump to view content via htmx
 
-    if 'HX-Request' in flask.request.headers and 'content' not in flask.request.args:
+    if 'HX-Request' in flask.request.headers and 'content' not in flask.request.args and not entry.content_full:
         # if ajax/htmx just load the empty UI and load content asynchronously
         return flask.render_template("entry_content.html", entry=entry, content=None)
     else:
@@ -442,11 +438,9 @@ def entry_view(id):
             return redirect_response(entry.target_url)
 
         # if full browser load or explicit content request, fetch the article synchronously
-        try:
-            content = extract_article(entry.content_url, local_links=True)['content']
-            return flask.render_template("entry_content.html", entry=entry, content=content)
-        except Exception:
-            pass
+        entry.fetch_content()
+        if entry.content_full:
+            return flask.render_template("entry_content.html", entry=entry, content=entry.content_full)
 
         return redirect_response(entry.target_url)
 
@@ -474,7 +468,7 @@ def preview_content():
     """
     url = flask.request.args['url']
     try:
-        article = extract_article(url, local_links=True)
+        article = scraping.extract(url)
     except Exception:
         return flask.redirect(url)
 
@@ -499,76 +493,18 @@ def send_to_kindle():
         user_id=current_user.id))
 
     url = flask.request.args['url']
-    article = extract_article(url)
+    article = scraping.extract(url)
 
     # a tempfile is necessary because the kindle client expects a local filepath to upload
     # the file contents are a zip including the article.html and its image assets
     with tempfile.NamedTemporaryFile(mode='w+', delete=False) as fp:
-        compress_article(fp.name, article)
+        scraping.compress(fp.name, article)
 
         kindle.send(pathlib.Path(fp.name),
                     author=article['byline'],
                     title=article['title'])
 
         return '', 204
-
-
-def compress_article(outfilename, article):
-    """
-    Extract the article content, convert it to a valid html doc, localize its images and write
-    everything as a zip in the given file (which should be open for writing).
-    """
-
-    # pass it through bs4 so it's a well-formed html (otherwise kindle will reject it)
-    soup = BeautifulSoup(article['content'], 'lxml')
-
-    with zipfile.ZipFile(outfilename, 'w', compression=zipfile.ZIP_DEFLATED) as zip:
-        for img in soup.findAll('img'):
-            img_url = img['src']
-            img_filename = 'article_files/' + img['src'].split('/')[-1].split('?')[0]
-
-            # update each img src url to point to the local copy of the file
-            img['src'] = img_filename
-
-            # TODO webp images aren't supported, convert to png or jpg
-
-            # download the image into the zip, inside the files subdir
-            with requests.get(img_url, stream=True) as img_src, zip.open(img_filename, mode='w') as img_dest:
-                shutil.copyfileobj(img_src.raw, img_dest)
-
-        zip.writestr('article.html', str(soup))
-
-
-def extract_article(url, local_links=False):
-    # The mozilla/readability npm package shows better results at extracting the
-    # article content than all the python libraries I've tried... even than the readabilipy
-    # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
-    # for parsing the article sadly this adds a dependency to node and a few npm pacakges
-    r = subprocess.run(["feedi/extract_article.js", url],
-                       capture_output=True, text=True, check=True)
-
-    article = json.loads(r.stdout)
-
-    # load lazy images by replacing putting the data-src into src and stripping other attrs
-    soup = BeautifulSoup(article['content'], 'lxml')
-
-    LAZY_DATA_ATTRS = ['data-src', 'data-lazy-src', 'data-td-src-property', 'data-srcset']
-    for data_attr in LAZY_DATA_ATTRS:
-        for img in soup.findAll('img', attrs={data_attr: True}):
-            img.attrs = {'src': img[data_attr]}
-
-    # prevent video iframes to force dimensions
-    for iframe in soup.findAll('iframe', height=True):
-        del iframe['height']
-
-    if local_links:
-        for a in soup.findAll('a', href=True):
-            a['href'] = flask.url_for('preview_content', url=a['href'])
-            del a['target']
-
-    article['content'] = str(soup)
-
-    return article
 
 
 @app.route("/feeds/<feed_name>/debug")
