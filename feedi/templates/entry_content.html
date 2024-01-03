@@ -20,6 +20,13 @@
 
 {% block mobile_navbar %}
 <div class="navbar-brand">
+    <div class="is-hidden navbar-item navbar-autocomplete"
+         _="on dragstart from elsewhere remove .is-hidden then add .is-hidden to next .level
+                then on click from elsewhere add .is-hidden then remove .is-hidden from next .level">
+        {% include "autocomplete.html" %}
+        <a class="navbar-item icon"
+            <i class="fas fa-bars"></i></a>
+    </div>
     <div class="navbar-item is-expanded">
         <div class="level is-mobile " style="flex: 1 0 auto;">
             <a class="is-white icon is-rounded level-item" title="Back"
