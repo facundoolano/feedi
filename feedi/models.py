@@ -559,6 +559,7 @@ class Entry(db.Model):
         Return a base Entry query applying any combination of filters.
         """
 
+        # FIXME consider orphan entries here
         query = db.select(cls).filter(cls.feed.has(user_id=user_id))
 
         if older_than:

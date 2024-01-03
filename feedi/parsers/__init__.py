@@ -1,1 +1,1 @@
-from . import custom, mastodon, rss  # noqa
+from . import custom, html, mastodon, rss  # noqa
