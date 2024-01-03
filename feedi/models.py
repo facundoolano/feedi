@@ -627,7 +627,7 @@ class Entry(db.Model):
 
             # isouter = true so that if a feed with only old stuff is added, entries still show up
             # even without having a freq rank
-            return query.join(Feed)\
+            return query.join(Feed, isouter=True)\
                         .join(subquery, Feed.id == subquery.c.id, isouter=True)\
                         .order_by(
                             (cls.sort_date >= recency_bucket_date).desc(),
