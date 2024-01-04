@@ -199,14 +199,20 @@ class RSSParser(CachingRequestsMixin):
             return url
 
     def parse_content_short(self, entry):
+        content_url = self.parse_content_url(entry)
         summary = entry.get('summary')
         if summary:
+            # wordpress adds an annoying footer by default ('the post x appeared first on')
+            # removing it by skipping the last line when it includes a link to the article
+            footer = summary.split('\n')[-1]
+            if content_url.split('?')[0] in footer:
+                summary = summary.strip(footer).strip()
+
             summary = html.unescape(summary)
         else:
-            url = self.parse_content_url(entry)
-            if not url:
+            if not content_url:
                 return
-            summary = self.fetch_meta(url, 'og:description', 'description')
+            summary = self.fetch_meta(content_url, 'og:description', 'description')
             if not summary:
                 return
 
