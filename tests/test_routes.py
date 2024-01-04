@@ -1,3 +1,5 @@
+# coding: utf-8
+
 import datetime as dt
 import re
 
@@ -242,6 +244,29 @@ def test_entries_not_mixed_between_users(client):
 
 
 def test_view_entry_content(client):
+    # create feed with a sample entry
+    with open('tests/sample.html') as sample:
+        body = sample.read()
+    response = create_feed(client, 'olano.dev', [{'title': 'reclaiming-the-web',
+                                                  'date': '2023-12-12T00:00:00-03:00',
+                                                  'description': 'short content',
+                                                  'body': body}])
+    assert 'reclaiming-the-web' in response.text
+    assert 'short content' in response.text
+    entry_url = re.search(r'/entries/(\d+)', response.text).group(0)
+    response = client.get(entry_url)
+
+    assert 'reclaiming-the-web' in response.text
+    assert 'I had some ideas of what I wanted' in response.text
+
+
+def test_add_external_entry(client):
+    # mock response to an arbitrary url
+    # add a standalone entry for that url
+    # extract redirected entry url
+    # verify content parsed
+    # add same url again
+    # verify that redirected entry url is the same as before
     # TODO
     pass
 

@@ -81,7 +81,7 @@ def mock_feed(domain, items):
         entry.updated(item['date'])
         entry.description(item.get('description', 'default description'))
 
-        mock_request(entry_url, body='<p>content!</p>')
+        mock_request(entry_url, body=item.get('body', '<p>content!</p>'))
 
     rssfeed = fg.rss_str()
     mock_request(base_url)

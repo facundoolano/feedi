@@ -78,14 +78,13 @@ def extract(url=None, html=None):
     # article content than all the python libraries I've tried... even than the readabilipy
     # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
     # for parsing the article sadly this adds a dependency to node and a few npm pacakges
-    if html:
-        r = subprocess.run(["feedi/extract_article.js"], input=html,
-                           capture_output=True, check=True)
-    elif url:
-        r = subprocess.run(["feedi/extract_article.js", url],
-                           capture_output=True, text=True, check=True)
-    else:
+    if url:
+        html = requests.get(url).content
+    elif not html:
         raise ValueError('Expected either url or html')
+
+    r = subprocess.run(["feedi/extract_article.js"], input=html,
+                       capture_output=True, check=True)
 
     article = json.loads(r.stdout)
 
