@@ -124,7 +124,7 @@ def autocomplete():
         # we can reasonably assume this is a url
 
         options += [
-            ('Preview article', flask.url_for('preview_content', url=term), 'far fa-eye'),
+            ('Read article', flask.url_for('entry_add', url=term), 'far fa-eye'),
             ('Discover feed', flask.url_for('feed_add', url=term), 'fas fa-rss'),
         ]
         if current_user.has_kindle:
@@ -407,7 +407,28 @@ def feed_sync(feed_name):
     return response
 
 
-# TODO unit test this view
+# this should be a .post but that complicates utilization from hyperscipt
+@app.get("/entries/")
+@login_required
+def entry_add():
+    """
+    Redirects to the content reader for the article at the given URL, creating a new entry for it
+    if there isn't already one.
+    """
+
+    # TODO sanitize?
+    url = flask.request.args['url']
+    entry = db.session.scalar(db.select(models.Entry)
+                              .filter_by(content_url=url, user_id=current_user.id))
+
+    if not entry:
+        values = html.fetch(url, full_content=True)
+        entry = models.Entry(user_id=current_user.id, **values)
+        db.session.add(entry)
+        db.session.commit()
+    return redirect_response(flask.url_for('entry_view', id=entry.id))
+
+
 @app.get("/entries/<int:id>")
 @login_required
 def entry_view(id):
@@ -458,28 +479,6 @@ def redirect_response(url):
         return response
     else:
         return flask.redirect(url)
-
-
-# for now this is accesible dragging an url to the searchbox
-# later it will be an autocomplete command there
-@app.get("/entries/preview")
-@login_required
-def preview_content():
-    """
-    Preview an url content in the reader, as if it was an entry parsed from a feed.
-    """
-
-    # TODO sanitize?
-    url = flask.request.args['url']
-    entry = db.session.scalar(db.select(models.Entry)
-                              .filter_by(content_url=url, user_id=current_user.id))
-
-    if not entry:
-        values = html.fetch(url, full_content=True)
-        entry = models.Entry(user_id=current_user.id, **values)
-        db.session.add(entry)
-        db.session.commit()
-    return flask.redirect(flask.url_for('entry_view', id=entry.id))
 
 
 @app.post("/entries/kindle")
