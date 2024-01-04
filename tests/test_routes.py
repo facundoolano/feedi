@@ -3,7 +3,7 @@
 import datetime as dt
 import re
 
-from tests.conftest import create_feed, mock_feed
+from tests.conftest import create_feed, datafile, mock_feed
 
 
 def test_feed_add(client):
@@ -245,8 +245,7 @@ def test_entries_not_mixed_between_users(client):
 
 def test_view_entry_content(client):
     # create feed with a sample entry
-    with open('tests/sample.html') as sample:
-        body = sample.read()
+    body = datafile('sample.html')
     response = create_feed(client, 'olano.dev', [{'title': 'reclaiming-the-web',
                                                   'date': '2023-12-12T00:00:00-03:00',
                                                   'description': 'short content',

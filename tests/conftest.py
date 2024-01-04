@@ -1,4 +1,5 @@
 import os
+import os.path
 import uuid
 
 import feedgen.feed as feedgen
@@ -96,3 +97,9 @@ def mock_request(url, body='', ctype='application/html'):
                            'Content-Type': ctype}, priority=1)
     httpretty.register_uri(httpretty.GET, url, body=body, adding_headers={
                            'Content-Type': ctype}, priority=1)
+
+
+def datafile(filename):
+    path = os.path.join(os.path.dirname(__file__), filename)
+    with open(path) as f:
+        return f.read()
