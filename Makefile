@@ -19,8 +19,9 @@ deps-dev: deps
 node_modules:
 	npm install || true
 
+# TODO add var to specify test
 test:
-	$(venv) FLASK_ENV=testing pytest --disable-warnings
+	$(venv) FLASK_ENV=testing pytest --disable-warnings -v
 
 lint:
 	$(venv) flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude venv,migrations
