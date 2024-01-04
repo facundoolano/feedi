@@ -553,7 +553,7 @@ class Entry(db.Model):
             try:
                 self.content_full = scraping.extract(self.content_url)['content']
             except Exception as e:
-                logger.exception("failed to fetch content %s", e)
+                logger.debug("failed to fetch content %s", e)
 
     @classmethod
     def _filtered_query(cls, user_id, hide_seen=False, favorited=None,
