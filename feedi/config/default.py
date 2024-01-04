@@ -16,10 +16,6 @@ MASTODON_FETCH_LIMIT = 50
 # This affects the sqlalchemy engine pool size
 HUEY_POOL_SIZE = 100
 
-# how much to wait for the headless browser load a page when extracting js enabled articles
-JS_LOADING_DELAY_MS = 1000
-
-
 # username to use internally when authentication is "disabled"
 # this user will be inserted automatically when first creating the DB
 # and auto-logged-in when a browser first sends a request to the app.
