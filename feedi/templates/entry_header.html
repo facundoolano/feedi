@@ -12,7 +12,7 @@
                    then on click[shiftKey and metaKey] or keydown[key is 'Enter' and metaKey and shiftKey ] from the closest .feed-entry go to url '{{ url_for("entry_view", id=entry.id) }}' in new window then halt
                    {% endif %}
                    {% if entry.target_url %}
-                   then on keydown[key is 'Enter' and not metaKey and not shiftKey] from the closest .feed-entry go to url '{{ entry.target_url }}' in new window then halt
+                   {% if entry.content_url %}then{% endif %} on keydown[key is 'Enter' and not metaKey and not shiftKey] from the closest .feed-entry go to url '{{ entry.target_url }}' in new window then halt
                    {% endif %}"
                    {% if entry.target_url %}href="{{ entry.target_url }}" target="_blank"{% endif %}
                 >{{ entry.title | safe }}</a>
