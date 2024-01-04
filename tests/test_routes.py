@@ -246,6 +246,7 @@ def test_entries_not_mixed_between_users(client):
 def test_view_entry_content(client):
     # create feed with a sample entry
     body = datafile('sample.html')
+    print("BODY IS", body)
     response = create_feed(client, 'olano.dev', [{'title': 'reclaiming-the-web',
                                                   'date': '2023-12-12T00:00:00-03:00',
                                                   'description': 'short content',
