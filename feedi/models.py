@@ -2,6 +2,7 @@
 
 import datetime
 import json
+import logging
 import urllib
 
 import sqlalchemy as sa
@@ -18,6 +19,9 @@ from feedi import scraping
 # TODO consider adding explicit support for url columns
 
 db = SQLAlchemy()
+
+
+logger = logging.getLogger(__name__)
 
 
 def init_db(app):
@@ -550,8 +554,8 @@ class Entry(db.Model):
         if self.content_url and not self.content_full:
             try:
                 self.content_full = scraping.extract(self.content_url)['content']
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("failed to fetch content %s", e)
 
     @classmethod
     def _filtered_query(cls, user_id, hide_seen=False, favorited=None,
