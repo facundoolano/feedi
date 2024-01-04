@@ -19,8 +19,10 @@ deps-dev: deps
 node_modules:
 	npm install || true
 
+# make test
+# make test TEST=test_feed_ad
 test:
-	$(venv) FLASK_ENV=testing pytest --disable-warnings
+	$(venv) FLASK_ENV=testing pytest --disable-warnings -v $(if $(TEST),-k $(TEST))
 
 lint:
 	$(venv) flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude venv,migrations
