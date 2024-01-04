@@ -3,7 +3,7 @@
 import datetime as dt
 import re
 
-from tests.conftest import create_feed, mock_feed
+from tests.conftest import create_feed, mock_feed, mock_request
 
 
 def test_feed_add(client):
@@ -261,14 +261,29 @@ def test_view_entry_content(client):
 
 
 def test_add_external_entry(client):
-    # mock response to an arbitrary url
-    # add a standalone entry for that url
-    # extract redirected entry url
-    # verify content parsed
-    # add same url again
-    # verify that redirected entry url is the same as before
-    # TODO
-    pass
+    with open('tests/sample.html') as sample:
+        body = sample.read()
+    content_url = 'http://olano.dev/reclaiming-the-web'
+    mock_request(content_url, body=body)
+
+    # add a standalone entry for that url, check that browser redirects to view content
+    response = client.get('/entries/', query_string={'url': content_url}, follow_redirects=True)
+    assert response.status_code == 200
+    assert 'reclaiming-the-web' in response.text
+    assert 'I had some ideas of what I wanted' in response.text
+
+    # add same url again, verify that redirected entry url is the same as before
+    previous_entry_url = response.request.path
+    response = client.get('/entries/', query_string={'url': content_url}, follow_redirects=True)
+    assert response.status_code == 200
+    assert response.request.path == previous_entry_url
+
+    # check that standalone entry appears in feed
+    client.post('/session/hide_seen')
+    response = client.get('/')
+    assert 'reclaiming-the-web' in response.text
+    # short content taken from page meta description
+    assert 'There’s a kind of zen flow' in response.text
 
 
 def test_discover_feed(client):
