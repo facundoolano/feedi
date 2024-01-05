@@ -184,8 +184,7 @@ class RSSParser(CachingRequestsMixin):
         if author:
             author = BeautifulSoup(author, 'lxml').text
 
-        if ',' in author:
-            author = author.split(',')[0]
+        author = author.split(',')[0]
 
         if '(' in author:
             author = author.split('(')[1].split(')')[0]

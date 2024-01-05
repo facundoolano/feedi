@@ -22,10 +22,13 @@ def fetch(url, full_content=False):
     if not title and soup.title:
         title = soup.title.text
 
+    username = scraping.extract_meta(soup, 'author') or ''
+    username = username.split(',')[0]
+
     entry = {
         'remote_id': url,
         'title': title,
-        'username': scraping.extract_meta(soup, 'author'),
+        'username': username,
         'display_date': display_date,
         'sort_date': datetime.datetime.utcnow(),
         'content_short': scraping.extract_meta(soup, 'og:description', 'description'),
