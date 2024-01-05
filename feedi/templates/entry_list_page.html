@@ -83,6 +83,13 @@
             <i class="fas fa-comment-alt"></i>
         </a>
         {% endif %}
+        <a tabindex="-1" class="icon is-white is-rounded level-item" title="Explode"
+           hx-delete="{{ url_for('entry_explode', id=entry.id )}}"
+           hx-target="closest .feed-entry"
+           hx-swap="outerHTML"
+           _ = "on click set x to the closest .feed-entry then set x.style.opacity to 0.5"
+        ><i class="fas fa-bomb fa-lg"></i></a>
+
         <a class="icon is-white is-rounded level-item"
            tabindex="-1"
            _="on click toggle .is-active on the next .dropdown then
