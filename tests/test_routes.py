@@ -297,8 +297,48 @@ def test_feed_list(client):
 
 
 def test_feed_edit(client):
-    # TODO
-    pass
+    response = create_feed(client, 'feed1.com', [{'title': 'pin-entry', 'date': '2023-12-01 00:00Z'},
+                                                 {'title': 'fav-entry', 'date': '2023-11-10 00:00Z'},
+                                                 {'title': 'plain-entry', 'date': '2023-10-10 00:00Z'}])
+
+    response = client.get('/')
+    assert 'pin-entry' in response.text
+    assert 'fav-entry' in response.text
+    assert 'plain-entry' in response.text
+
+    # check the 3 appear when requesting by feed name
+    response = client.get('/feeds/feed1.com/entries')
+    assert 'pin-entry' in response.text
+    assert 'fav-entry' in response.text
+    assert 'plain-entry' in response.text
+
+    # pin the 1st, fav the 2nd
+    entry_ids_with_duplicates = re.findall(r'/entries/(\d+)', response.text)
+    entry_ids = []
+    for e in entry_ids_with_duplicates:
+        if e not in entry_ids:
+            entry_ids.append(e)
+
+    response = client.put('/pinned/' + entry_ids[0])
+    assert response.status_code == 200
+    response = client.put('/favorites/' + entry_ids[1])
+    assert response.status_code == 204
+
+    # delete the feed
+    response = client.delete('/feeds/feed1.com')
+    assert response.status_code == 204
+
+    # check pinned and favorited appear on home, the other is deleted
+    response = client.get('/')
+    assert 'pin-entry' in response.text
+    assert 'fav-entry' in response.text
+    assert 'plain-entry' not in response.text
+
+    # check empty when requesting by feed name
+    response = client.get('/feeds/feed1.com/entries')
+    assert 'pin-entry' not in response.text
+    assert 'fav-entry' not in response.text
+    assert 'plain-entry' not in response.text
 
 
 def test_feed_delete(client):

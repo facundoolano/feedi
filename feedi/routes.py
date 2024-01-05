@@ -378,12 +378,21 @@ def feed_edit_submit(feed_name):
 @app.delete("/feeds/<feed_name>")
 @login_required
 def feed_delete(feed_name):
-    "Remove a feed and its entries from the database."
-    # FIXME this should probably do a "logic" delete and keep stuff around
-    # especially considering that it will kill child entries as well
-
+    "Remove a feed and its entries from the database. Pinned and favorited entries are preserved."
     feed = db.session.scalar(db.select(models.Feed).filter_by(
         name=feed_name, user_id=current_user.id))
+
+    if not feed:
+        flask.abort(404, "Feed not found")
+
+    # preserve pinned and favorited by moving them out of the feed before deleting it.
+    update = db.update(models.Entry)\
+        .where((models.Entry.feed_id == feed.id) & (
+            models.Entry.favorited.isnot(None) |
+            models.Entry.pinned.isnot(None)))\
+        .values(feed_id=None)
+    db.session.execute(update)
+
     # running from db.session ensures cascading effects
     db.session.delete(feed)
     db.session.commit()
