@@ -6,7 +6,7 @@ from feedi import scraping
 from feedi.requests import requests
 
 
-def fetch(url, full_content=False):
+def fetch(url):
     "Return the entry values for an article at the given url."
 
     response = requests.get(url)
@@ -18,6 +18,7 @@ def fetch(url, full_content=False):
     else:
         display_date = datetime.datetime.utcnow()
 
+    # FIXME consider skipping if no title? and no og:type=article?
     title = scraping.extract_meta(soup, 'og:title', 'twitter:title')
     if not title and soup.title:
         title = soup.title.text
@@ -37,7 +38,6 @@ def fetch(url, full_content=False):
         'content_url': url,
     }
 
-    if full_content:
-        entry['content_full'] = scraping.extract(html=response.content)['content']
+    # TODO make raw entry the set of met tags
 
     return entry

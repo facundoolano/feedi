@@ -35,6 +35,6 @@
 <a href="{{ url_for('feed_edit', feed_name=entry.feed.name ) }}" class="dropdown-item"><span class="icon"><i class="far fa-edit"></i></span> Edit {{ entry.feed.name }}</a>
 <a hx-delete="{{ url_for('feed_delete', feed_name=entry.feed.name ) }}" _="on htmx:afterRequest go to url {{ url_for('entry_list') }}" class="dropdown-item"><span class="icon"><i class="far fa-trash-alt"></i></span> Delete {{ entry.feed.name }}</a>
 <hr class="dropdown-divider is-hidden-mobile">
-<a class="dropdown-item is-hidden-mobile" href="{{ url_for('raw_entry', id=entry.id ) }}" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw entry data</a>
 <a class="dropdown-item is-hidden-mobile" href="{{ url_for('raw_feed', feed_name=entry.feed.name ) }}" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw feed data</a>
 {% endif %}
+<a class="dropdown-item is-hidden-mobile" href="{{ url_for('raw_entry', id=entry.id ) }}" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw entry data</a>
