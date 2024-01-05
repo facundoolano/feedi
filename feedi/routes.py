@@ -11,7 +11,7 @@ import feedi.models as models
 import feedi.tasks as tasks
 from feedi import scraping
 from feedi.models import db
-from feedi.parsers import html, mastodon, rss
+from feedi.parsers import mastodon, rss
 
 
 @app.route("/users/<username>")
@@ -214,6 +214,28 @@ def entry_favorite(id):
 
     db.session.commit()
     return '', 204
+
+
+@app.delete("/entries/<int:id>")
+@login_required
+def entry_explode(id):
+    "Mark the given entry as viewed, scan the links in its contents, create entries and render them."
+    # may be overloading the delete method a bit here
+
+    entry = db.get_or_404(models.Entry, id)
+    if entry.user_id != current_user.id:
+        flask.abort(404)
+
+    entry.fetch_content()
+    entry.viewed = entry.viewed or datetime.datetime.utcnow()
+
+    urls = scraping.extract_links(entry.content_full)
+    entries = [models.Entry.from_url(current_user.id, url)
+               for url in urls]
+    db.session.commit()
+
+    return flask.render_template('entry_list_page.html',
+                                 entries=entries)
 
 
 @app.put("/mastodon/favorites/<int:id>")
@@ -428,6 +450,7 @@ def entry_add():
     url = flask.request.args['url']
 
     entry = models.Entry.from_url(current_user.id, url)
+    db.session.commit()
     return redirect_response(flask.url_for('entry_view', id=entry.id))
 
 

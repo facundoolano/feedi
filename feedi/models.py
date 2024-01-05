@@ -531,7 +531,6 @@ class Entry(db.Model):
             values = parsers.html.fetch(url, full_content=True)
             entry = cls(user_id=current_user.id, **values)
             db.session.add(entry)
-            db.session.commit()
         return entry
 
     def __repr__(self):
