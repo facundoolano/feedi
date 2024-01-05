@@ -86,6 +86,7 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
 
         # use server-local urls
         entry['target_url'] = status_url(server_url, toot)
+        entry['comments_url'] = entry['target_url']
 
         # for media we only support images for now and will take just the first one
         media = [m['preview_url'] for m in toot['media_attachments'] if m['type'] == 'image']
@@ -147,6 +148,7 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
             entry['target_url'] = user_url(server_url, notification)
         else:
             entry['target_url'] = status_url(server_url, notification['status'])
+            entry['comments_url'] = entry['target_url']
 
         entries.append(entry)
 
