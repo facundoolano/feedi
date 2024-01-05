@@ -7,9 +7,18 @@ from feedi.requests import requests
 
 
 def fetch(url):
-    "Return the entry values for an article at the given url."
+    """
+    Return the entry values for an article at the given url.
+    Raises ValueError if the url doesn't seem to point to an article (it doesn't have a title).
+    Raises HTTPError if the request is not successfull.
+    """
 
     response = requests.get(url)
+    response.raise_for_status()
+
+    if not response.ok:
+        raise Exception()
+
     soup = BeautifulSoup(response.content, 'lxml')
     metadata = scraping.all_meta(soup)
 

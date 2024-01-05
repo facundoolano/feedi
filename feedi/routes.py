@@ -231,8 +231,14 @@ def entry_explode(id):
     db.session.commit()
 
     urls = scraping.extract_links(entry.content_full)
-    entries = [models.Entry.from_url(current_user.id, url)
-               for url in urls]
+    entries = []
+    for url in urls:
+        try:
+            subentry = models.Entry.from_url(current_user.id, url)
+            entries.append(subentry)
+        except Exception:
+            continue
+
     db.session.add_all(entries)
     db.session.commit()
 
@@ -451,7 +457,12 @@ def entry_add():
     # TODO sanitize?
     url = flask.request.args['url']
 
-    entry = models.Entry.from_url(current_user.id, url)
+    try:
+        entry = models.Entry.from_url(current_user.id, url)
+    except Exception:
+        return redirect_response(url)
+
+    db.session.add(entry)
     db.session.commit()
     return redirect_response(flask.url_for('entry_view', id=entry.id))
 
