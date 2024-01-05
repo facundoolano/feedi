@@ -528,9 +528,8 @@ class Entry(db.Model):
                                   .filter_by(content_url=url, user_id=user_id))
 
         if not entry:
-            values = parsers.html.fetch(url, full_content=True)
-            entry = cls(user_id=current_user.id, **values)
-            db.session.add(entry)
+            values = parsers.html.fetch(url)
+            entry = cls(user_id=user_id, **values)
         return entry
 
     def __repr__(self):

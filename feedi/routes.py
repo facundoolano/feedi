@@ -228,10 +228,12 @@ def entry_explode(id):
 
     entry.fetch_content()
     entry.viewed = entry.viewed or datetime.datetime.utcnow()
+    db.session.commit()
 
     urls = scraping.extract_links(entry.content_full)
     entries = [models.Entry.from_url(current_user.id, url)
                for url in urls]
+    db.session.add_all(entries)
     db.session.commit()
 
     return flask.render_template('entry_list_page.html',
