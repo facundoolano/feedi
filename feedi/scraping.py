@@ -73,6 +73,14 @@ def extract_meta(soup, *tags):
                 return meta_tag['content']
 
 
+def all_meta(soup):
+    result = {}
+    for attr in ['property', 'name', 'itemprop']:
+        for meta_tag in soup.find_all("meta", {attr: True}, content=True):
+            result[meta_tag[attr]] = meta_tag['content']
+    return result
+
+
 def extract_links(html):
     soup = BeautifulSoup(html, 'lxml')
     links = soup.find_all('a', href=lambda url: url and url.startswith('http'))
