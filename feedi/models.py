@@ -521,6 +521,19 @@ class Entry(db.Model):
     __table_args__ = (sa.UniqueConstraint("feed_id", "remote_id"),
                       sa.Index("entry_sort_ts", sort_date.desc()))
 
+    @classmethod
+    def from_url(cls, user_id, url):
+        "TODO"
+        entry = db.session.scalar(db.select(cls)
+                                  .filter_by(content_url=url, user_id=user_id))
+
+        if not entry:
+            values = parsers.html.fetch(url, full_content=True)
+            entry = cls(user_id=current_user.id, **values)
+            db.session.add(entry)
+            db.session.commit()
+        return entry
+
     def __repr__(self):
         return f'<Entry {self.feed_id}/{self.remote_id}>'
 
