@@ -13,6 +13,10 @@
 {% if entry.id and request.path != url_for('entry_view', id=entry.id) %}
 <a hx-boost="true" href="{{ url_for('entry_view', id=entry.id) }}" class="dropdown-item"><span class="icon"><i class="fas fa-book-reader"></i></span> View in reader</a>
 {% endif %}
+<a class="dropdown-item" hx-delete="{{ url_for('entry_explode', id=entry.id )}}" hx-swap="none"
+   _="on htmx:beforeRequest or htmx:afterRequest toggle .fa-spin on <i/> in me
+          then on htmx:afterRequest go to url {{ url_for('entry_list') }}">
+    <span class="icon"><i class="fas fa-bomb fa-lg"></i></span> Explode</a>
 <a class="dropdown-item" _="on click writeText('{{ entry.content_url }}') into the navigator's clipboard"><span class="icon"><i class="fas fa-link"></i></span> Copy URL</a>
 
 {% if entry.is_external_link %}
