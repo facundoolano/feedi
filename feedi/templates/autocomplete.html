@@ -13,6 +13,7 @@
                           then on keyup[key is 'Enter'] wait 300ms then click() on the next .autocomplete-item
                           then on keyup[key is 'Escape'] if (next .autocomplete-items) does not match .is-active then blur() me end
                           then on drop set my.value to event.dataTransfer.getData('text') then halt -- set explicitly so text is replaced instead of appended
+                          then on click from elsewhere set my.value to ''
                           "/>
         </p>
         <div class="autocomplete-items" role="menu"
