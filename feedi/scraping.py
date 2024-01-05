@@ -83,7 +83,8 @@ def all_meta(soup):
 
 def extract_links(html):
     soup = BeautifulSoup(html, 'lxml')
-    links = soup.find_all('a', href=lambda url: url and url.startswith('http'))
+    # text = True to skip images
+    links = soup.find_all('a', text=True, href=lambda url: url and url.startswith('http'))
     return set([a['href'] for a in links])
 
 
