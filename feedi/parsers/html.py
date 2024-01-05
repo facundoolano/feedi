@@ -1,4 +1,5 @@
 import datetime
+import json
 
 import dateparser
 from bs4 import BeautifulSoup
@@ -43,7 +44,7 @@ def fetch(url):
         'media_url': metadata.get('og:image', metadata.get('twitter:image')),
         'target_url': url,
         'content_url': url,
-        'raw_data': metadata
+        'raw_data': json.dumps(metadata)
     }
 
     return entry
