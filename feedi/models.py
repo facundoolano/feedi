@@ -292,6 +292,7 @@ class Feed(db.Model):
             # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
             values['updated'] = utcnow
             values['feed_id'] = self.id
+            values['user_id'] = self.user_id
             db.session.execute(
                 sqlite.insert(Entry).
                 values(**values).
@@ -462,6 +463,7 @@ class Entry(db.Model):
     id = sa.Column(sa.Integer, primary_key=True)
 
     feed_id = sa.orm.mapped_column(sa.ForeignKey("feeds.id"))
+    user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False, index=True)
     feed = sa.orm.relationship("Feed", back_populates="entries")
     remote_id = sa.Column(sa.String, nullable=False,
                           doc="The identifier of this entry in its source feed.")
@@ -563,7 +565,7 @@ class Entry(db.Model):
         Return a base Entry query applying any combination of filters.
         """
 
-        query = db.select(cls).filter(cls.feed.has(user_id=user_id))
+        query = db.select(cls).filter_by(user_id=user_id)
 
         if older_than:
             query = query.filter(cls.created < older_than)
@@ -629,7 +631,7 @@ class Entry(db.Model):
 
             # isouter = true so that if a feed with only old stuff is added, entries still show up
             # even without having a freq rank
-            return query.join(Feed)\
+            return query.join(Feed, isouter=True)\
                         .join(subquery, Feed.id == subquery.c.id, isouter=True)\
                         .order_by(
                             (cls.sort_date >= recency_bucket_date).desc(),

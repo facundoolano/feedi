@@ -11,7 +11,7 @@ import feedi.models as models
 import feedi.tasks as tasks
 from feedi import scraping
 from feedi.models import db
-from feedi.parsers import mastodon, rss
+from feedi.parsers import html, mastodon, rss
 
 
 @app.route("/users/<username>")
@@ -124,7 +124,7 @@ def autocomplete():
         # we can reasonably assume this is a url
 
         options += [
-            ('Preview article', flask.url_for('preview_content', url=term), 'far fa-eye'),
+            ('Read article', flask.url_for('entry_add', url=term), 'far fa-eye'),
             ('Discover feed', flask.url_for('feed_add', url=term), 'fas fa-rss'),
         ]
         if current_user.has_kindle:
@@ -179,7 +179,7 @@ def entry_pin(id):
     entries, respecting the url filters.
     """
     entry = db.get_or_404(models.Entry, id)
-    if entry.feed.user_id != current_user.id:
+    if entry.user_id != current_user.id:
         flask.abort(404)
 
     if entry.pinned:
@@ -204,7 +204,7 @@ def entry_pin(id):
 def entry_favorite(id):
     "Toggle the favorite status of the given entry."
     entry = db.get_or_404(models.Entry, id)
-    if entry.feed.user_id != current_user.id:
+    if entry.user_id != current_user.id:
         flask.abort(404)
 
     if entry.favorited:
@@ -407,7 +407,28 @@ def feed_sync(feed_name):
     return response
 
 
-# TODO unit test this view
+# this should be a .post but that complicates utilization from hyperscipt
+@app.get("/entries/")
+@login_required
+def entry_add():
+    """
+    Redirects to the content reader for the article at the given URL, creating a new entry for it
+    if there isn't already one.
+    """
+
+    # TODO sanitize?
+    url = flask.request.args['url']
+    entry = db.session.scalar(db.select(models.Entry)
+                              .filter_by(content_url=url, user_id=current_user.id))
+
+    if not entry:
+        values = html.fetch(url, full_content=True)
+        entry = models.Entry(user_id=current_user.id, **values)
+        db.session.add(entry)
+        db.session.commit()
+    return redirect_response(flask.url_for('entry_view', id=entry.id))
+
+
 @app.get("/entries/<int:id>")
 @login_required
 def entry_view(id):
@@ -415,7 +436,7 @@ def entry_view(id):
     Fetch the entry content from the source and display it for reading locally.
     """
     entry = db.get_or_404(models.Entry, id)
-    if entry.feed.user_id != current_user.id:
+    if entry.user_id != current_user.id:
         flask.abort(404)
 
     # When requested through htmx (ajax), this page loads layout first, then the content
@@ -458,28 +479,6 @@ def redirect_response(url):
         return response
     else:
         return flask.redirect(url)
-
-
-# for now this is accesible dragging an url to the searchbox
-# later it will be an autocomplete command there
-@app.get("/entries/preview")
-@login_required
-def preview_content():
-    """
-    Preview an url content in the reader, as if it was an entry parsed from a feed.
-    """
-    url = flask.request.args['url']
-    try:
-        article = scraping.extract(url)
-    except Exception:
-        return flask.redirect(url)
-
-    # put together entry stub for the template
-    entry = models.Entry(content_url=url,
-                         target_url=url,
-                         title=article['title'],
-                         username=article['byline'])
-    return flask.render_template("content_preview.html", content=article['content'], entry=entry)
 
 
 @app.post("/entries/kindle")
@@ -539,7 +538,7 @@ def raw_entry(id):
     entry = db.get_or_404(models.Entry, id,
                           options=[sa.orm.undefer(models.Entry.raw_data)])
 
-    if entry.feed.user_id != current_user.id:
+    if entry.user_id != current_user.id:
         flask.abort(404)
 
     return app.response_class(

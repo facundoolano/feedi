@@ -68,8 +68,8 @@ def sanitize_content(html, truncate=True):
         # prevent link clicks triggering the container's click event
         # add kb modifiers to open in reader
         a['_'] = f"""
-        on click[shiftKey and not metaKey] go to url {flask.url_for("preview_content", url=a["href"])} then halt
-        then on click[shiftKey and metaKey] go to url {flask.url_for("preview_content", url=a["href"])} in new window then halt
+        on click[shiftKey and not metaKey] go to url {flask.url_for("entry_add", url=a["href"])} then halt
+        then on click[shiftKey and metaKey] go to url {flask.url_for("entry_add", url=a["href"])} in new window then halt
         then on click halt the event's bubbling
         """
 
