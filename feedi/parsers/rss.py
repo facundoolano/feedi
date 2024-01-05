@@ -205,7 +205,7 @@ class RSSParser(CachingRequestsMixin):
             # removing it by skipping the last line when it includes a link to the article
             footer = summary.split('\n')[-1]
             if content_url.split('?')[0] in footer:
-                summary = summary.strip(footer).strip()
+                summary = summary.replace(footer, '').strip()
 
             summary = html.unescape(summary)
         else:
