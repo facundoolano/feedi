@@ -297,6 +297,11 @@ def test_feed_list(client):
 
 
 def test_feed_edit(client):
+    # TODO
+    pass
+
+
+def test_feed_delete(client):
     response = create_feed(client, 'feed1.com', [{'title': 'pin-entry', 'date': '2023-12-01 00:00Z'},
                                                  {'title': 'fav-entry', 'date': '2023-11-10 00:00Z'},
                                                  {'title': 'plain-entry', 'date': '2023-10-10 00:00Z'}])
@@ -339,11 +344,6 @@ def test_feed_edit(client):
     assert 'pin-entry' not in response.text
     assert 'fav-entry' not in response.text
     assert 'plain-entry' not in response.text
-
-
-def test_feed_delete(client):
-    # TODO
-    pass
 
 
 def test_mastodon_feed(client):
