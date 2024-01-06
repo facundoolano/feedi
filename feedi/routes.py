@@ -230,7 +230,14 @@ def entry_explode(id):
     entry.viewed = entry.viewed or datetime.datetime.utcnow()
     db.session.commit()
 
-    urls = scraping.extract_links(entry.content_full)
+    # extract a unique set of links considering both short and full content
+    urls = []
+    for content in [entry.content_short, entry.content_full]:
+        if content:
+            urls += scraping.extract_links(entry.content_full)
+    urls = set(urls)
+
+    # create (or load old) entries for those that are valid articles
     entries = []
     for url in urls:
         try:
