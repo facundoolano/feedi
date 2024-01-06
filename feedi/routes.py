@@ -234,7 +234,7 @@ def entry_explode(id):
     urls = []
     for content in [entry.content_short, entry.content_full]:
         if content:
-            urls += scraping.extract_links(entry.content_full)
+            urls += scraping.extract_links(content)
     urls = set(urls)
 
     # create (or load old) entries for those that are valid articles
