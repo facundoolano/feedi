@@ -8,18 +8,21 @@ import zipfile
 import favicon
 from bs4 import BeautifulSoup
 
-from feedi.requests import requests
+from feedi.requests import USER_AGENT, requests
 
 logger = logging.getLogger(__name__)
 
 
-def get_favicon(url):
+def get_favicon(url, html=None):
     "Return the best favicon from the given url, or None."
     url_parts = urllib.parse.urlparse(url)
     url = f'{url_parts.scheme}://{url_parts.netloc}'
 
     try:
-        favicons = favicon.get(url)
+        if not html:
+            favicons = favicon.get(url, headers={'User-Agent': USER_AGENT}, timeout=2)
+        else:
+            favicons = favicon.tags(url, html)
     except Exception:
         logger.exception("error fetching favicon: %s", url)
         return
