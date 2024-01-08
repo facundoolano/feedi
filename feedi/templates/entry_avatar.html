@@ -8,5 +8,5 @@
     </a>
     {% else %}
     {% set domain = entry.target_url | url_domain %}
-    <img class="is-rounded feed-avatar" alt="{{ domain.0.upper() }}" title="{{ domain }}">
+    <img class="is-rounded feed-avatar" {% if entry.icon_url %}src="{{ entry.icon_url }}"{% endif %} alt="{{ domain.0.upper() }}" title="{{ domain }}">
     {% endif %}
