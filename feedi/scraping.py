@@ -81,13 +81,11 @@ def all_meta(soup):
     return result
 
 
-def extract_links(html):
+def extract_links(url, html):
     soup = BeautifulSoup(html, 'lxml')
     # checks tag.text so it skips image links
-    # checks startswith http to exclude local links (not sure if it's the best assumption?)
-    links = soup.find_all(lambda tag: tag.name ==
-                          'a' and tag.text and tag['href'].startswith('http'))
-    return [a['href'] for a in links]
+    links = soup.find_all(lambda tag: tag.name == 'a' and tag.text)
+    return [make_absolute(url, a['href']) for a in links]
 
 
 # TODO this should be renamed, and maybe other things in this modules, using extract too much
@@ -147,3 +145,10 @@ def compress(outfilename, article):
                 shutil.copyfileobj(img_src.raw, img_dest)
 
         zip.writestr('article.html', str(soup))
+
+
+def make_absolute(url, path):
+    "If `path` is a relative url, join it with the given absolute url."
+    if not urllib.parse.urlparse(path).netloc:
+        path = urllib.parse.urljoin(url, path)
+    return path

@@ -301,28 +301,20 @@ def discover_feed(url):
     for type in link_types:
         link = soup.find('link', type=type, href=True)
         if link:
-            feed_url = make_absolute(url, link['href'])
+            feed_url = scraping.make_absolute(url, link['href'])
             return feed_url, title
 
     # if none found in the html, try with common urls, provided that they exist
     # and are xml content
     common_paths = ['/feed', '/rss', '/feed.xml', '/rss.xml']
     for path in common_paths:
-        rss_url = make_absolute(url, path)
+        rss_url = scraping.make_absolute(url, path)
         res = requests.get(rss_url)
         mime = res.headers.get('Content-Type', '').split(';')[0]
         if res.ok and mime.endswith('xml'):
             return rss_url, title
 
     return None, title
-
-
-def make_absolute(url, path):
-    "If `path` is a relative url, join it with the given absolute url."
-    if not urllib.parse.urlparse(path).netloc:
-
-        path = urllib.parse.urljoin(url, path)
-    return path
 
 
 def pretty_print(url):
