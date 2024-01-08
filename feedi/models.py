@@ -518,6 +518,9 @@ class Entry(db.Model):
     header = sa.Column(
         sa.String, doc="an html line to put above the title, such as 'user reblogged'.")
 
+    icon_url = sa.Column(
+        sa.String, doc="To be used for standalone entry avatars or as a fallback when the feed has no icon.")
+
     __table_args__ = (sa.UniqueConstraint("feed_id", "remote_id"),
                       sa.Index("entry_sort_ts", sort_date.desc()))
 

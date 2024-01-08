@@ -23,7 +23,7 @@ def fetch(url):
     soup = BeautifulSoup(response.content, 'lxml')
     metadata = scraping.all_meta(soup)
 
-    title = metadata.get('og:title', metadata.get('twitter:title'))
+    title = metadata.get('og:title', metadata.get('twitter:title', getattr(soup.title, 'text')))
 
     if not title or (metadata.get('og:type') and metadata['og:type'] != 'article'):
         raise ValueError(f"{url} is missing article metadata")
@@ -35,6 +35,8 @@ def fetch(url):
 
     username = metadata.get('author', '').split(',')[0]
 
+    icon_url = scraping.get_favicon(url, html=response.content)
+
     entry = {
         'remote_id': url,
         'title': title,
@@ -45,7 +47,7 @@ def fetch(url):
         'media_url': metadata.get('og:image', metadata.get('twitter:image')),
         'target_url': url,
         'content_url': url,
-        'raw_data': json.dumps(metadata)
-    }
+        'raw_data': json.dumps(metadata),
+        'icon_url': icon_url}
 
     return entry
