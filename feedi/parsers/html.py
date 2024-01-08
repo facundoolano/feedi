@@ -23,7 +23,7 @@ def fetch(url):
     soup = BeautifulSoup(response.content, 'lxml')
     metadata = scraping.all_meta(soup)
 
-    title = metadata.get('og:title', metadata.get('twitter:title'))
+    title = metadata.get('og:title', metadata.get('twitter:title', getattr(soup.title, 'text')))
 
     if not title or (metadata.get('og:type') and metadata['og:type'] != 'article'):
         raise ValueError(f"{url} is missing article metadata")
