@@ -124,7 +124,8 @@ def autocomplete():
         # we can reasonably assume this is a url
 
         options += [
-            ('Read article', flask.url_for('entry_add', url=term), 'far fa-eye'),
+            ('Add to feed', flask.url_for('entry_add', url=term), 'fas fa-download'),
+            ('View in reader', flask.url_for('entry_add', url=term, redirect=1), 'fas fa-book-reader'),
             ('Discover feed', flask.url_for('feed_add', url=term), 'fas fa-rss'),
         ]
         if current_user.has_kindle:
@@ -434,7 +435,11 @@ def entry_add():
 
     db.session.add(entry)
     db.session.commit()
-    return redirect_response(flask.url_for('entry_view', id=entry.id))
+
+    if flask.request.args.get('redirect'):
+        return redirect_response(flask.url_for('entry_view', id=entry.id))
+    else:
+        return '', 204
 
 
 @app.get("/entries/<int:id>")
