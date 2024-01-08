@@ -5,7 +5,8 @@ import subprocess
 import urllib
 import zipfile
 
-import favicon
+# use internal module to access unexported .tags function
+import favicon.favicon as favicon
 from bs4 import BeautifulSoup
 
 from feedi.requests import USER_AGENT, requests
@@ -22,7 +23,8 @@ def get_favicon(url, html=None):
         if not html:
             favicons = favicon.get(url, headers={'User-Agent': USER_AGENT}, timeout=2)
         else:
-            favicons = favicon.tags(url, html)
+            favicons = sorted(favicon.tags(url, html),
+                              key=lambda i: i.width + i.height, reverse=True)
     except Exception:
         logger.exception("error fetching favicon: %s", url)
         return
