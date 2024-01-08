@@ -1,4 +1,5 @@
 import datetime
+import json
 
 import dateparser
 from bs4 import BeautifulSoup
@@ -6,24 +7,33 @@ from feedi import scraping
 from feedi.requests import requests
 
 
-def fetch(url, full_content=False):
-    "Return the entry values for an article at the given url."
+def fetch(url):
+    """
+    Return the entry values for an article at the given url.
+    Raises ValueError if the url doesn't seem to point to an article (it doesn't have a title).
+    Raises HTTPError if the request is not successfull.
+    """
 
     response = requests.get(url)
-    soup = BeautifulSoup(response.content, 'lxml')
+    response.raise_for_status()
 
-    published = scraping.extract_meta(soup, 'og:article:published_time')
-    if published:
-        display_date = dateparser.parse(published)
+    if not response.ok:
+        raise Exception()
+
+    soup = BeautifulSoup(response.content, 'lxml')
+    metadata = scraping.all_meta(soup)
+
+    title = metadata.get('og:title', metadata.get('twitter:title'))
+
+    if not title or (metadata.get('og:type') and metadata['og:type'] != 'article'):
+        raise ValueError(f"{url} is missing article metadata")
+
+    if 'og:article:published_time' in metadata:
+        display_date = dateparser.parse(metadata['og:article:published_time'])
     else:
         display_date = datetime.datetime.utcnow()
 
-    title = scraping.extract_meta(soup, 'og:title', 'twitter:title')
-    if not title and soup.title:
-        title = soup.title.text
-
-    username = scraping.extract_meta(soup, 'author') or ''
-    username = username.split(',')[0]
+    username = metadata.get('author', '').split(',')[0]
 
     entry = {
         'remote_id': url,
@@ -31,13 +41,11 @@ def fetch(url, full_content=False):
         'username': username,
         'display_date': display_date,
         'sort_date': datetime.datetime.utcnow(),
-        'content_short': scraping.extract_meta(soup, 'og:description', 'description'),
-        'media_url': scraping.extract_meta(soup, 'og:image', 'twitter:image'),
+        'content_short': metadata.get('og:description', metadata.get('description')),
+        'media_url': metadata.get('og:image', metadata.get('twitter:image')),
         'target_url': url,
         'content_url': url,
+        'raw_data': json.dumps(metadata)
     }
-
-    if full_content:
-        entry['content_full'] = scraping.extract(html=response.content)['content']
 
     return entry

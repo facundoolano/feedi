@@ -73,6 +73,29 @@ def extract_meta(soup, *tags):
                 return meta_tag['content']
 
 
+def all_meta(soup):
+    result = {}
+    for attr in ['property', 'name', 'itemprop']:
+        for meta_tag in soup.find_all("meta", {attr: True}, content=True):
+            result[meta_tag[attr]] = meta_tag['content']
+    return result
+
+
+def extract_links(url, html):
+    soup = BeautifulSoup(html, 'lxml')
+    # checks tag.text so it skips image links
+    links = soup.find_all(lambda tag: tag.name == 'a' and tag.text)
+    return [(make_absolute(url, a['href']), a.text) for a in links]
+
+
+def make_absolute(url, path):
+    "If `path` is a relative url, join it with the given absolute url."
+    if not urllib.parse.urlparse(path).netloc:
+        path = urllib.parse.urljoin(url, path)
+    return path
+
+
+# TODO this should be renamed, and maybe other things in this modules, using extract too much
 def extract(url=None, html=None):
     # The mozilla/readability npm package shows better results at extracting the
     # article content than all the python libraries I've tried... even than the readabilipy
