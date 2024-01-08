@@ -11,7 +11,7 @@ import feedi.models as models
 import feedi.tasks as tasks
 from feedi import scraping
 from feedi.models import db
-from feedi.parsers import html, mastodon, rss
+from feedi.parsers import mastodon, rss
 
 
 @app.route("/users/<username>")
@@ -424,17 +424,16 @@ def entry_add():
     Redirects to the content reader for the article at the given URL, creating a new entry for it
     if there isn't already one.
     """
-
     # TODO sanitize?
     url = flask.request.args['url']
-    entry = db.session.scalar(db.select(models.Entry)
-                              .filter_by(content_url=url, user_id=current_user.id))
 
-    if not entry:
-        values = html.fetch(url, full_content=True)
-        entry = models.Entry(user_id=current_user.id, **values)
-        db.session.add(entry)
-        db.session.commit()
+    try:
+        entry = models.Entry.from_url(current_user.id, url)
+    except Exception:
+        return redirect_response(url)
+
+    db.session.add(entry)
+    db.session.commit()
     return redirect_response(flask.url_for('entry_view', id=entry.id))
 
 

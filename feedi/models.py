@@ -521,6 +521,17 @@ class Entry(db.Model):
     __table_args__ = (sa.UniqueConstraint("feed_id", "remote_id"),
                       sa.Index("entry_sort_ts", sort_date.desc()))
 
+    @classmethod
+    def from_url(cls, user_id, url):
+        "Load an entry for the given article url if it exists, otherwise create a new one."
+        entry = db.session.scalar(db.select(cls)
+                                  .filter_by(content_url=url, user_id=user_id))
+
+        if not entry:
+            values = parsers.html.fetch(url)
+            entry = cls(user_id=user_id, **values)
+        return entry
+
     def __repr__(self):
         return f'<Entry {self.feed_id}/{self.remote_id}>'
 
