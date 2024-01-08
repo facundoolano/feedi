@@ -232,9 +232,14 @@ def entry_explode(id):
 
     # extract a unique set of links considering both short and full content
     urls = []
+    source_url = entry.content_url or entry.target_url
     for content in [entry.content_short, entry.content_full]:
         if content:
-            urls += scraping.extract_links(entry.content_url, content)
+            links = [url
+                     for (url, text) in scraping.extract_links(source_url, content)
+                     # skip hashtag and profile links
+                     if not text.startswith('#') and not text.startswith('@')]
+            urls += links
     urls = set(urls)
 
     # create (or load old) entries for those that are valid articles

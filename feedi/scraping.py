@@ -85,7 +85,7 @@ def extract_links(url, html):
     soup = BeautifulSoup(html, 'lxml')
     # checks tag.text so it skips image links
     links = soup.find_all(lambda tag: tag.name == 'a' and tag.text)
-    return [make_absolute(url, a['href']) for a in links]
+    return [(make_absolute(url, a['href']), a.text) for a in links]
 
 
 # TODO this should be renamed, and maybe other things in this modules, using extract too much
