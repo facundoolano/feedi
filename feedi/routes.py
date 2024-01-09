@@ -409,6 +409,7 @@ def feed_delete(feed_name):
     update = db.update(models.Entry)\
         .where((models.Entry.feed_id == feed.id) & (
             models.Entry.favorited.isnot(None) |
+            models.Entry.backlogged.isnot(None) |
             models.Entry.pinned.isnot(None)))\
         .values(feed_id=None)
     db.session.execute(update)
