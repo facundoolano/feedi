@@ -16,6 +16,7 @@ from feedi.parsers import mastodon, rss
 
 @app.route("/users/<username>")
 @app.route("/favorites", defaults={'favorited': True}, endpoint='favorites')
+@app.route("/backlog", defaults={'backlogged': True}, endpoint='backlog')
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
 @app.route("/")
@@ -160,6 +161,7 @@ def autocomplete():
     static_options = [
         ('Home', flask.url_for('entry_list'), 'fas fa-home'),
         ('Favorites', flask.url_for('favorites', favorited=True), 'far fa-star'),
+        ('Backlog', flask.url_for('backlog', favorited=True), 'fa fa-archive'),
         ('Add Feed', flask.url_for('feed_add'), 'fas fa-plus'),
         ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit'),
         ('Mastodon login', flask.url_for('mastodon_oauth'), 'fab fa-mastodon'),
