@@ -24,8 +24,7 @@ def fetch(url):
     metadata = scraping.all_meta(soup)
 
     title = metadata.get('og:title', metadata.get('twitter:title', getattr(soup.title, 'text')))
-
-    if not title or (metadata.get('og:type') and metadata['og:type'] != 'article'):
+    if not title:
         raise ValueError(f"{url} is missing article metadata")
 
     if 'og:article:published_time' in metadata:
