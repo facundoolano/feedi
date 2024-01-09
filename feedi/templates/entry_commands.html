@@ -3,15 +3,6 @@
 <a hx-put="{{ url_for('mastodon_favorite', id=entry.id )}}" class="dropdown-item"><span class="icon"><i class="fas fa-star"></i></span>Masto favorite</a>
 <hr class="dropdown-divider">
 {% endif %}
-<a hx-put="{{ url_for('entry_backlog', id=entry.id )}}" class="dropdown-item"
-   _="on htmx:afterRequest remove the closest .feed-entry"
-><span class="icon"><i class="fas fa-archive"></i></span>
-    {% if entry.backlogged %}
-    Pop from backlog
-    {% else  %}
-    Send to backlog
-    {% endif %}
-    </a>
 {% if entry.target_url %}
 <a href="{{ entry.target_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-external-link-alt"></i></span> Go to source</a>
 {% endif %}

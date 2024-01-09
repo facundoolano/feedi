@@ -34,12 +34,10 @@
             >
                 <i class="fas fa-arrow-left fa-lg"></i>
             </a>
-        {% if entry.id %}
         <a class="level-item icon is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite"
            hx-put="{{ url_for('entry_favorite', id=entry.id )}}"
            _="on click toggle .toggled"
         ><i class="fas fa-star"></i></a>
-        {% endif %}
 
         {% if entry.comments_url %}
         <a class="is-white icon is-rounded level-item" title="Comment"
@@ -52,14 +50,16 @@
             <i class="fas fa-external-link-alt"></i>
         </a>
         {% endif %}
+        <a class="level-item icon is-white is-rounded" title="{%if entry.backlogged %}Pop from backlog{% else %}Send to backlog{%endif%}"
+                  hx-put="{{ url_for('entry_backlog', id=entry.id )}}"
+                  _="on htmx:afterRequest if history.length == 1 go to url '{{ url_for("entry_list")}}' else go back end"
+        ><i class="fas fa-archive"></i></a>
 
-        {% if entry.id %}
         <a class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin"
            hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
            hx-swap="none"
            _="on click toggle .toggled">
             <i class="fas fa-thumbtack"></i></a>
-        {% endif %}
 
         <a class="level-item icon hover-icon is-white is-rounded pin-button" title="More"
            _="on click toggle .is-active then toggle .is-active on the previous .navbar-menu"
@@ -92,6 +92,10 @@
         <div class="media-right">
             <div class="level entry-quick-actions">
                 <div class="level-left is-hidden-mobile">
+                    <a class="level-item icon is-white is-rounded" title="{%if entry.backlogged %}Pop from backlog{% else %}Send to backlog{%endif%}"
+                       hx-put="{{ url_for('entry_backlog', id=entry.id )}}"
+                       _="on htmx:afterRequest if history.length == 1 go to url '{{ url_for("entry_list")}}' else go back end"
+                    ><i class="fas fa-archive"></i></a>
                     <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite entry"
                        hx-put="{{ url_for('entry_favorite', id=entry.id )}}"
                        _="on click toggle .toggled"
