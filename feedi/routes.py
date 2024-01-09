@@ -190,6 +190,7 @@ def entry_pin(id):
     else:
         entry.fetch_content()
         entry.pinned = datetime.datetime.utcnow()
+        entry.backlogged = None
     db.session.commit()
 
     # get the new list of pinned based on filters
@@ -233,6 +234,7 @@ def entry_backlog(id):
         entry.sort_date = datetime.datetime.utcnow()
     else:
         entry.backlogged = datetime.datetime.utcnow()
+        entry.pinned = None
 
     db.session.commit()
     return '', 204
