@@ -3,7 +3,8 @@
 import datetime as dt
 import re
 
-from tests.conftest import create_feed, mock_feed, mock_request
+from tests.conftest import (create_feed, extract_entry_ids, mock_feed,
+                            mock_request)
 
 
 def test_feed_add(client):
@@ -180,16 +181,25 @@ def test_sync_between_pages(client):
 
 def test_favorites(client):
     feed_domain = 'feed1.com'
-    response = create_feed(client, feed_domain, [{'title': 'my-first-article', 'date': '2023-10-01 00:00Z'},
-                                                 {'title': 'my-second-article', 'date': '2023-10-10 00:00Z'}])
+    response = create_feed(client, feed_domain, [{'title': 'my-third-article', 'date': '2023-11-10 00:00Z'},
+                                                 {'title': 'my-second-article',
+                                                     'date': '2023-10-10 00:00Z'},
+                                                 {'title': 'my-first-article', 'date': '2023-10-01 00:00Z'}])
+    entry_ids = extract_entry_ids(response)
 
-    a2_favorite = re.search(r'/favorites/(\d+)', response.text).group(0)
-    response = client.put(a2_favorite)
+    # pin the 3rd, then the 2nd
+    response = client.put(f'/favorites/{entry_ids[0]}')
+    assert response.status_code == 204
+    response = client.put(f'/favorites/{entry_ids[1]}')
     assert response.status_code == 204
 
     response = client.get('/favorites')
     assert 'my-first-article' not in response.text
     assert 'my-second-article' in response.text
+    assert 'my-third-article' in response.text
+
+    # 2nd appears first because most recent fav, even though it's older
+    assert response.text.find('my-second-article') < response.text.find('my-third-article')
 
 
 def test_pinned(client):
@@ -320,14 +330,10 @@ def test_feed_delete(client):
     assert 'plain-entry' in response.text
 
     # pin the 1st, fav the 2nd
-    entry_ids_with_duplicates = re.findall(r'/entries/(\d+)', response.text)
-    entry_ids = []
-    for e in entry_ids_with_duplicates:
-        if e not in entry_ids:
-            entry_ids.append(e)
-
+    entry_ids = extract_entry_ids(response)
     response = client.put('/pinned/' + entry_ids[0])
     assert response.status_code == 200
+
     response = client.put('/favorites/' + entry_ids[1])
     assert response.status_code == 204
 

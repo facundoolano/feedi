@@ -629,7 +629,10 @@ class Entry(db.Model):
         """
         query = cls._filtered_query(user_id, older_than=start_at, **filters)
 
-        if ordering == cls.ORDER_RECENCY:
+        if filters.get('favorited'):
+            return query.order_by(cls.favorited.desc())
+
+        elif ordering == cls.ORDER_RECENCY:
             # reverse chronological order
             return query.order_by(cls.sort_date.desc())
 

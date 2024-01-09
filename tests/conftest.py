@@ -1,4 +1,5 @@
 import os
+import re
 import uuid
 
 import feedgen.feed as feedgen
@@ -96,3 +97,12 @@ def mock_request(url, body='', ctype='application/html'):
                            'Content-Type': ctype}, priority=1)
     httpretty.register_uri(httpretty.GET, url, body=body, adding_headers={
                            'Content-Type': ctype}, priority=1)
+
+
+def extract_entry_ids(response):
+    entry_ids_with_duplicates = re.findall(r'/entries/(\d+)', response.text)
+    entry_ids = []
+    for e in entry_ids_with_duplicates:
+        if e not in entry_ids:
+            entry_ids.append(e)
+    return entry_ids
