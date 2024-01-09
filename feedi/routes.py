@@ -217,6 +217,25 @@ def entry_favorite(id):
     return '', 204
 
 
+@app.put("/backlog/<int:id>")
+@login_required
+def entry_backlog(id):
+    "TODO"
+    entry = db.get_or_404(models.Entry, id)
+    if entry.user_id != current_user.id:
+        flask.abort(404)
+
+    if entry.backlogged:
+        entry.backlogged = None
+        entry.viewed = None
+        entry.sort_date = datetime.datetime.utcnow()
+    else:
+        entry.backlogged = datetime.datetime.utcnow()
+
+    db.session.commit()
+    return '', 204
+
+
 @app.put("/mastodon/favorites/<int:id>")
 @login_required
 def mastodon_favorite(id):
