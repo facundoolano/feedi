@@ -572,6 +572,15 @@ class Entry(db.Model):
             except Exception as e:
                 logger.debug("failed to fetch content %s", e)
 
+    def backlog(self):
+        self.backlogged = datetime.datetime.utcnow()
+        self.pinned = None
+
+    def unbacklog(self):
+        self.backlogged = None
+        self.viewed = None
+        self.sort_date = datetime.datetime.utcnow()
+
     @classmethod
     def _filtered_query(cls, user_id, hide_seen=False, favorited=None, backlogged=None,
                         feed_name=None, username=None, folder=None, older_than=None,
