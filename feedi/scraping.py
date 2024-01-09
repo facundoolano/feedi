@@ -111,7 +111,7 @@ def extract(url=None, html=None):
     elif not html:
         raise ValueError('Expected either url or html')
 
-    r = subprocess.run(["feedi/extract_article.js"], input=html,
+    r = subprocess.run(["feedi/extract_article.js", "--stdin", url], input=html,
                        capture_output=True, check=True)
 
     article = json.loads(r.stdout)

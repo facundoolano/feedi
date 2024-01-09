@@ -20,12 +20,19 @@ async function read(stream) {
 }
 
 const {values, positionals} =  util.parseArgs({
-  allowPositionals: true
+  allowPositionals: true,
+  options: {
+    stdin: {type: 'boolean'}
+  }
 });
-const url = positionals[0];
 
-if (url) {
-  JSDOM.fromURL(url).then(parseAndPrint);
+const url = positionals[0];
+if (!url) {
+  process.stderr.write('missing url argument', () => process.exit(1));
+}
+
+if (values.stdin) {
+  read(process.stdin).then(s => new JSDOM(s, {url})).then(parseAndPrint);
 } else {
-  read(process.stdin).then(s => new JSDOM(s)).then(parseAndPrint);
+  JSDOM.fromURL(url).then(parseAndPrint);
 }
