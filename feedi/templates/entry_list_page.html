@@ -83,14 +83,20 @@
             <i class="fas fa-comment-alt"></i>
         </a>
         {% endif %}
-        <a tabindex="-1" class="level-item icon  is-white is-rounded" title="{%if entry.backlogged %}Pop from backlog{% else %}Send to backlog{%endif%}"
+        {%if entry.backlogged %}
+        <a tabindex="-1" class="level-item icon  is-white is-rounded" title="Pop from backlog"
            _="on htmx:afterRequest remove the closest .feed-entry"
-           {%if entry.backlogged %}
            hx-delete="{{ url_for('entry_backlog_pop', id=entry.id )}}"
-           {% else %}
+        ><i class="fas fa-undo"></i></a>
+        {% else %}
+        <a tabindex="-1" class="level-item icon is-white is-rounded" title="Recycle"
            hx-put="{{ url_for('entry_recycle', id=entry.id )}}"
-           {% endif %}
-        ><i class="fas fa-archive"></i></a>
+           hx-target="closest .feed-entry"
+           hx-swap="outerHTML"
+           _ = "on click set x to the closest .feed-entry then set x.style.opacity to 0.5"
+        ><i class="fas fa-recycle fa-lg"></i></a>
+        {% endif %}
+
         <a class="icon is-white is-rounded level-item"
            tabindex="-1"
            _="on click toggle .is-active on the next .dropdown then
