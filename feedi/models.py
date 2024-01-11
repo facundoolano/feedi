@@ -580,6 +580,7 @@ class Entry(db.Model):
         self.backlogged = None
         self.viewed = None
         self.sort_date = datetime.datetime.utcnow()
+        self.fetch_content()
 
     @classmethod
     def _filtered_query(cls, user_id, hide_seen=False, favorited=None, backlogged=None,
