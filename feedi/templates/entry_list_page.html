@@ -85,7 +85,11 @@
         {% endif %}
         <a tabindex="-1" class="level-item icon  is-white is-rounded" title="{%if entry.backlogged %}Pop from backlog{% else %}Send to backlog{%endif%}"
            _="on htmx:afterRequest remove the closest .feed-entry"
-           hx-put="{{ url_for('entry_backlog', id=entry.id )}}"
+           {%if entry.backlogged %}
+           hx-delete="{{ url_for('entry_backlog_pop', id=entry.id )}}"
+           {% else %}
+           hx-put="{{ url_for('entry_recycle', id=entry.id )}}"
+           {% endif %}
         ><i class="fas fa-archive"></i></a>
         <a class="icon is-white is-rounded level-item"
            tabindex="-1"

@@ -51,8 +51,12 @@
         </a>
         {% endif %}
         <a class="level-item icon is-white is-rounded" title="{%if entry.backlogged %}Pop from backlog{% else %}Send to backlog{%endif%}"
-                  hx-put="{{ url_for('entry_backlog', id=entry.id )}}"
-                  _="on htmx:afterRequest if history.length == 1 go to url '{{ url_for("entry_list")}}' else go back end"
+           {%if entry.backlogged %}
+           hx-delete="{{ url_for('entry_backlog_pop', id=entry.id )}}"
+           {% else %}
+           hx-put="{{ url_for('entry_recycle', id=entry.id )}}"
+           {% endif %}
+           _="on htmx:afterRequest if history.length == 1 go to url '{{ url_for("entry_list")}}' else go back end"
         ><i class="fas fa-archive"></i></a>
 
         <a class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin"
@@ -93,7 +97,11 @@
             <div class="level entry-quick-actions">
                 <div class="level-left is-hidden-mobile">
                     <a class="level-item icon is-white is-rounded" title="{%if entry.backlogged %}Pop from backlog{% else %}Send to backlog{%endif%}"
-                       hx-put="{{ url_for('entry_backlog', id=entry.id )}}"
+                       {%if entry.backlogged %}
+                       hx-delete="{{ url_for('entry_backlog_pop', id=entry.id )}}"
+                       {% else %}
+                       hx-put="{{ url_for('entry_recycle', id=entry.id )}}"
+                       {% endif %}
                        _="on htmx:afterRequest if history.length == 1 go to url '{{ url_for("entry_list")}}' else go back end"
                     ><i class="fas fa-archive"></i></a>
                     <a tabindex="-1" class="level-item icon  is-white is-rounded {% if entry.favorited %}toggled{% endif %}" title="Favorite entry"

@@ -223,7 +223,23 @@ def entry_favorite(id):
 
 @app.put("/backlog/<int:id>")
 @login_required
-def entry_backlog(id):
+def entry_recycle(id):
+    "TODO"
+    entry = db.get_or_404(models.Entry, id)
+    if entry.user_id != current_user.id:
+        flask.abort(404)
+
+    # FIXME add more sophisticated logic
+    if not entry.backlogged:
+        entry.backlog()
+
+    db.session.commit()
+    return '', 204
+
+
+@app.delete("/backlog/<int:id>")
+@login_required
+def entry_backlog_pop(id):
     "TODO"
     entry = db.get_or_404(models.Entry, id)
     if entry.user_id != current_user.id:
@@ -231,8 +247,6 @@ def entry_backlog(id):
 
     if entry.backlogged:
         entry.unbacklog()
-    else:
-        entry.backlog()
 
     db.session.commit()
     return '', 204

@@ -45,7 +45,11 @@
     </div>
     <div class="is-hidden compact-actions is-hidden">
         <a tabindex="-1" class="is-marginless level-item icon hover-icon is-white is-rounded" title="{%if entry.backlogged %}Pop from backlog{% else %}Send to backlog{%endif%}"
-           hx-put="{{ url_for('entry_backlog', id=entry.id )}}"
+           {%if entry.backlogged %}
+           hx-delete="{{ url_for('entry_backlog_pop', id=entry.id )}}"
+           {% else %}
+           hx-put="{{ url_for('entry_recycle', id=entry.id )}}"
+           {%endif%}
            _="on htmx:afterRequest remove the closest .feed-entry"
         ><i class="fas fa-archive"></i></a>
         <div class="dropdown is-right"
@@ -88,7 +92,11 @@
         ><i class="fas fa-comment-alt"></i></a>
         {% endif %}
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="{%if entry.backlogged %}Pop from backlog{% else %}Send to backlog{%endif%}"
-           hx-put="{{ url_for('entry_backlog', id=entry.id )}}"
+           {%if entry.backlogged %}
+           hx-delete="{{ url_for('entry_backlog_pop', id=entry.id )}}"
+           {% else %}
+           hx-put="{{ url_for('entry_recycle', id=entry.id )}}"
+           {% endif %}
            _="on htmx:afterRequest remove the closest .feed-entry"
         ><i class="fas fa-archive"></i></a>
         <div class="dropdown is-right"
