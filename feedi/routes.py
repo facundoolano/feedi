@@ -237,16 +237,20 @@ def entry_recycle(id):
                  # skip hashtag and profile links
                  if not text.startswith('#') and not text.startswith('@')]
         if links:
-            subentry = models.Entry.from_url(current_user.id, links[0])
-            entry.viewed = datetime.datetime.now()
-            db.session.add(subentry)
-            db.session.commit()
-            return flask.render_template('entry_list_page.html',
-                                         entries=[subentry])
+            for link in links:
+                try:
+                    subentry = models.Entry.from_url(current_user.id, link)
+                    entry.viewed = datetime.datetime.now()
+                    db.session.add(subentry)
+                    db.session.commit()
+                    return flask.render_template('entry_list_page.html',
+                                                 entries=[subentry])
+                except Exception:
+                    continue
 
     entry.backlog()
     db.session.commit()
-    return '', 204
+    return '', 200
 
 
 @app.delete("/backlog/<int:id>")
