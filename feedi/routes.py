@@ -229,10 +229,22 @@ def entry_recycle(id):
     if entry.user_id != current_user.id:
         flask.abort(404)
 
-    # FIXME add more sophisticated logic
-    if not entry.backlogged:
-        entry.backlog()
+    if not entry.pinned and entry.content_short:
+        # If there's an inline link, "unwrap it", e.g. remove the old entry and put the linked
+        # article entry in its place
 
+        links = [url for (url, text) in scraping.extract_links(entry.target_url, entry.content_short)
+                 # skip hashtag and profile links
+                 if not text.startswith('#') and not text.startswith('@')]
+        if links:
+            subentry = models.Entry.from_url(current_user.id, links[0])
+            entry.viewed = datetime.datetime.now()
+            db.session.add(subentry)
+            db.session.commit()
+            return flask.render_template('entry_list_page.html',
+                                         entries=[subentry])
+
+    entry.backlog()
     db.session.commit()
     return '', 204
 
