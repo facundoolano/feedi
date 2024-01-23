@@ -125,8 +125,8 @@ def autocomplete():
         # we can reasonably assume this is a url
 
         options += [
-            ('Add to feed', flask.url_for('entry_add', url=term), 'fas fa-download'),
-            ('View in reader', flask.url_for('entry_add', url=term, redirect=1), 'fas fa-book-reader'),
+            ('Add to feed', flask.url_for('entry_add', url=term), 'fas fa-download', 'POST'),
+            ('View in reader', flask.url_for('entry_add', url=term, redirect=1), 'fas fa-book-reader', 'POST'),
             ('Send to backlog', flask.url_for('entry_backlog_url', url=term), 'fas fa-archive', 'POST'),
             ('Discover feed', flask.url_for('feed_add', url=term), 'fas fa-rss'),
         ]
@@ -485,8 +485,7 @@ def feed_sync(feed_name):
     return response
 
 
-# this should be a .post but that complicates utilization from hyperscipt
-@app.get("/entries/")
+@app.post("/entries/")
 @login_required
 def entry_add():
     """
@@ -495,16 +494,20 @@ def entry_add():
     """
     # TODO sanitize?
     url = flask.request.args['url']
+    redirect = flask.request.args.get('redirect')
 
     try:
         entry = models.Entry.from_url(current_user.id, url)
     except Exception:
-        return redirect_response(url)
+        if redirect:
+            return redirect_response(url)
+        else:
+            return 'failed to parse entry', 500
 
     db.session.add(entry)
     db.session.commit()
 
-    if flask.request.args.get('redirect'):
+    if redirect:
         return redirect_response(flask.url_for('entry_view', id=entry.id))
     else:
         return '', 204

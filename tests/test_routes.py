@@ -277,7 +277,7 @@ def test_add_external_entry(client):
     mock_request(content_url, body=body)
 
     # add a standalone entry for that url, check that browser redirects to view content
-    response = client.get(
+    response = client.post(
         '/entries/', query_string={'url': content_url, 'redirect': 1}, follow_redirects=True)
     assert response.status_code == 200
     assert 'reclaiming-the-web' in response.text
@@ -285,7 +285,7 @@ def test_add_external_entry(client):
 
     # add same url again, verify that redirected entry url is the same as before
     previous_entry_url = response.request.path
-    response = client.get(
+    response = client.post(
         '/entries/', query_string={'url': content_url, 'redirect': 1}, follow_redirects=True)
     assert response.status_code == 200
     assert response.request.path == previous_entry_url
