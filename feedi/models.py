@@ -572,6 +572,16 @@ class Entry(db.Model):
             except Exception as e:
                 logger.debug("failed to fetch content %s", e)
 
+    def embedded_links(self):
+        if self.content_short:
+            return [url for (url, text) in scraping.extract_links(self.target_url, self.content_short)
+                    # skip hashtag and profile links
+                    if not text.startswith('#') and not text.startswith('@')]
+        return []
+
+    def is_unwrappable(self):
+        return bool(self.embedded_links())
+
     def backlog(self):
         self.backlogged = datetime.datetime.utcnow()
         self.pinned = None

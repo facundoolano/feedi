@@ -88,9 +88,9 @@
            _="on htmx:afterRequest remove the closest .feed-entry"
            hx-delete="{{ url_for('entry_backlog_pop', id=entry.id )}}"
         ><i class="fas fa-undo"></i></a>
-        {% else %}
+        {% elif entry.is_unwrappable() %}
         <a tabindex="-1" class="level-item icon is-white is-rounded" title="Unwrap"
-           hx-put="{{ url_for('entry_unwrap', id=entry.id )}}"
+           hx-post="{{ url_for('entry_unwrap', id=entry.id )}}"
            hx-target="closest .feed-entry"
            hx-swap="outerHTML"
            _ = "on click set x to the closest .feed-entry then set x.style.opacity to 0.5"
