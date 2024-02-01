@@ -50,12 +50,12 @@
            hx-delete="{{ url_for('entry_backlog_pop', id=entry.id )}}"
         ><i class="fas fa-undo"></i></a>
         {% else %}
-        <a tabindex="-1" class="is-marginless level-item icon hover-icon is-white is-rounded" title="{%if entry.backlogged %}Pop from backlog{% else %}Recycle{%endif%}"
-           hx-put="{{ url_for('entry_recycle', id=entry.id )}}"
+        <a tabindex="-1" class="is-marginless level-item icon hover-icon is-white is-rounded" title="Unwrap"
+           hx-put="{{ url_for('entry_unwrap', id=entry.id )}}"
            hx-target="closest .feed-entry"
            hx-swap="outerHTML"
            _ = "on click set x to the closest .feed-entry then set x.style.opacity to 0.5"
-        ><i class="fas fa-recycle fa-lg"></i></a>
+        ><i class="fas fa-envelope-open-text"></i></a>
         {% endif %}
         <div class="dropdown is-right"
              _="on intersection(intersecting) having margin '0px 0px -50% 0px'
@@ -102,12 +102,12 @@
            hx-delete="{{ url_for('entry_backlog_pop', id=entry.id )}}"
         ><i class="fas fa-undo"></i></a>
         {%else%}
-        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="Recycle"
-           hx-put="{{ url_for('entry_recycle', id=entry.id )}}"
+        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="Unwrap"
+           hx-put="{{ url_for('entry_unwrap', id=entry.id )}}"
            hx-target="closest .feed-entry"
            hx-swap="outerHTML"
            _ = "on click set x to the closest .feed-entry then set x.style.opacity to 0.5"
-        ><i class="fas fa-recycle fa-lg"></i></a>
+        ><i class="fas fa-envelope-open-text"></i></a>
         {% endif %}
         <div class="dropdown is-right"
              _="on intersection(intersecting) having margin '0px 0px -50% 0px'

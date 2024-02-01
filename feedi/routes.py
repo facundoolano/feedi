@@ -223,30 +223,11 @@ def entry_favorite(id):
 
 @app.put("/backlog/<int:id>")
 @login_required
-def entry_recycle(id):
+def entry_backlog_push(id):
     "TODO"
     entry = db.get_or_404(models.Entry, id)
     if entry.user_id != current_user.id:
         flask.abort(404)
-
-    if not entry.pinned and entry.content_short:
-        # If there's an inline link, "unwrap it", e.g. remove the old entry and put the linked
-        # article entry in its place
-
-        links = [url for (url, text) in scraping.extract_links(entry.target_url, entry.content_short)
-                 # skip hashtag and profile links
-                 if not text.startswith('#') and not text.startswith('@')]
-        if links:
-            for link in links:
-                try:
-                    subentry = models.Entry.from_url(current_user.id, link)
-                    entry.viewed = datetime.datetime.now()
-                    db.session.add(subentry)
-                    db.session.commit()
-                    return flask.render_template('entry_list_page.html',
-                                                 entries=[subentry])
-                except Exception:
-                    continue
 
     entry.backlog()
     db.session.commit()
@@ -511,6 +492,33 @@ def entry_add():
         return redirect_response(flask.url_for('entry_view', id=entry.id))
     else:
         return '', 204
+
+
+@app.post("/entries/<int:id>")
+@login_required
+def entry_unwrap(id_):
+    entry = db.get_or_404(models.Entry, id)
+    if entry.user_id != current_user.id:
+        flask.abort(404)
+
+    if entry.content_short:
+        # If there's an inline link, "unwrap it", e.g. remove the old entry and put the linked
+        # article entry in its place
+        links = [url for (url, text) in scraping.extract_links(entry.target_url, entry.content_short)
+                 # skip hashtag and profile links
+                 if not text.startswith('#') and not text.startswith('@')]
+        if links:
+            for link in links:
+                try:
+                    subentry = models.Entry.from_url(current_user.id, link)
+                    entry.viewed = datetime.datetime.now()
+                    db.session.add(subentry)
+                    db.session.commit()
+                    return flask.render_template('entry_list_page.html',
+                                                 entries=[subentry])
+                except Exception:
+                    continue
+    return "Couldn't unwrap", 400
 
 
 @app.get("/entries/<int:id>")
