@@ -83,7 +83,7 @@
             <i class="fas fa-comment-alt"></i>
         </a>
         {% endif %}
-        {%if entry.backlogged %}
+        {% if entry.backlogged %}
         <a tabindex="-1" class="level-item icon  is-white is-rounded" title="Pop from backlog"
            _="on htmx:afterRequest remove the closest .feed-entry"
            hx-delete="{{ url_for('entry_backlog_pop', id=entry.id )}}"

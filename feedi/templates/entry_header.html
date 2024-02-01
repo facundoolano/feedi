@@ -101,7 +101,7 @@
            _="on htmx:afterRequest remove the closest .feed-entry"
            hx-delete="{{ url_for('entry_backlog_pop', id=entry.id )}}"
         ><i class="fas fa-undo"></i></a>
-        {%else%}
+        {% else %}
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="Unwrap"
            hx-put="{{ url_for('entry_unwrap', id=entry.id )}}"
            hx-target="closest .feed-entry"

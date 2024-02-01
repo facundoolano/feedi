@@ -13,6 +13,12 @@
 {% if entry.id and request.path != url_for('entry_view', id=entry.id) %}
 <a hx-boost="true" href="{{ url_for('entry_view', id=entry.id) }}" class="dropdown-item"><span class="icon"><i class="fas fa-book-reader"></i></span> View in reader</a>
 {% endif %}
+{% if not entry.backlogged %}
+<a href="{{ url_for('entry_backlog_push', id=entry.id) }}" class="dropdown-item"
+   _="on htmx:afterRequest remove the closest .feed-entry"
+><span class="icon"><i class="fas fa-archive"></i></span> Send to backlog</a>
+{% endif %}
+<hr class="dropdown-divider">
 <a class="dropdown-item" _="on click writeText('{{ entry.content_url }}') into the navigator's clipboard"><span class="icon"><i class="fas fa-link"></i></span> Copy URL</a>
 
 {% if entry.is_external_link %}
@@ -35,6 +41,6 @@
 <a href="{{ url_for('feed_edit', feed_name=entry.feed.name ) }}" class="dropdown-item"><span class="icon"><i class="far fa-edit"></i></span> Edit {{ entry.feed.name }}</a>
 <a hx-delete="{{ url_for('feed_delete', feed_name=entry.feed.name ) }}" _="on htmx:afterRequest go to url {{ url_for('entry_list') }}" class="dropdown-item"><span class="icon"><i class="far fa-trash-alt"></i></span> Delete {{ entry.feed.name }}</a>
 <hr class="dropdown-divider is-hidden-mobile">
-<a class="dropdown-item is-hidden-mobile" href="{{ url_for('raw_entry', id=entry.id ) }}" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw entry data</a>
 <a class="dropdown-item is-hidden-mobile" href="{{ url_for('raw_feed', feed_name=entry.feed.name ) }}" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw feed data</a>
 {% endif %}
+<a class="dropdown-item is-hidden-mobile" href="{{ url_for('raw_entry', id=entry.id ) }}" target="_blank"><span class="icon"><i class="fas fa-file-code"></i></span>  View raw entry data</a>
