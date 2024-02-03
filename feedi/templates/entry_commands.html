@@ -13,7 +13,7 @@
 <a hx-boost="true" href="{{ url_for('entry_view', id=entry.id) }}" class="dropdown-item"><span class="icon"><i class="fas fa-book-reader"></i></span> View in reader</a>
 {% endif %}
 {% if not entry.backlogged %}
-<a href="{{ url_for('entry_backlog_push', id=entry.id) }}" class="dropdown-item"
+<a hx-put="{{ url_for('entry_backlog_push', id=entry.id) }}" class="dropdown-item"
    _="on htmx:afterRequest remove the closest .feed-entry"
 ><span class="icon"><i class="fas fa-archive"></i></span> Send to backlog</a>
 {% endif %}

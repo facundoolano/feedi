@@ -85,7 +85,7 @@
         {% endif %}
         {% if entry.backlogged %}
         <a tabindex="-1" class="level-item icon  is-white is-rounded" title="Pop from backlog"
-           _="on htmx:afterRequest remove the closest .feed-entry"
+           _="on click remove the closest .feed-entry"
            hx-delete="{{ url_for('entry_backlog_pop', id=entry.id )}}"
         ><i class="fas fa-undo"></i></a>
         {% elif entry.is_unwrappable() %}
