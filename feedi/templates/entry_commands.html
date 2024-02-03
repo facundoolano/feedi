@@ -9,8 +9,7 @@
 {% if entry.comments_url %}
 <a href="{{ entry.comments_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="far fa-comment-alt"></i></span> Go to comments</a>
 {% endif %}
-{% if entry.content_url %}
-{% if entry.id and request.path != url_for('entry_view', id=entry.id) %}
+{% if entry.content_url and entry.id and request.path != url_for('entry_view', id=entry.id) %}
 <a hx-boost="true" href="{{ url_for('entry_view', id=entry.id) }}" class="dropdown-item"><span class="icon"><i class="fas fa-book-reader"></i></span> View in reader</a>
 {% endif %}
 {% if not entry.backlogged %}
@@ -24,7 +23,7 @@
 {% if entry.is_external_link %}
 <a href="{{ url_for('feed_add', url=entry.content_url) }}" class="dropdown-item"><span class="icon"><i class="fas fa-rss"></i></span> Discover feed</a>
 {% endif %}
-{% if current_user.has_kindle %}
+{% if entry.content_url and current_user.has_kindle %}
 <a class="dropdown-item" hx-post="{{ url_for('send_to_kindle', url=entry.content_url ) }}"
    _="on htmx:beforeRequest or htmx:afterRequest toggle .fa-spin on <i/> in me"
 ><span class="icon"><i class="fas fa-tablet-alt "></i></span> Send to Kindle</a>
@@ -32,7 +31,6 @@
 
 <hr class="dropdown-divider">
 
-{% endif %}
 {% if entry.username %}
 <a class="dropdown-item" href="{{ url_for('entry_list', username=entry.username ) }}"><span class="icon"><i class="fas fa-user"></i></span> View {{ entry.username }}</a>
 {% endif %}
