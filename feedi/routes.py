@@ -230,7 +230,7 @@ def entry_backlog_push(id):
 
     entry.backlog()
     db.session.commit()
-    return '', 200
+    return '', 204
 
 
 @app.delete("/backlog/<int:id>")
