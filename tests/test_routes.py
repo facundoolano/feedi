@@ -202,6 +202,50 @@ def test_favorites(client):
     assert response.text.find('my-second-article') < response.text.find('my-third-article')
 
 
+def test_backlog(client):
+    # add feed with a couple of articles
+    feed_domain = 'feed1.com'
+    response = create_feed(client, feed_domain, [{'title': 'my-third-article', 'date': '2023-11-10 00:00Z'},
+                                                 {'title': 'my-second-article',
+                                                     'date': '2023-10-10 00:00Z'},
+                                                 {'title': 'my-first-article', 'date': '2023-10-01 00:00Z'}])
+    entry_ids = extract_entry_ids(response)
+
+    # backlog the 3rd, then the 2nd
+    response = client.put(f'/backlog/{entry_ids[0]}')
+    assert response.status_code == 204
+    response = client.put(f'/backlog/{entry_ids[1]}')
+    assert response.status_code == 204
+
+    # verify backlogged is excluded from home list
+    response = client.get('/backlog')
+    assert 'my-first-article' not in response.text
+    assert 'my-second-article' in response.text
+    assert 'my-third-article' in response.text
+
+    # verify backlogged is included in the backlog, in the order they were added
+    response = client.get('/')
+    assert 'my-first-article' in response.text
+    assert 'my-second-article' not in response.text
+    assert 'my-third-article' not in response.text
+
+    # pop from backlog
+    response = client.delete(f'/backlog/{entry_ids[0]}')
+    assert response.status_code == 204
+
+    # verify backlogged is included in home list
+    response = client.get('/backlog')
+    assert 'my-first-article' not in response.text
+    assert 'my-second-article' in response.text
+    assert 'my-third-article' not in response.text
+
+    # verify backlogged is excluded from the backlog
+    response = client.get('/')
+    assert 'my-first-article' in response.text
+    assert 'my-second-article' not in response.text
+    assert 'my-third-article' in response.text
+
+
 def test_pinned(client):
     response = create_feed(client, 'feed1.com', [{'title': 'f1-a1', 'date': '2023-10-01 00:00Z'},
                                                  {'title': 'f1-a2', 'date': '2023-10-10 00:00Z'}],
@@ -277,7 +321,7 @@ def test_add_external_entry(client):
     mock_request(content_url, body=body)
 
     # add a standalone entry for that url, check that browser redirects to view content
-    response = client.get(
+    response = client.post(
         '/entries/', query_string={'url': content_url, 'redirect': 1}, follow_redirects=True)
     assert response.status_code == 200
     assert 'reclaiming-the-web' in response.text
@@ -285,7 +329,7 @@ def test_add_external_entry(client):
 
     # add same url again, verify that redirected entry url is the same as before
     previous_entry_url = response.request.path
-    response = client.get(
+    response = client.post(
         '/entries/', query_string={'url': content_url, 'redirect': 1}, follow_redirects=True)
     assert response.status_code == 200
     assert response.request.path == previous_entry_url
