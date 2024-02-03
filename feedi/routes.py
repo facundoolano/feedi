@@ -127,7 +127,6 @@ def autocomplete():
         options += [
             ('Add to feed', flask.url_for('entry_add', url=term), 'fas fa-download', 'POST'),
             ('View in reader', flask.url_for('entry_add', url=term, redirect=1), 'fas fa-book-reader', 'POST'),
-            ('Send to backlog', flask.url_for('entry_backlog_url', url=term), 'fas fa-archive', 'POST'),
             ('Discover feed', flask.url_for('feed_add', url=term), 'fas fa-rss'),
         ]
         if current_user.has_kindle:
@@ -224,7 +223,7 @@ def entry_favorite(id):
 @app.put("/backlog/<int:id>")
 @login_required
 def entry_backlog_push(id):
-    "TODO"
+    "Put the entry of the given id in the backlog."
     entry = db.get_or_404(models.Entry, id)
     if entry.user_id != current_user.id:
         flask.abort(404)
@@ -237,7 +236,7 @@ def entry_backlog_push(id):
 @app.delete("/backlog/<int:id>")
 @login_required
 def entry_backlog_pop(id):
-    "TODO"
+    "Remove the entry of the given id from the backlog, sending it back to the home feed."
     entry = db.get_or_404(models.Entry, id)
     if entry.user_id != current_user.id:
         flask.abort(404)
@@ -245,22 +244,6 @@ def entry_backlog_pop(id):
     if entry.backlogged:
         entry.unbacklog()
 
-    db.session.commit()
-    return '', 204
-
-
-@app.post("/backlog/")
-@login_required
-def entry_backlog_url():
-    url = flask.request.args['url']
-
-    try:
-        entry = models.Entry.from_url(current_user.id, url)
-    except Exception:
-        return "Couldn't parse article", 400
-
-    entry.backlog()
-    db.session.add(entry)
     db.session.commit()
     return '', 204
 

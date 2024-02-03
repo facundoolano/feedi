@@ -573,6 +573,7 @@ class Entry(db.Model):
                 logger.debug("failed to fetch content %s", e)
 
     def embedded_links(self):
+        "Return a list of (url, title) for links found in the content_short (excluding hashtags and mentions)."
         if self.content_short:
             return [url for (url, text) in scraping.extract_links(self.target_url, self.content_short)
                     # skip hashtag and profile links
@@ -580,13 +581,16 @@ class Entry(db.Model):
         return []
 
     def is_unwrappable(self):
+        "Return whether there are embedded links that can be extracted from the content_shrot."
         return bool(self.embedded_links())
 
     def backlog(self):
+        "Put this entry in the backlog."
         self.backlogged = datetime.datetime.utcnow()
         self.pinned = None
 
     def unbacklog(self):
+        "Pop this entry from the backlog."
         self.backlogged = None
         self.viewed = None
         self.sort_date = datetime.datetime.utcnow()
@@ -617,7 +621,10 @@ class Entry(db.Model):
 
         if backlogged:
             query = query.filter(cls.backlogged.is_not(None))
-        elif hide_seen:  # TODO verify this makes sense
+        elif hide_seen:
+            # exclude backlogged unless explicitly asking for backlog list
+            # or if the hide seen option is disabled.
+            # (abusing the fact that non mixed lists set this flag to false)
             query = query.filter(cls.backlogged.is_(None))
 
         if feed_name:
