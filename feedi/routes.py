@@ -480,6 +480,7 @@ def entry_add():
 @app.post("/entries/<int:id>")
 @login_required
 def entry_unwrap(id):
+    "If the entry has embedded links in its short content, extract the first and render it."
     entry = db.get_or_404(models.Entry, id)
     if entry.user_id != current_user.id:
         flask.abort(404)
