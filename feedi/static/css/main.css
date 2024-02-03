@@ -9,7 +9,7 @@ but we only want it for mobile*/
 @media screen and (max-width: 768px) {
     body {
         /* FIXME $navbar-height */
-        /* padding-bottom: 3.25rem!important; */
+        padding-bottom: 3rem!important;
     }
 }
 
