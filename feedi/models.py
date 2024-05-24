@@ -573,7 +573,7 @@ class Entry(db.Model):
                 logger.debug("failed to fetch content %s", e)
 
     @classmethod
-    def _filtered_query(cls, user_id, hide_seen=False, favorited=None, backlogged=None,
+    def _filtered_query(cls, user_id, hide_seen=False, favorited=None,
                         feed_name=None, username=None, folder=None, older_than=None,
                         text=None):
         """
@@ -594,14 +594,6 @@ class Entry(db.Model):
 
         if favorited:
             query = query.filter(cls.favorited.is_not(None))
-
-        if backlogged:
-            query = query.filter(cls.backlogged.is_not(None))
-        elif hide_seen:
-            # exclude backlogged unless explicitly asking for backlog list
-            # or if the hide seen option is disabled.
-            # (abusing the fact that non mixed lists set this flag to false)
-            query = query.filter(cls.backlogged.is_(None))
 
         if feed_name:
             query = query.filter(cls.feed.has(name=feed_name))
@@ -640,8 +632,6 @@ class Entry(db.Model):
 
         if filters.get('favorited'):
             return query.order_by(cls.favorited.desc())
-        if filters.get('backlogged'):
-            return query.order_by(cls.backlogged)
 
         elif ordering == cls.ORDER_RECENCY:
             # reverse chronological order
