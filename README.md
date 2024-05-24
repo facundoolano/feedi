@@ -78,7 +78,7 @@ When you first add a feed, the app  will fetch its most recent articles, then it
 - Sources can be put into folders, accesible on the left sidebar (desktop) or on the navbar menu (mobile).
 - The feed behavior can be tweaked with the controls on the right sidebar (desktop) or on the navbar menu:
 - Entries are auto-marked as viewed as the user scrolls down the feed. By default, already seen entries are skipped next time the app is open.
-- The default sorting puts least frequent sources at the top. Alternatively, there are are strict chronological sorting and an experimental "best score" sorting (based on previous user interactions).
+- The default sorting puts least frequent sources at the top. Alternatively, there's are are strict chronological sorting.
 
 ### Reading articles
 There are different ways to interact with a feed entry:
