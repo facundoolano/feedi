@@ -83,19 +83,6 @@
            href="{{ entry.comments_url}}" target="_blank"
         ><i class="fas fa-comment-alt"></i></a>
         {% endif %}
-        {% if entry.backlogged %}
-        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="Pop from backlog"
-           _="on click remove the closest .feed-entry"
-           hx-delete="{{ url_for('entry_backlog_pop', id=entry.id )}}"
-        ><i class="fas fa-undo"></i></a>
-        {% elif entry.is_unwrappable() %}
-        <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="Unwrap"
-           hx-post="{{ url_for('entry_unwrap', id=entry.id )}}"
-           hx-target="closest .feed-entry"
-           hx-swap="outerHTML"
-           _ = "on click set x to the closest .feed-entry then set x.style.opacity to 0.5"
-        ><i class="fas fa-envelope-open-text"></i></a>
-        {% endif %}
         <div class="dropdown is-right"
              _="on intersection(intersecting) having margin '0px 0px -50% 0px'
                     if intersecting remove .is-up else add .is-up -- show dropup up or dropdown depending position relative to middle of screen">

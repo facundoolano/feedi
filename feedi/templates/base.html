@@ -24,8 +24,6 @@
                 {% endfor %}
                 <a class="dropdown-item {% if filters.favorited %}is-active{% endif %}" href="{{ url_for('favorites') }}">
                     <icon class="icon"><i class="far fa-star"></i></icon> favorites</a>
-                <a class="dropdown-item {% if filters.backlogged %}is-active{% endif %}" href="{{ url_for('backlog') }}">
-                    <icon class="icon"><i class="fas fa-archive"></i></icon> backlog</a>
                 <hr class="dropdown-divider"/>
                 {% endif %}
                 {{ self.sidebar_right() }}
@@ -83,14 +81,6 @@
                                 <div class="level-item">
                                     <a href="{{ url_for('favorites') }}"><icon class="icon"><i class="far fa-star"></i></icon>
                                         favorites</a>
-                                </div>
-                            </div>
-                        </li>
-                        <li>
-                            <div class="level-left {% if filters.backlogged %}is-active{% endif %}">
-                                <div class="level-item">
-                                    <a href="{{ url_for('backlog') }}"><icon class="icon"><i class="fas fa-archive"></i></icon>
-                                        backlog</a>
                                 </div>
                             </div>
                         </li>
