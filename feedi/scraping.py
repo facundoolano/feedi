@@ -1,3 +1,4 @@
+import io
 import json
 import logging
 import shutil
@@ -126,7 +127,7 @@ def extract(url=None, html=None):
     return article
 
 
-def compress(outfilename, article):
+def compress(article):
     """
     Extract the article content, convert it to a valid html doc, localize its images and write
     everything as a zip in the given file (which should be open for writing).
@@ -135,7 +136,8 @@ def compress(outfilename, article):
     # pass it through bs4 so it's a well-formed html (otherwise kindle will reject it)
     soup = BeautifulSoup(article['content'], 'lxml')
 
-    with zipfile.ZipFile(outfilename, 'w', compression=zipfile.ZIP_DEFLATED) as zip:
+    output_buffer = io.BytesIO()
+    with zipfile.ZipFile(output_buffer, 'w', compression=zipfile.ZIP_DEFLATED) as zip:
         for img in soup.findAll('img'):
             img_url = img['src']
             img_filename = 'article_files/' + img['src'].split('/')[-1].split('?')[0]
@@ -150,3 +152,5 @@ def compress(outfilename, article):
                 shutil.copyfileobj(img_src.raw, img_dest)
 
         zip.writestr('article.html', str(soup))
+
+    return output_buffer.getvalue()

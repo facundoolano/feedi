@@ -1,12 +1,8 @@
 import datetime
-import io
-import os
 import smtplib
-import tempfile
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
-from io import StringIO
 
 import flask
 import sqlalchemy as sa
@@ -518,11 +514,7 @@ def send_to_kindle():
     url = flask.request.args['url']
     article = scraping.extract(url)
 
-    # FIXME revisit this comment
-    # a tempfile is necessary because the kindle client expects a local filepath to upload
-    # the file contents are a zip including the article.html and its image assets
-    output_buffer = io.BytesIO()
-    scraping.compress(output_buffer, article)
+    data = scraping.compress(article)
 
     sender = app.config['FEEDI_EMAIL']
     password = app.config['FEEDI_EMAIL_PASSWORD']
@@ -534,7 +526,7 @@ def send_to_kindle():
     msg['Subject'] = 'Feedi article submission'
 
     part = MIMEBase('application', 'octet-stream')
-    part.set_payload(output_buffer.getvalue())
+    part.set_payload(data)
     encoders.encode_base64(part)
     part.add_header('Content-Disposition', f'attachment; filename=article.zip')
     msg.attach(part)
