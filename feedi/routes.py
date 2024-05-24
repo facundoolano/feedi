@@ -16,7 +16,6 @@ from feedi.parsers import mastodon, rss
 
 @app.route("/users/<username>")
 @app.route("/favorites", defaults={'favorited': True}, endpoint='favorites')
-@app.route("/backlog", defaults={'backlogged': True}, endpoint='backlog')
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
 @app.route("/")
@@ -161,7 +160,6 @@ def autocomplete():
     static_options = [
         ('Home', flask.url_for('entry_list'), 'fas fa-home'),
         ('Favorites', flask.url_for('favorites', favorited=True), 'far fa-star'),
-        ('Backlog', flask.url_for('backlog', favorited=True), 'fa fa-archive'),
         ('Add Feed', flask.url_for('feed_add'), 'fas fa-plus'),
         ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit'),
         ('Mastodon login', flask.url_for('mastodon_oauth'), 'fab fa-mastodon'),
@@ -190,7 +188,6 @@ def entry_pin(id):
     else:
         entry.fetch_content()
         entry.pinned = datetime.datetime.utcnow()
-        entry.backlogged = None
     db.session.commit()
 
     # get the new list of pinned based on filters
@@ -215,34 +212,6 @@ def entry_favorite(id):
         entry.favorited = None
     else:
         entry.favorited = datetime.datetime.utcnow()
-
-    db.session.commit()
-    return '', 204
-
-
-@app.put("/backlog/<int:id>")
-@login_required
-def entry_backlog_push(id):
-    "Put the entry of the given id in the backlog."
-    entry = db.get_or_404(models.Entry, id)
-    if entry.user_id != current_user.id:
-        flask.abort(404)
-
-    entry.backlog()
-    db.session.commit()
-    return '', 204
-
-
-@app.delete("/backlog/<int:id>")
-@login_required
-def entry_backlog_pop(id):
-    "Remove the entry of the given id from the backlog, sending it back to the home feed."
-    entry = db.get_or_404(models.Entry, id)
-    if entry.user_id != current_user.id:
-        flask.abort(404)
-
-    if entry.backlogged:
-        entry.unbacklog()
 
     db.session.commit()
     return '', 204
@@ -421,7 +390,6 @@ def feed_delete(feed_name):
     update = db.update(models.Entry)\
         .where((models.Entry.feed_id == feed.id) & (
             models.Entry.favorited.isnot(None) |
-            models.Entry.backlogged.isnot(None) |
             models.Entry.pinned.isnot(None)))\
         .values(feed_id=None)
     db.session.execute(update)
@@ -475,30 +443,6 @@ def entry_add():
         return redirect_response(flask.url_for('entry_view', id=entry.id))
     else:
         return '', 204
-
-
-@app.post("/entries/<int:id>")
-@login_required
-def entry_unwrap(id):
-    "If the entry has embedded links in its short content, extract the first and render it."
-    entry = db.get_or_404(models.Entry, id)
-    if entry.user_id != current_user.id:
-        flask.abort(404)
-
-    if entry.content_short:
-        # If there's an inline link, "unwrap it", e.g. remove the old entry and put the linked
-        # article entry in its place
-        for link in entry.embedded_links():
-            try:
-                subentry = models.Entry.from_url(current_user.id, link)
-                entry.viewed = datetime.datetime.now()
-                db.session.add(subentry)
-                db.session.commit()
-                return flask.render_template('entry_list_page.html',
-                                             entries=[subentry])
-            except Exception:
-                continue
-    return "Couldn't unwrap", 400
 
 
 @app.get("/entries/<int:id>")

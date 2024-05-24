@@ -121,7 +121,6 @@ def delete_old_entries():
         .join(models.Feed.entries)\
         .filter(models.Entry.sort_date < older_than_date,
                 models.Entry.favorited.is_(None),
-                models.Entry.backlogged.is_(None),
                 models.Entry.pinned.is_(None)
                 )\
         .group_by(models.Feed.id)\
@@ -144,7 +143,6 @@ def delete_old_entries():
         q = db.delete(models.Entry)\
               .where(
                   models.Entry.favorited.is_(None),
-                  models.Entry.backlogged.is_(None),
                   models.Entry.pinned.is_(None),
                   models.Entry.feed_id == feed_id,
                   models.Entry.sort_date < min_sort_date,
@@ -167,24 +165,6 @@ def delete_old_entries():
     db.session.commit()
     if res.rowcount:
         app.logger.info("Deleted %s old standalone entries from", res.rowcount)
-
-
-@feed_cli.command('backlog')
-@huey_task(crontab(minute='0', hour='0'))
-def pop_backlog():
-    "Periodically pop an entry from the backlog into the home feed."
-    # TODO make this configurable
-    week_ago = datetime.datetime.utcnow() - datetime.timedelta(days=7)
-    backlogged_date = sa.func.min(models.Entry.backlogged).label('backlogged_date')
-    query = db.select(models.Entry)\
-        .group_by(models.Entry.user_id)\
-        .having(backlogged_date < week_ago)
-
-    for entry in db.session.scalars(query):
-        entry.unbacklog()
-        app.logger.info("Popped from user %s backlog: %s ", entry.user_id, entry.target_url)
-
-    db.session.commit()
 
 
 @feed_cli.command('debug')
