@@ -445,30 +445,6 @@ def entry_add():
         return '', 204
 
 
-@app.post("/entries/<int:id>")
-@login_required
-def entry_unwrap(id):
-    "If the entry has embedded links in its short content, extract the first and render it."
-    entry = db.get_or_404(models.Entry, id)
-    if entry.user_id != current_user.id:
-        flask.abort(404)
-
-    if entry.content_short:
-        # If there's an inline link, "unwrap it", e.g. remove the old entry and put the linked
-        # article entry in its place
-        for link in entry.embedded_links():
-            try:
-                subentry = models.Entry.from_url(current_user.id, link)
-                entry.viewed = datetime.datetime.now()
-                db.session.add(subentry)
-                db.session.commit()
-                return flask.render_template('entry_list_page.html',
-                                             entries=[subentry])
-            except Exception:
-                continue
-    return "Couldn't unwrap", 400
-
-
 @app.get("/entries/<int:id>")
 @login_required
 def entry_view(id):

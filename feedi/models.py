@@ -572,30 +572,6 @@ class Entry(db.Model):
             except Exception as e:
                 logger.debug("failed to fetch content %s", e)
 
-    def embedded_links(self):
-        "Return a list of (url, title) for links found in the content_short (excluding hashtags and mentions)."
-        if self.content_short:
-            return [url for (url, text) in scraping.extract_links(self.target_url, self.content_short)
-                    # skip hashtag and profile links
-                    if not text.startswith('#') and not text.startswith('@')]
-        return []
-
-    def is_unwrappable(self):
-        "Return whether there are embedded links that can be extracted from the content_shrot."
-        return bool(self.embedded_links())
-
-    def backlog(self):
-        "Put this entry in the backlog."
-        self.backlogged = datetime.datetime.utcnow()
-        self.pinned = None
-
-    def unbacklog(self):
-        "Pop this entry from the backlog."
-        self.backlogged = None
-        self.viewed = None
-        self.sort_date = datetime.datetime.utcnow()
-        self.fetch_content()
-
     @classmethod
     def _filtered_query(cls, user_id, hide_seen=False, favorited=None, backlogged=None,
                         feed_name=None, username=None, folder=None, older_than=None,

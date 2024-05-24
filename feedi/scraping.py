@@ -86,13 +86,6 @@ def all_meta(soup):
     return result
 
 
-def extract_links(url, html):
-    soup = BeautifulSoup(html, 'lxml')
-    # checks tag.text so it skips image links
-    links = soup.find_all(lambda tag: tag.name == 'a' and tag.text and 'href' in tag)
-    return [(make_absolute(url, a['href']), a.text) for a in links]
-
-
 def make_absolute(url, path):
     "If `path` is a relative url, join it with the given absolute url."
     if not urllib.parse.urlparse(path).netloc:
