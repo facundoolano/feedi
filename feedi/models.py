@@ -511,7 +511,6 @@ class Entry(db.Model):
     viewed = sa.Column(sa.TIMESTAMP, index=True)
     favorited = sa.Column(sa.TIMESTAMP, index=True)
     pinned = sa.Column(sa.TIMESTAMP, index=True)
-    backlogged = sa.Column(sa.TIMESTAMP, index=True)
 
     raw_data = sa.orm.deferred(sa.Column(sa.String,
                                          doc="The original entry data received from the feed, as JSON"))
