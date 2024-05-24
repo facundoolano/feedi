@@ -1,14 +1,11 @@
 import datetime
-import smtplib
-from email import encoders
-from email.mime.base import MIMEBase
-from email.mime.multipart import MIMEMultipart
 
 import flask
 import sqlalchemy as sa
 from flask import current_app as app
 from flask_login import current_user, login_required
 
+import feedi.email as email
 import feedi.models as models
 import feedi.tasks as tasks
 from feedi import scraping
@@ -508,32 +505,10 @@ def send_to_kindle():
     if not current_user.kindle_email:
         return '', 204
 
-    kindle = db.session.scalar(db.select(models.KindleDevice).filter_by(
-        user_id=current_user.id))
-
     url = flask.request.args['url']
     article = scraping.extract(url)
-
-    data = scraping.compress(article)
-
-    sender = app.config['FEEDI_EMAIL']
-    password = app.config['FEEDI_EMAIL_PASSWORD']
-    recipient = current_user.kindle_email
-
-    msg = MIMEMultipart()
-    msg['From'] = sender
-    msg['To'] = recipient
-    msg['Subject'] = 'Feedi article submission'
-
-    part = MIMEBase('application', 'octet-stream')
-    part.set_payload(data)
-    encoders.encode_base64(part)
-    part.add_header('Content-Disposition', f'attachment; filename=article.zip')
-    msg.attach(part)
-
-    with smtplib.SMTP_SSL(app.config['FEEDI_EMAIL_SERVER'], app.config['FEEDI_EMAIL_PORT']) as smtp_server:
-        smtp_server.login(sender, password)
-        smtp_server.sendmail(sender, recipient, msg.as_string())
+    attach_data = scraping.compress(article)
+    email.send(current_user.kindle_email, attach_data)
 
     return '', 204
 
