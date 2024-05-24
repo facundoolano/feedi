@@ -10,7 +10,6 @@ Mastodon-py>=1.8.1
 gevent==23.7.0
 huey==2.4.5
 alembic==1.11.2
-stkclient==0.1.1
 gunicorn==21.2.0
 pyopml==1.0.0
 flask-login==0.6.2

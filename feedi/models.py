@@ -7,7 +7,6 @@ import urllib
 
 import sqlalchemy as sa
 import sqlalchemy.dialects.sqlite as sqlite
-import stkclient
 import werkzeug.security as security
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
@@ -158,44 +157,6 @@ class MastodonAccount(db.Model):
 
     app = sa.orm.relationship("MastodonApp", lazy='joined')
     user = sa.orm.relationship("User", back_populates='mastodon_accounts')
-
-
-class KindleDevice(db.Model):
-    __tablename__ = 'kindle_devices'
-    id = sa.Column(sa.Integer, primary_key=True)
-    user_id = sa.orm.mapped_column(sa.ForeignKey("users.id"), nullable=False, unique=True)
-    credentials = sa.Column(sa.String, nullable=False)
-
-    @staticmethod
-    def signin_url():
-        auth = stkclient.OAuth2()
-        signin_url = auth.get_signin_url()
-        return auth._verifier, signin_url
-
-    @classmethod
-    def add_from_url(cls, user_id, verifier, redirect_url):
-        """
-        Creates or updates a kindle device for the given user, based on
-        an auth redirect.
-        """
-        auth = stkclient.OAuth2()
-        auth._verifier = verifier
-        client = auth.create_client(redirect_url)
-
-        values = dict(user_id=user_id, credentials=client.dumps())
-        db.session.execute(
-            sqlite.insert(cls).
-            values(**values).
-            on_conflict_do_update(("user_id",), set_=values)
-        )
-
-    def send(self, path, author, title):
-        client = stkclient.Client.loads(self.credentials)
-        serials = [d.device_serial_number for d in client.get_owned_devices()]
-        client.send_file(path, serials,
-                         format='zip',
-                         author=author,
-                         title=title)
 
 
 class Feed(db.Model):
