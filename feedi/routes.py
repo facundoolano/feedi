@@ -1,6 +1,12 @@
 import datetime
-import pathlib
+import io
+import os
+import smtplib
 import tempfile
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from io import StringIO
 
 import flask
 import sqlalchemy as sa
@@ -128,7 +134,7 @@ def autocomplete():
             ('View in reader', flask.url_for('entry_add', url=term, redirect=1), 'fas fa-book-reader', 'POST'),
             ('Discover feed', flask.url_for('feed_add', url=term), 'fas fa-rss'),
         ]
-        if current_user.has_kindle:
+        if current_user.kindle_email:
             options += [('Send to Kindle',
                          flask.url_for('send_to_kindle', url=term), 'fas fa-tablet-alt',
                          'POST')]
@@ -503,7 +509,7 @@ def send_to_kindle():
     """
     If the user has a registered device, send the article in the given URL through kindle.
     """
-    if not current_user.has_kindle:
+    if not current_user.kindle_email:
         return '', 204
 
     kindle = db.session.scalar(db.select(models.KindleDevice).filter_by(
@@ -512,16 +518,32 @@ def send_to_kindle():
     url = flask.request.args['url']
     article = scraping.extract(url)
 
+    # FIXME revisit this comment
     # a tempfile is necessary because the kindle client expects a local filepath to upload
     # the file contents are a zip including the article.html and its image assets
-    with tempfile.NamedTemporaryFile(mode='w+', delete=False) as fp:
-        scraping.compress(fp.name, article)
+    output_buffer = io.BytesIO()
+    scraping.compress(output_buffer, article)
 
-        kindle.send(pathlib.Path(fp.name),
-                    author=article['byline'],
-                    title=article['title'])
+    sender = app.config['FEEDI_EMAIL']
+    password = app.config['FEEDI_EMAIL_PASSWORD']
+    recipient = current_user.kindle_email
 
-        return '', 204
+    msg = MIMEMultipart()
+    msg['From'] = sender
+    msg['To'] = recipient
+    msg['Subject'] = 'Feedi article submission'
+
+    part = MIMEBase('application', 'octet-stream')
+    part.set_payload(output_buffer.getvalue())
+    encoders.encode_base64(part)
+    part.add_header('Content-Disposition', f'attachment; filename=article.zip')
+    msg.attach(part)
+
+    with smtplib.SMTP_SSL(app.config['FEEDI_EMAIL_SERVER'], app.config['FEEDI_EMAIL_PORT']) as smtp_server:
+        smtp_server.login(sender, password)
+        smtp_server.sendmail(sender, recipient, msg.as_string())
+
+    return '', 204
 
 
 @app.route("/feeds/<feed_name>/debug")
