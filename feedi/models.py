@@ -57,6 +57,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
 
+    kindle_email = db.Column(db.String(100))
     mastodon_accounts = sa.orm.relationship("MastodonAccount", back_populates='user')
 
     @staticmethod
@@ -195,11 +196,6 @@ class KindleDevice(db.Model):
                          format='zip',
                          author=author,
                          title=title)
-
-
-User.has_kindle = sa.orm.column_property(sa.select(sa.func.count(KindleDevice.id) == 1)
-                                         .where(KindleDevice.user_id == User.id)
-                                         .scalar_subquery())
 
 
 class Feed(db.Model):
