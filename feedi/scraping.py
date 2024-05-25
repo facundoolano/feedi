@@ -127,11 +127,10 @@ def extract(url=None, html=None):
     return article
 
 
-# FIXME rename to build epub or something
-def compress(article):
+def package_epub(article):
     """
-    Extract the article content, convert it to a valid html doc, localize its images and write
-    everything as a zip in the given file (which should be open for writing).
+    Extract the article content, convert it to a valid html doc, localize its images, write
+    everything as a zip and add the proper EPUB metadata. Returns the zipped bytes.
     """
 
     # pass it through bs4 so it's a well-formed html (otherwise kindle will reject it)
