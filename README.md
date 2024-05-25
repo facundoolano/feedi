@@ -138,10 +138,6 @@ feedi uses special purpose feed parsers both for reddit listing messages and lin
 
 ### Kindle device support
 
-
-
-https://myaccount.google.com/apppasswords
-
 The app allows to register a kindle email to send the cleaned up article HTML to it, yielding better results
 than the default Amazon Send to Kindle Chrome extension. This requires setting up SMTP credentials for sending email.
 
