@@ -1,4 +1,5 @@
 import smtplib
+import urllib.parse
 from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
@@ -21,7 +22,9 @@ def send(recipient, attach_data, filename):
     part.set_payload(attach_data)
     encoders.encode_base64(part)
 
-    part.add_header('Content-Disposition', f'attachment; filename={filename}.epub')
+    filename = urllib.parse.quote(filename)
+    # https://stackoverflow.com/a/216777/993769
+    part.add_header('Content-Disposition', f"attachment; filename*=UTF-8''{filename}.epub")
     msg.attach(part)
 
     with smtplib.SMTP_SSL(server, port) as smtp_server:
