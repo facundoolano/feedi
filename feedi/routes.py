@@ -1,12 +1,11 @@
 import datetime
-import pathlib
-import tempfile
 
 import flask
 import sqlalchemy as sa
 from flask import current_app as app
 from flask_login import current_user, login_required
 
+import feedi.email as email
 import feedi.models as models
 import feedi.tasks as tasks
 from feedi import scraping
@@ -128,7 +127,7 @@ def autocomplete():
             ('View in reader', flask.url_for('entry_add', url=term, redirect=1), 'fas fa-book-reader', 'POST'),
             ('Discover feed', flask.url_for('feed_add', url=term), 'fas fa-rss'),
         ]
-        if current_user.has_kindle:
+        if current_user.kindle_email:
             options += [('Send to Kindle',
                          flask.url_for('send_to_kindle', url=term), 'fas fa-tablet-alt',
                          'POST')]
@@ -503,25 +502,15 @@ def send_to_kindle():
     """
     If the user has a registered device, send the article in the given URL through kindle.
     """
-    if not current_user.has_kindle:
+    if not current_user.kindle_email:
         return '', 204
-
-    kindle = db.session.scalar(db.select(models.KindleDevice).filter_by(
-        user_id=current_user.id))
 
     url = flask.request.args['url']
     article = scraping.extract(url)
+    attach_data = scraping.package_epub(article)
+    email.send(current_user.kindle_email, attach_data, filename=article['title'])
 
-    # a tempfile is necessary because the kindle client expects a local filepath to upload
-    # the file contents are a zip including the article.html and its image assets
-    with tempfile.NamedTemporaryFile(mode='w+', delete=False) as fp:
-        scraping.compress(fp.name, article)
-
-        kindle.send(pathlib.Path(fp.name),
-                    author=article['byline'],
-                    title=article['title'])
-
-        return '', 204
+    return '', 204
 
 
 @app.route("/feeds/<feed_name>/debug")

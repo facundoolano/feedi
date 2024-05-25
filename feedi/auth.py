@@ -53,16 +53,17 @@ def login_post():
 @app.get("/auth/kindle")
 @login_required
 def kindle_add():
-    verifier, url = models.KindleDevice.signin_url()
-    return flask.render_template('kindle.html', signin_url=url, verifier=verifier)
+    feedi_email = app.config.get('FEEDI_EMAIL')
+    if not feedi_email:
+        return flask.abort(400, "no feedi email configured")
+    return flask.render_template('kindle.html', feedi_email=feedi_email)
 
 
 @app.post("/auth/kindle")
 @login_required
 def kindle_add_submit():
-    verifier = flask.request.form.get('verifier')
-    redirect_url = flask.request.form.get('redirect_url')
-    models.KindleDevice.add_from_url(current_user.id, verifier, redirect_url)
+    kindle_email = flask.request.form.get('kindle_email')
+    current_user.kindle_email = kindle_email
     db.session.commit()
     return flask.redirect(flask.url_for('entry_list'))
 

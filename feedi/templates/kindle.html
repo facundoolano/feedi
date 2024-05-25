@@ -6,18 +6,17 @@
 {% block content %}
 <div class="box is-radiusless feed-entry  ">
     <div class="content">
-        <h3>Register device</h3>
+        <h3>Register Kindle email</h3>
         <br/>
 
-        <p>Open <a href="{{ signin_url }}" target="_blank">this link</a>, authenticate with Amazon, then copy the redirect browser URL in the form below.</p>
+        <p>Configure your Kindle device associated email below (the address where feedi will send articles to).
+            Then go to your <a href="https://www.amazon.com/mn/dcw/myx.html/ref=kinw_myk_redirect#/home/settings/pdoc" target="_blank">Amazon settings</a> and add  <code>{{feedi_email}}</code> to your "Approved Personal Document E-mail List".</p>
 
             <form method="post">
-                <input type="hidden" name="verifier" value="{{verifier}}">
-
             <div class="field">
-                <label class="label">Redirect URL</label>
+                <label class="label">Kindle email</label>
                 <div class="control">
-                    <textarea class="textarea" name="redirect_url"></textarea>
+                    <input class="input" name="kindle_email" type="email"  {% if current_user.kindle_email %}value="{{ current_user.kindle_email }}" {% endif %}>
                 </div>
             </div>
 
