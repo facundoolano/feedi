@@ -35,7 +35,7 @@ NOTE: this project is primarily for personal use and experimentation, expect bug
     - [Github notification feed](#github-notification-feed)
     - [Goodreads home feed](#goodreads-home-feed)
     - [Reddit feeds](#reddit-feeds)
-    - [Kindle device support (experimental)](#kindle-device-support-experimental)
+    - [Kindle device support](#kindle-device-support)
     - [Feed parsing](#feed-parsing)
         - [RSS/Atom feeds](#rssatom-feeds)
         - [Custom feeds](#custom-feeds)
@@ -136,14 +136,31 @@ Additionally, authenticated users have access to RSS feeds for private account p
 feedi uses special purpose feed parsers both for reddit listing messages and links, and for the user inbox.
 
 
-### Kindle device support (experimental)
+### Kindle device support
 
-The app allows to register a kindle device to send the cleaned up article HTML to it, yielding better results
-than the default Amazon Send to Kindle Chrome extension.
 
-To enable the "send to kindle" feature on your user, navigate to `/auth/kindle` or type 'kindle' in the searchbox, and follow the instructions to register the device credentials.
 
-This features uses the [stkclient](https://github.com/maxdjohnson/stkclient) library and stores device credentials in the DB file (use at your own risk).
+https://myaccount.google.com/apppasswords
+
+The app allows to register a kindle email to send the cleaned up article HTML to it, yielding better results
+than the default Amazon Send to Kindle Chrome extension. This requires setting up SMTP credentials for sending email.
+
+Steps to make it work with a basic gmail account:
+1. Register an google email account.
+2. Turn on 2-factor authentication for the account
+3. navigate to the [app passwords settings](https://myaccount.google.com/apppasswords) and generate a password for the app (requires 2FA activated to work).
+4. Add SMTP settings to the app config:
+
+``` python
+FEEDI_EMAIL = "YOUR.EMAIL@gmail.com"
+FEEDI_EMAIL_PASSWORD = "GENERATED APP PASSWORD"
+FEEDI_EMAIL_SERVER = "smtp.gmail.com"
+FEEDI_EMAIL_PORT = 465
+```
+5. navigate to `/auth/kindle` or type 'kindle' in the searchbox, and enter the @kindle.com email for your device.
+6. Go to your [Amazon Personal Document Settings](https://www.amazon.com/mn/dcw/myx.html/ref=kinw_myk_redirect#/home/settings/pdoc) and add your feedi email address to the approved document email list.
+
+After this setup the "Send to Kindle" command will be available when browsing articles.
 
 ### Feed parsing
 
