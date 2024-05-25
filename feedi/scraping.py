@@ -152,6 +152,8 @@ def package_epub(article):
                 shutil.copyfileobj(img_src.raw, img_dest)
 
         zip.writestr('article.html', str(soup))
+
+        # epub boilerplate based on https://github.com/thansen0/sample-epub-minimal
         zip.writestr('mimetype', "application/epub+zip")
         zip.writestr('META-INF/container.xml', """<?xml version="1.0"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
@@ -159,6 +161,7 @@ def package_epub(article):
     <rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>
   </rootfiles>
 </container>""")
+
         zip.writestr('content.opf', f"""<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" xml:lang="en" unique-identifier="uid" prefix="cc: http://creativecommons.org/ns#">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -166,13 +169,12 @@ def package_epub(article):
     <dc:creator>{article['byline']}</dc:creator>
     <dc:language>{article['lang']}</dc:language>
   </metadata>
-        <manifest>
-	    <item id="article" href="article.html" media-type="text/html" />
-	</manifest>
-
-	<spine toc="ncx">
-	    <itemref idref="article" />
-	</spine>
+  <manifest>
+    <item id="article" href="article.html" media-type="text/html" />
+  </manifest>
+  <spine toc="ncx">
+   <itemref idref="article" />
+  </spine>
 </package>""")
 
     return output_buffer.getvalue()
