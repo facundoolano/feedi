@@ -155,6 +155,7 @@ Steps to make it work with a basic gmail account:
 FEEDI_EMAIL = "YOUR.EMAIL@gmail.com"
 FEEDI_EMAIL_PASSWORD = "GENERATED APP PASSWORD"
 FEEDI_EMAIL_SERVER = "smtp.gmail.com"
+FEEDI_EMAIL_PORT = 587
 ```
 5. navigate to `/auth/kindle` or type 'kindle' in the searchbox, and enter the @kindle.com email for your device.
 6. Go to your [Amazon Personal Document Settings](https://www.amazon.com/mn/dcw/myx.html/ref=kinw_myk_redirect#/home/settings/pdoc) and add your feedi email address to the approved document email list.

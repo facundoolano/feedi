@@ -9,6 +9,7 @@ import flask
 
 def send(recipient, attach_data, filename):
     server = flask.current_app.config['FEEDI_EMAIL_SERVER']
+    port = flask.current_app.config['FEEDI_EMAIL_PORT']
     sender = flask.current_app.config['FEEDI_EMAIL']
     password = flask.current_app.config['FEEDI_EMAIL_PASSWORD']
 
@@ -26,7 +27,7 @@ def send(recipient, attach_data, filename):
     part.add_header('Content-Disposition', f"attachment; filename*=UTF-8''{filename}.epub")
     msg.attach(part)
 
-    smtp = smtplib.SMTP(server, 587)
+    smtp = smtplib.SMTP(server, port)
     smtp.ehlo()
     smtp.starttls()
     smtp.login(sender, password)
