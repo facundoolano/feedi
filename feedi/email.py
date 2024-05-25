@@ -6,7 +6,7 @@ from email.mime.multipart import MIMEMultipart
 import flask
 
 
-def send(recipient, attach_data):
+def send(recipient, attach_data, filename):
     server = flask.current_app.config['FEEDI_EMAIL_SERVER']
     port = flask.current_app.config['FEEDI_EMAIL_PORT']
     sender = flask.current_app.config['FEEDI_EMAIL']
@@ -17,10 +17,11 @@ def send(recipient, attach_data):
     msg['To'] = recipient
     msg['Subject'] = 'Feedi article submission'
 
-    part = MIMEBase('application', 'octet-stream')
+    part = MIMEBase('application', 'epub')
     part.set_payload(attach_data)
     encoders.encode_base64(part)
-    part.add_header('Content-Disposition', f'attachment; filename=article.zip')
+
+    part.add_header('Content-Disposition', f'attachment; filename={filename}.epub')
     msg.attach(part)
 
     with smtplib.SMTP_SSL(server, port) as smtp_server:

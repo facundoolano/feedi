@@ -127,6 +127,7 @@ def extract(url=None, html=None):
     return article
 
 
+# FIXME rename to build epub or something
 def compress(article):
     """
     Extract the article content, convert it to a valid html doc, localize its images and write
@@ -152,5 +153,27 @@ def compress(article):
                 shutil.copyfileobj(img_src.raw, img_dest)
 
         zip.writestr('article.html', str(soup))
+        zip.writestr('mimetype', "application/epub+zip")
+        zip.writestr('META-INF/container.xml', """<?xml version="1.0"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles>
+    <rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>
+  </rootfiles>
+</container>""")
+        zip.writestr('content.opf', f"""<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" xml:lang="en" unique-identifier="uid" prefix="cc: http://creativecommons.org/ns#">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:title id="title">{article['title']}</dc:title>
+    <dc:creator>{article['byline']}</dc:creator>
+    <dc:language>{article['lang']}</dc:language>
+  </metadata>
+        <manifest>
+	    <item id="article" href="article.html" media-type="text/html" />
+	</manifest>
+
+	<spine toc="ncx">
+	    <itemref idref="article" />
+	</spine>
+</package>""")
 
     return output_buffer.getvalue()
