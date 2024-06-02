@@ -506,9 +506,19 @@ def send_to_kindle():
         return '', 204
 
     url = flask.request.args['url']
+
     article = scraping.extract(url)
     attach_data = scraping.package_epub(url, article)
     email.send(current_user.kindle_email, attach_data, filename=article['title'])
+
+    # save as read entry if not already, to keep track of sent to kindle urls
+    entry = models.Entry.from_url(current_user.id, url)
+    entry.sent_to_kindle = datetime.datetime.now()
+    entry.viewed = entry.viewed or datetime.datetime.utcnow()
+    entry.content_full = article['content']
+
+    db.session.add(entry)
+    db.session.commit()
 
     return '', 204
 

@@ -469,6 +469,8 @@ class Entry(db.Model):
     favorited = sa.Column(sa.TIMESTAMP, index=True)
     pinned = sa.Column(sa.TIMESTAMP, index=True)
 
+    sent_to_kindle = sa.Column(sa.TIMESTAMP, index=True)
+
     raw_data = sa.orm.deferred(sa.Column(sa.String,
                                          doc="The original entry data received from the feed, as JSON"))
 
