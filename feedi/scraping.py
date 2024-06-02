@@ -51,7 +51,7 @@ class CachingRequestsMixin:
     # TODO make this a proper cache of any sort of request, and cache all.
     def request(self, url):
         """
-        GET the content of the given url, and if the response is succesful
+        GET the content of the given url, and if the response is successful
         cache it for subsequent calls to this method.
         """
         if url in self.response_cache:
@@ -127,7 +127,7 @@ def extract(url=None, html=None):
     return article
 
 
-def package_epub(article):
+def package_epub(url, article):
     """
     Extract the article content, convert it to a valid html doc, localize its images, write
     everything as a zip and add the proper EPUB metadata. Returns the zipped bytes.
@@ -153,8 +153,14 @@ def package_epub(article):
 
         zip.writestr('article.html', str(soup))
 
+        author = article['byline'] or article['siteName']
+        if not author:
+            # if no explicit author in the website, use the domain
+            author = urllib.parse.urlparse(url).netloc.replace('www.', '')
+
         # epub boilerplate based on https://github.com/thansen0/sample-epub-minimal
         zip.writestr('mimetype', "application/epub+zip")
+
         zip.writestr('META-INF/container.xml', """<?xml version="1.0"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
   <rootfiles>
@@ -166,7 +172,7 @@ def package_epub(article):
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" xml:lang="en" unique-identifier="uid" prefix="cc: http://creativecommons.org/ns#">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="title">{article['title']}</dc:title>
-    <dc:creator>{article['byline']}</dc:creator>
+    <dc:creator>{author}</dc:creator>
     <dc:language>{article['lang']}</dc:language>
   </metadata>
   <manifest>

@@ -507,7 +507,7 @@ def send_to_kindle():
 
     url = flask.request.args['url']
     article = scraping.extract(url)
-    attach_data = scraping.package_epub(article)
+    attach_data = scraping.package_epub(url, article)
     email.send(current_user.kindle_email, attach_data, filename=article['title'])
 
     return '', 204
