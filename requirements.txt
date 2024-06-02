@@ -15,3 +15,4 @@ pyopml==1.0.0
 flask-login==0.6.2
 Werkzeug==2.3.7
 dateparser==1.1.8
+Pillow==10.3.0
