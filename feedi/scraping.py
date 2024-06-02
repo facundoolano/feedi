@@ -133,11 +133,9 @@ def package_epub(url, article):
     everything as a zip and add the proper EPUB metadata. Returns the zipped bytes.
     """
 
-    # pass it through bs4 so it's a well-formed html (otherwise kindle will reject it)
-    soup = BeautifulSoup(article['content'], 'lxml')
-
     output_buffer = io.BytesIO()
     with zipfile.ZipFile(output_buffer, 'w', compression=zipfile.ZIP_DEFLATED) as zip:
+        soup = BeautifulSoup(article['content'], 'lxml')
         for img in soup.findAll('img'):
             img_url = img['src']
             img_filename = 'article_files/' + img['src'].split('/')[-1].split('?')[0]
