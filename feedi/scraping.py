@@ -1,7 +1,6 @@
 import io
 import json
 import logging
-import shutil
 import subprocess
 import urllib
 import zipfile
@@ -9,6 +8,7 @@ import zipfile
 # use internal module to access unexported .tags function
 import favicon.favicon as favicon
 from bs4 import BeautifulSoup
+from PIL import Image
 
 from feedi.requests import USER_AGENT, requests
 
@@ -141,15 +141,24 @@ def package_epub(url, article):
         for img in soup.findAll('img'):
             img_url = img['src']
             img_filename = 'article_files/' + img['src'].split('/')[-1].split('?')[0]
+            img_filename = img_filename.replace('.webp', '.jpg')
 
             # update each img src url to point to the local copy of the file
             img['src'] = img_filename
 
-            # TODO webp images aren't supported, convert to png or jpg
+            # download the image and save into the files subdir of the zip
+            response = requests.get(img_url)
+            if not response.ok:
+                continue
 
-            # download the image into the zip, inside the files subdir
-            with requests.get(img_url, stream=True) as img_src, zip.open(img_filename, mode='w') as img_dest:
-                shutil.copyfileobj(img_src.raw, img_dest)
+            with zip.open(img_filename, 'w') as dest_file:
+                if img_url.endswith('.webp'):
+                    # when the image is of a known unsupported format, convert it to jpg first
+                    jpg_img = Image.open(io.BytesIO(response.content)).convert("RGB")
+                    jpg_img.save(dest_file, "JPEG")
+                else:
+                    # else write as is
+                    dest_file.write(response.content)
 
         zip.writestr('article.html', str(soup))
 
