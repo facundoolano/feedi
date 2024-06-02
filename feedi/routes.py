@@ -17,6 +17,7 @@ from feedi.parsers import mastodon, rss
 @app.route("/favorites", defaults={'favorited': True}, endpoint='favorites')
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
+@app.get("/entries/kindle", defaults={'sent_to_kindle': True}, endpoint='sent_to_kindle')
 @app.route("/")
 @login_required
 def entry_list(**filters):
@@ -162,7 +163,8 @@ def autocomplete():
         ('Add Feed', flask.url_for('feed_add'), 'fas fa-plus'),
         ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit'),
         ('Mastodon login', flask.url_for('mastodon_oauth'), 'fab fa-mastodon'),
-        ('Kindle setup', flask.url_for('kindle_add'), 'fas fa-tablet-alt')
+        ('Kindle setup', flask.url_for('kindle_add'), 'fas fa-tablet-alt'),
+        ('Kindle log', flask.url_for('sent_to_kindle'), 'fas fa-list')
     ]
     for so in static_options:
         if term.lower() in so[0].lower():
