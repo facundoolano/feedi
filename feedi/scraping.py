@@ -5,6 +5,7 @@ import subprocess
 import urllib
 import zipfile
 
+import dateparser
 # use internal module to access unexported .tags function
 import favicon.favicon as favicon
 from bs4 import BeautifulSoup
@@ -174,13 +175,18 @@ def package_epub(url, article):
             # if no explicit author in the website, use the domain
             author = urllib.parse.urlparse(url).netloc.replace('www.', '')
 
+        published = dateparser.parse(article.get('publishedTime')) or ''
+        if published:
+            # drop the time, keep the date
+            published = published.date().isoformat()
+
         zip.writestr('content.opf', f"""<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" xml:lang="en" unique-identifier="uid" prefix="cc: http://creativecommons.org/ns#">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="title">{article['title']}</dc:title>
     <dc:creator>{author}</dc:creator>
     <dc:language>{article.get('lang', '')}</dc:language>
-    <dc:date>{article.get('publishedTime', '')}</dc:date>
+    <dc:date>{published}</dc:date>
   </metadata>
   <manifest>
     <item id="article" href="article.html" media-type="text/html" />
