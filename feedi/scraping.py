@@ -175,10 +175,9 @@ def package_epub(url, article):
             # if no explicit author in the website, use the domain
             author = urllib.parse.urlparse(url).netloc.replace('www.', '')
 
-        published = dateparser.parse(article.get('publishedTime')) or ''
-        if published:
-            # drop the time, keep the date
-            published = published.date().isoformat()
+        published = article.get('publishedTime') or ''
+        published = published and dateparser.parse(published)
+        published = published and published.date().isoformat()
 
         zip.writestr('content.opf', f"""<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" xml:lang="en" unique-identifier="uid" prefix="cc: http://creativecommons.org/ns#">
