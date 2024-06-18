@@ -120,7 +120,7 @@
 
 {% block sidebar_right %}
 {% if feed %}
-<a class="dropdown-item" hx-post="{{ url_for('feed_list', feed_name=feed.name )}}"
+<a class="dropdown-item" hx-post="{{ url_for('feed_sync', feed_name=feed.name )}}"
    _="on htmx:beforeRequest add .fa-spin to <i/> in me"
 ><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{feed.name}}</a>
 {% endif %}
