@@ -16,14 +16,14 @@ def send(recipient, attach_data, filename):
     msg = MIMEMultipart()
     msg['From'] = sender
     msg['To'] = recipient
-    msg['Subject'] = 'Feedi article submission'
+    msg['Subject'] = f'feedi - {filename}'
 
     part = MIMEBase('application', 'epub')
     part.set_payload(attach_data)
     encoders.encode_base64(part)
 
-    filename = urllib.parse.quote(filename)
     # https://stackoverflow.com/a/216777/993769
+    filename = urllib.parse.quote(filename)
     part.add_header('Content-Disposition', f"attachment; filename*=UTF-8''{filename}.epub")
     msg.attach(part)
 

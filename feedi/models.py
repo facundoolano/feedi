@@ -469,6 +469,8 @@ class Entry(db.Model):
     favorited = sa.Column(sa.TIMESTAMP, index=True)
     pinned = sa.Column(sa.TIMESTAMP, index=True)
 
+    sent_to_kindle = sa.Column(sa.TIMESTAMP, index=True)
+
     raw_data = sa.orm.deferred(sa.Column(sa.String,
                                          doc="The original entry data received from the feed, as JSON"))
 
@@ -529,7 +531,7 @@ class Entry(db.Model):
                 logger.debug("failed to fetch content %s", e)
 
     @classmethod
-    def _filtered_query(cls, user_id, hide_seen=False, favorited=None,
+    def _filtered_query(cls, user_id, hide_seen=False, favorited=None, sent_to_kindle=None,
                         feed_name=None, username=None, folder=None, older_than=None,
                         text=None):
         """
@@ -550,6 +552,9 @@ class Entry(db.Model):
 
         if favorited:
             query = query.filter(cls.favorited.is_not(None))
+
+        if sent_to_kindle:
+            query = query.filter(cls.sent_to_kindle.is_not(None))
 
         if feed_name:
             query = query.filter(cls.feed.has(name=feed_name))
@@ -588,6 +593,9 @@ class Entry(db.Model):
 
         if filters.get('favorited'):
             return query.order_by(cls.favorited.desc())
+
+        elif filters.get('sent_to_kindle'):
+            return query.order_by(cls.sent_to_kindle.desc())
 
         elif ordering == cls.ORDER_RECENCY:
             # reverse chronological order

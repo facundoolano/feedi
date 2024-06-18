@@ -17,6 +17,7 @@ from feedi.parsers import mastodon, rss
 @app.route("/favorites", defaults={'favorited': True}, endpoint='favorites')
 @app.route("/folder/<folder>")
 @app.route("/feeds/<feed_name>/entries")
+@app.get("/entries/kindle", defaults={'sent_to_kindle': True}, endpoint='sent_to_kindle')
 @app.route("/")
 @login_required
 def entry_list(**filters):
@@ -162,7 +163,8 @@ def autocomplete():
         ('Add Feed', flask.url_for('feed_add'), 'fas fa-plus'),
         ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit'),
         ('Mastodon login', flask.url_for('mastodon_oauth'), 'fab fa-mastodon'),
-        ('Kindle setup', flask.url_for('kindle_add'), 'fas fa-tablet-alt')
+        ('Kindle setup', flask.url_for('kindle_add'), 'fas fa-tablet-alt'),
+        ('Kindle log', flask.url_for('sent_to_kindle'), 'fas fa-list')
     ]
     for so in static_options:
         if term.lower() in so[0].lower():
@@ -506,9 +508,19 @@ def send_to_kindle():
         return '', 204
 
     url = flask.request.args['url']
+
     article = scraping.extract(url)
     attach_data = scraping.package_epub(url, article)
     email.send(current_user.kindle_email, attach_data, filename=article['title'])
+
+    # save as read entry if not already, to keep track of sent to kindle urls
+    entry = models.Entry.from_url(current_user.id, url)
+    entry.sent_to_kindle = datetime.datetime.now()
+    entry.viewed = entry.viewed or datetime.datetime.utcnow()
+    entry.content_full = article['content']
+
+    db.session.add(entry)
+    db.session.commit()
 
     return '', 204
 
