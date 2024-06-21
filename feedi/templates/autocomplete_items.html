@@ -6,6 +6,7 @@
              then on keydown[not ['Enter', 'ArrowUp', 'ArrowDown'].includes(key) and not ctrlKey ] focus() on .search"
        {% if option.3 == 'POST' %}
        hx-post="{{option.1}}"
+       hx-sync="this:queue"
        {% endif %}
     >
         <span class="icon"><i class="{{ option.2}}"></i></span> {{ option.0 }}
