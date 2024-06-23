@@ -30,13 +30,13 @@ lint:
 
 # Serve the app in development mode
 run:
-	$(flask) run --debug --reload -h 0.0.0.0
+	$(flask) run --debug --reload -h 0.0.0.0 -p 9988
 
 # Build a docker for the app container and run it
 docker:
 	mkdir -p instance
 	docker build -t feedi .
-	docker run -p 5000:5000 -v ${shell pwd}/instance:/app/instance feedi
+	docker run -p 9988:9988 -v ${shell pwd}/instance:/app/instance feedi
 
 docker-flask: CONTAINER_ID=${shell docker ps --filter "ancestor=feedi" -q}
 docker-flask:

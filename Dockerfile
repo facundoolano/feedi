@@ -8,6 +8,6 @@ RUN pip install -r requirements.txt
 
 COPY . .
 
-EXPOSE 5000
+EXPOSE 9988
 
-CMD [ "gunicorn", "-b0.0.0.0:5000", "--env", "FLASK_ENV=development"]
+CMD [ "gunicorn", "-b0.0.0.0:9988", "--env", "FLASK_ENV=development"]

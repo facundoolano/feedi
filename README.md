@@ -57,7 +57,7 @@ Then, to run the app:
 
     make run
 
-The application will be available at `http://localhost:5000/`.
+The application will be available at `http://localhost:9988/`.
 
 Alternatively, you can build and run the app in a docker container with `make docker`. Read below for [non-local setup instructions](#non-local-setup).
 
