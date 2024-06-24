@@ -139,6 +139,7 @@ def fetch_notifications(server_url, access_token, newer_than=None, limit=None):
             'raw_data': json.dumps(notification, default=str),
             'avatar_url': notification['account']['avatar'],
             'username': notification['account']['acct'],
+            'user_url': user_url(server_url, notification),
             'display_name': display_name(notification),
             'content_short': body}
 
