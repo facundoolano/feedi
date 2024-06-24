@@ -70,7 +70,7 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
 
         if toot.get('reblog'):
             reblogged_by = display_name(toot)
-            entry['header'] = f'<i class="fas fa-retweet"></i> { reblogged_by } boosted'
+            entry['header'] = f'<i class="fas fa-retweet"></i> {reblogged_by} boosted'
             toot = toot['reblog']
 
         entry['avatar_url'] = toot['account']['avatar']
@@ -87,6 +87,7 @@ def fetch_toots(server_url, access_token, newer_than=None, limit=None):
         # use server-local urls
         entry['target_url'] = status_url(server_url, toot)
         entry['comments_url'] = entry['target_url']
+        entry['user_url'] = user_url(server_url, toot)
 
         # for media we only support images for now and will take just the first one
         media = [m['preview_url'] for m in toot['media_attachments'] if m['type'] == 'image']

@@ -17,7 +17,7 @@
                    {% if entry.target_url %}href="{{ entry.target_url }}" target="_blank"{% endif %}
                 >{{ entry.title | safe }}</a>
                 {% elif entry.has_distinct_user %}
-                <a href="{{ url_for('entry_list', username=entry.username ) }}">
+                <a href="{{ entry.user_url or url_for('entry_list', username=entry.username ) }}">
                     {{ entry.display_name or entry.username }}
                 </a>
                 {% else %}

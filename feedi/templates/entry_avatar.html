@@ -1,5 +1,5 @@
     {% if entry.avatar_url %}
-    <a href="{{ url_for('entry_list', username=entry.username ) }}">
+    <a href="{{ entry.user_url or url_for('entry_list', username=entry.username ) }}">
         <img class="is-rounded feed-avatar" src="{{ entry.avatar_url }}" alt="{{ entry.username }}" title="{{ entry.username }}">
     </a>
     {% elif entry.feed %}
