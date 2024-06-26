@@ -135,7 +135,7 @@ def package_epub(url, article):
     """
 
     output_buffer = io.BytesIO()
-    with zipfile.ZipFile(output_buffer, 'w', compression=zipfile.ZIP_DEFLATED) as zip:
+    with zipfile.ZipFile(output_buffer, 'w') as zip:
         # mimetype should be the first file in the container and it should be uncompressed
         # https://www.w3.org/TR/epub-33/#sec-zip-container-mime
         zip.writestr('mimetype', "application/epub+zip", compress_type=zipfile.ZIP_STORED)
@@ -163,7 +163,7 @@ def package_epub(url, article):
                     # else write as is
                     dest_file.write(response.content)
 
-        zip.writestr('article.html', str(soup))
+        zip.writestr('article.html', str(soup), compress_type=zipfile.ZIP_DEFLATED)
 
         # epub boilerplate based on https://github.com/thansen0/sample-epub-minimal
         zip.writestr('META-INF/container.xml', """<?xml version="1.0"?>
@@ -171,7 +171,7 @@ def package_epub(url, article):
   <rootfiles>
     <rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>
   </rootfiles>
-</container>""")
+</container>""", compress_type=zipfile.ZIP_DEFLATED)
 
         author = article['byline'] or article['siteName']
         if not author:
@@ -196,6 +196,6 @@ def package_epub(url, article):
   <spine toc="ncx">
    <itemref idref="article" />
   </spine>
-</package>""")
+</package>""", compress_type=zipfile.ZIP_DEFLATED)
 
     return output_buffer.getvalue()
