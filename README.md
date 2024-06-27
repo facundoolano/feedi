@@ -19,8 +19,6 @@ Features:
 
 For background about the development of this project, see [this blog post](https://olano.dev/2023-12-12-reclaiming-the-web-with-a-personal-reader/).
 
-NOTE: this project is primarily for personal use and experimentation, expect bugs and breaking changes.
-
 ## Documentation
 
 - [Installation](#installation)
