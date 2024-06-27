@@ -37,6 +37,10 @@ def create_app():
     def shutdown_session(exception=None):
         models.db.session.remove()
 
+    # profile sql at http://localhost:9988/__sqltap__
+    # import sqltap.wsgi
+    # app.wsgi_app = sqltap.wsgi.SQLTapMiddleware(app.wsgi_app)
+
     return app
 
 

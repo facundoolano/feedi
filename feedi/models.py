@@ -179,7 +179,7 @@ class Feed(db.Model):
     name = sa.Column(sa.String)
     icon_url = sa.Column(sa.String)
 
-    created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
+    created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, index=True)
     updated = sa.Column(sa.TIMESTAMP, nullable=False,
                         default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
     last_fetch = sa.Column(sa.TIMESTAMP)
@@ -454,14 +454,14 @@ class Entry(db.Model):
 
     media_url = sa.Column(sa.String, doc="URL of a media attachement or preview.")
 
-    created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow)
+    created = sa.Column(sa.TIMESTAMP, nullable=False, default=datetime.datetime.utcnow, index=True)
     updated = sa.Column(sa.TIMESTAMP, nullable=False,
                         default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
     display_date = sa.Column(sa.TIMESTAMP, nullable=False,
                              doc="The date that will displayed as the publication date of the entry. \
                              Typically the publication or creation date informed at the source.")
 
-    sort_date = sa.Column(sa.TIMESTAMP, nullable=False,
+    sort_date = sa.Column(sa.TIMESTAMP, nullable=False, index=True,
                           doc="The date that determines an entry's chronological order. \
                           Typically the updated date informed at the source.")
 
