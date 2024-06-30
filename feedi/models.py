@@ -28,12 +28,14 @@ def init_db(app):
 
     @sa.event.listens_for(db.engine, 'connect')
     def on_connect(dbapi_connection, _connection_record):
-        # use WAL mode to prevent locks on concurrent writes
-        dbapi_connection.execute('pragma journal_mode=WAL')
-
-        # experiment to try holding most of the db in memory
-        # this should be ~200mb
-        dbapi_connection.execute('pragma cache_size = -195313')
+        # tweak sqlite defaults to improve concurrency (i.e. avoid busy timeout / db is locked errors)
+        # https://kerkour.com/sqlite-for-servers
+        dbapi_connection.execute('PRAGMA journal_mode = WAL')
+        dbapi_connection.execute('PRAGMA busy_timeout = 5000')
+        dbapi_connection.execute('PRAGMA synchronous = NORMAL')
+        dbapi_connection.execute('PRAGMA cache_size = 1000000000')
+        dbapi_connection.execute('PRAGMA foreign_keys = true')
+        dbapi_connection.execute('PRAGMA temp_store = memory')
 
         app.logger.debug("Created DB connection")
 
