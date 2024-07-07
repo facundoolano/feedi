@@ -4,8 +4,9 @@ feedi is a web feed reader with a minimal interface akin to a Mastodon or Twitte
 
 Features:
 - Easy local and self-hosted environment setup.
-- Mobile optimized UI.
 - Mastodon home and notification streams support.
+- Mobile-friendly UI.
+- Installable as a Progressive Web App.
 - Custom parsers for Reddit, Github and Goodreads.
 - Hackable RSS parsers and ad hoc scrapers.
 - Smart feed sorting options (highlight infrequent sources, auto mark as read).
