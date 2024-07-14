@@ -58,7 +58,8 @@ Then, to run the app:
 
 The application will be available at `http://localhost:9988/`.
 
-Alternatively, you can build and run the app in a docker container with `make docker`. Read below for [non-local setup instructions](#non-local-setup).
+Alternatively, you can build and run the app in a docker container with `make docker` or pull it [from GitHub packages](https://github.com/facundoolano/feedi/pkgs/container/feedi).
+Read below for [non-local setup instructions](#non-local-setup).
 
 ## Basic usage
 ### Adding sources
