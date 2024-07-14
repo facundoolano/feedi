@@ -253,9 +253,12 @@ Run in development mode:
 
     docker run -p 9988:9988 -v feedidb:/app/instance ghcr.io/facundoolano/feedi
 
-Run in production mode with authentication enabled:
+To run in production mode, a config file with at least a secret key is expected:
 
-    TODO
+    echo "SECRET_KEY = '$(python -c 'import secrets; print(secrets.token_hex())')'" >> production.py
+    docker run -p 9988:9988 -e FLASK_ENV=production -v feedidb:/app/instance -v $(pwd)/production.py:/app/feedi/config/production.py ghcr.io/facundoolano/feedi
+
+To enable authentication, add `DEFAULT_AUTH_USER=None` to that production config file.
 
 ### Non-local setup
 You can refer to the [Flask documentation](https://flask.palletsprojects.com/en/2.1.x/deploying/) for a instructions on how to deploy feedi to a non-local environment. The [setup script](./setup_server.sh) included in the repository shows an example setup for a Debian server. You can run it remotely with ssh like `make prod-install SSH=user@server`.
