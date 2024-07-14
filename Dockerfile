@@ -13,7 +13,7 @@ WORKDIR /app
 # Install python dependencies
 COPY requirements.txt ./
 
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt --no-cache-dir
 
 # Install node dependencies
 # Copy both package.json and package-lock.json
