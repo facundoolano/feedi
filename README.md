@@ -40,8 +40,8 @@ For background about the development of this project, see [this blog post](https
         - [Custom feeds](#custom-feeds)
     - [Keyboard shortcuts](#keyboard-shortcuts)
     - [User management](#user-management)
+    - [Running with Docker](#running-with-docker)
     - [Non-local setup](#non-local-setup)
-
 
 ## Installation
 feedi requires Python >= 3.9. If you don't have it installed already consider using [pyenv](https://github.com/pyenv/pyenv#installation) or [asdf](https://asdf-vm.com/guide/getting-started.html).
@@ -58,8 +58,7 @@ Then, to run the app:
 
 The application will be available at `http://localhost:9988/`.
 
-Alternatively, you can build and run the app in a docker container with `make docker` or pull it [from GitHub packages](https://github.com/facundoolano/feedi/pkgs/container/feedi).
-Read below for [non-local setup instructions](#non-local-setup).
+Alternatively, see the instructions for [running with Docker](#running-with-docker) or in a [non-local setup](#non-local-setup).
 
 ## Basic usage
 ### Adding sources
@@ -234,6 +233,28 @@ with `make user-del EMAIL=admin@admin.com`. Note that this will also remove feed
 3. You can create new users by running `make user-add EMAIL=some@email.address`. The command will prompt for a password.
 
 Note that there's no open user registration functionality exposed to the front end, but it should be straightforward to add it if you need it. Check the [auth module](https://github.com/facundoolano/feedi/blob/HEAD/feedi/auth.py) and the [flask-login documentation](https://flask-login.readthedocs.io/en/latest/) for details.
+
+### Running with Docker
+
+Get the image from github packages:
+
+    TODO
+
+Create a volume for persisting the db data:
+
+    TODO
+
+Run in development mode:
+
+    TODO
+
+Load some default feeds:
+
+    TODO
+
+Run in production mode with authentication enabled:
+
+    TODO
 
 ### Non-local setup
 You can refer to the [Flask documentation](https://flask.palletsprojects.com/en/2.1.x/deploying/) for a instructions on how to deploy feedi to a non-local environment. The [setup script](./setup_server.sh) included in the repository shows an example setup for a Debian server. You can run it remotely with ssh like `make prod-install SSH=user@server`.
