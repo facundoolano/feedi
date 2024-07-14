@@ -238,19 +238,20 @@ Note that there's no open user registration functionality exposed to the front e
 
 Get the image from github packages:
 
-    TODO
+    docker pull ghcr.io/facundoolano/feedi:latest
 
 Create a volume for persisting the db data:
 
-    TODO
+    docker volume create feedidb
+
+Load the default feeds into the default admin user:
+
+    docker run -v feedidb:/app/instance ghcr.io/facundoolano/feedi flask --app feedi/app.py feed load feeds.csv admin@admin.com
+	docker run -v feedidb:/app/instance ghcr.io/facundoolano/feedi flask --app feedi/app.py feed sync
 
 Run in development mode:
 
-    TODO
-
-Load some default feeds:
-
-    TODO
+    docker run -p 9988:9988 -v feedidb:/app/instance ghcr.io/facundoolano/feedi
 
 Run in production mode with authentication enabled:
 
