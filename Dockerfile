@@ -13,7 +13,7 @@ WORKDIR /app
 # Install python dependencies
 COPY requirements.txt ./
 
-RUN pip install -r requirements.txt
+RUN pip install -r requirements.txt --no-cache-dir
 
 # Install node dependencies
 # Copy both package.json and package-lock.json
@@ -25,4 +25,7 @@ COPY . .
 
 EXPOSE 9988
 
-CMD [ "gunicorn", "-b0.0.0.0:9988", "--env", "FLASK_ENV=development"]
+# run in dev by default, override with docker run -e FLASK_ENV=production
+ENV FLASK_ENV=development
+
+CMD ["sh", "-c", "gunicorn -b 0.0.0.0:9988 --env FLASK_ENV=${FLASK_ENV}"]
