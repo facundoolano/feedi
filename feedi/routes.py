@@ -164,7 +164,7 @@ def autocomplete():
         ('Manage Feeds', flask.url_for('feed_list'), 'fas fa-edit'),
         ('Mastodon login', flask.url_for('mastodon_oauth'), 'fab fa-mastodon'),
         ('Kindle setup', flask.url_for('kindle_add'), 'fas fa-tablet-alt'),
-        ('Kindle log', flask.url_for('sent_to_kindle'), 'fas fa-list')
+        ('Kindle log', flask.url_for('sent_to_kindle'), 'fas fa-tablet-alt')
     ]
     for so in static_options:
         if term.lower() in so[0].lower():

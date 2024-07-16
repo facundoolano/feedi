@@ -24,7 +24,11 @@
                 {% endfor %}
                 <a class="dropdown-item {% if filters.favorited %}is-active{% endif %}" href="{{ url_for('favorites') }}">
                     <icon class="icon"><i class="far fa-star"></i></icon> favorites</a>
+                {% if current_user.kindle_email %}
+                <a class="dropdown-item {% if filters.sent_to_kindle %}is-active{% endif %}" href="{{ url_for('sent_to_kindle') }}">
+                    <icon class="icon"><i class="fas fa-tablet-alt"></i></icon> kindle log</a>
                 <hr class="dropdown-divider"/>
+                {% endif %}
                 {% endif %}
                 {{ self.sidebar_right() }}
             </div>
@@ -81,6 +85,14 @@
                                 <div class="level-item">
                                     <a href="{{ url_for('favorites') }}"><icon class="icon"><i class="far fa-star"></i></icon>
                                         favorites</a>
+                                </div>
+                            </div>
+                        </li>
+                        <li>
+                            <div class="level-left {% if filters.sent_to_kindle %}is-active{% endif %}">
+                                <div class="level-item">
+                                    <a href="{{ url_for('sent_to_kindle') }}"><icon class="icon"><i class="fas fa-tablet-alt"></i></icon>
+                                        kindle log</a>
                                 </div>
                             </div>
                         </li>
