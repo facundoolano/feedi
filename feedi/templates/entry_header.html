@@ -62,6 +62,7 @@
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
            hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
            hx-target="#pinned-entry-list"
+           {% if not is_pinned_list %}hx-swap="none"{% endif %}
            _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />">
             <i class="fas fa-thumbtack"></i></a>
     </div>
@@ -69,6 +70,7 @@
         <a tabindex="-1" class="level-item is-pulled-right icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin entry"
            hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
            hx-target="#pinned-entry-list"
+           {% if not is_pinned_list %}hx-swap="none"{% endif %}
            _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />">
             <i class="fas fa-thumbtack"></i></a>
     </div>
@@ -99,6 +101,7 @@
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded {% if entry.pinned %}toggled{% endif %} pin-button" title="Pin"
            hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"
            hx-target="#pinned-entry-list"
+           {% if not is_pinned_list %}hx-swap="none"{% endif %}
            _="on click toggle .toggled on < [data-id='{{entry.id}}'] .pin-button />
                      then on keyup[key is 'p'] from the closest .feed-entry trigger click on me">
             <i class="fas fa-thumbtack"></i></a>
