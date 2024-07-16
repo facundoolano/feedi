@@ -2,7 +2,7 @@ import functools
 
 import requests
 
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36'
+USER_AGENT = 'feedi/0.1.0 (+https://github.com/facundoolano/feedi)'
 TIMEOUT_SECONDS = 5
 
 requests = requests.Session()
