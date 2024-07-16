@@ -17,7 +17,7 @@ def humanize_date(dt):
     elif delta < datetime.timedelta(hours=1):
         return f"{delta.seconds // 60}m"
     elif delta < datetime.timedelta(days=1):
-        return f"{delta.seconds // 60 // 60 }h"
+        return f"{delta.seconds // 60 // 60}h"
     elif delta < datetime.timedelta(days=8):
         return f"{delta.days}d"
     elif delta < datetime.timedelta(days=365):
@@ -53,6 +53,9 @@ def contains_feed_name(feed_list, selected_name):
 
 @app.template_filter('sanitize')
 def sanitize_content(html, truncate=True):
+    if not html:
+        return ''
+
     # poor man's line truncating: reduce the amount of characters and let bs4 fix the html
     soup = BeautifulSoup(html, 'lxml')
     if len(html) > 500 and truncate:
@@ -82,7 +85,7 @@ def sanitize_content(html, truncate=True):
 @app.template_filter('entry_excerpt')
 def entry_excerpt(entry):
     if not entry.content_short:
-        return ''
+        return '[click to read]'
 
     if entry.content_url and entry.title:
         title = entry.title
