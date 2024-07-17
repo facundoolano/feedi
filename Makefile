@@ -9,12 +9,17 @@ all: deps node_modules
 
 venv:
 	python -m venv venv
+	$(venv) pip install pip-tools
 
 deps: venv
-	$(venv) pip install -r requirements.txt
+	$(venv) pip-sync
 
 deps-dev: deps
-	$(venv) pip install -r requirements-dev.txt
+	$(venv) pip-sync requirements.txt requirements-dev.txt
+
+deps-lock:
+	$(venv) pip-compile
+	$(venv) pip-compile requirements-dev.in
 
 node_modules:
 	npm install || true
