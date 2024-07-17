@@ -18,8 +18,8 @@ deps-dev: deps
 	$(venv) pip-sync requirements.txt requirements-dev.txt
 
 deps-lock:
-	$(venv) pip-compile --strip-extras
-	$(venv) pip-compile requirements-dev.in --strip-extras
+	$(venv) pip-compile -o requirements.txt pyproject.toml
+	$(venv) pip-compile --extra dev -o requirements-dev.txt pyproject.toml
 
 node_modules:
 	npm install || true

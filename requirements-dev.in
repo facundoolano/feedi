@@ -1,8 +1,0 @@
--c requirements.txt
-ipython
-ipdb
-flask-shell-ipython
-pytest
-httpretty
-feedgen
-flake8
