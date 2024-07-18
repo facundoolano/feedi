@@ -11,7 +11,7 @@ from feedi.models import db
 
 def init():
     login_manager = flask_login.LoginManager()
-    login_manager.login_view = 'login'
+    login_manager.login_view = "login"
     login_manager.init_app(app)
 
     @login_manager.user_loader
@@ -23,56 +23,56 @@ def init():
 def login():
     # if config has a default user it means auth is disabled
     # just load the user so we know what to point feeds to in the DB
-    default_email = app.config.get('DEFAULT_AUTH_USER')
+    default_email = app.config.get("DEFAULT_AUTH_USER")
     if default_email:
         app.logger.debug("Logging default user %s", default_email)
         user = db.session.scalar(db.select(models.User).filter_by(email=default_email))
         flask_login.login_user(user, remember=True)
-        return flask.redirect(flask.url_for('entry_list'))
+        return flask.redirect(flask.url_for("entry_list"))
 
-    return flask.render_template('login.html')
+    return flask.render_template("login.html")
 
 
-@app.post('/auth/login')
+@app.post("/auth/login")
 def login_post():
-    email = flask.request.form.get('email')
-    password = flask.request.form.get('password')
+    email = flask.request.form.get("email")
+    password = flask.request.form.get("password")
     if not email or not password:
-        return flask.render_template('login.html', error_msg="missing required field")
+        return flask.render_template("login.html", error_msg="missing required field")
 
     user = db.session.scalar(db.select(models.User).filter_by(email=email))
 
     if not user or not user.check_password(password):
-        return flask.render_template('login.html', error_msg="authentication failed")
+        return flask.render_template("login.html", error_msg="authentication failed")
 
     flask_login.login_user(user, remember=True)
 
-    return flask.redirect(flask.url_for('entry_list'))
+    return flask.redirect(flask.url_for("entry_list"))
 
 
 @app.get("/auth/kindle")
 @login_required
 def kindle_add():
-    feedi_email = app.config.get('FEEDI_EMAIL')
+    feedi_email = app.config.get("FEEDI_EMAIL")
     if not feedi_email:
         return flask.abort(400, "no feedi email configured")
-    return flask.render_template('kindle.html', feedi_email=feedi_email)
+    return flask.render_template("kindle.html", feedi_email=feedi_email)
 
 
 @app.post("/auth/kindle")
 @login_required
 def kindle_add_submit():
-    kindle_email = flask.request.form.get('kindle_email')
+    kindle_email = flask.request.form.get("kindle_email")
     current_user.kindle_email = kindle_email
     db.session.commit()
-    return flask.redirect(flask.url_for('entry_list'))
+    return flask.redirect(flask.url_for("entry_list"))
 
 
 @app.get("/auth/mastodon")
 @login_required
 def mastodon_oauth():
     "Displays the form to initiate a mastodon oauth login flow."
-    return flask.render_template('mastodon.html')
+    return flask.render_template("mastodon.html")
 
 
 @app.post("/auth/mastodon")
@@ -84,15 +84,15 @@ def mastodon_oauth_submit():
     Returns a redirect to the mastodon authorization url on that instance, which
     will then redirect to the callback route.
     """
-    base_url = flask.request.form.get('url')
+    base_url = flask.request.form.get("url")
     if not base_url:
-        return flask.render_template('mastodon.html', error_msg="The instance url is required")
+        return flask.render_template("mastodon.html", error_msg="The instance url is required")
 
     # normalize base url
     url_parts = urllib.parse.urlparse(base_url)
-    base_url = f'https://{url_parts.netloc}'
+    base_url = f"https://{url_parts.netloc}"
 
-    app.logger.info('Registering mastodon application for %s', base_url)
+    app.logger.info("Registering mastodon application for %s", base_url)
     masto_app = models.MastodonApp.get_or_create(base_url)
     return flask.redirect(masto_app.auth_redirect_url())
 
@@ -106,8 +106,8 @@ def mastodon_oauth_callback():
     and an access token will be stored in the DB for subsequent access to the mastodon api.
     Redirects to the feed add form to proceed creating a mastodon feed associated with the new account.
     """
-    code = flask.request.args.get('code')
-    base_url = flask.request.args.get('server')
+    code = flask.request.args.get("code")
+    base_url = flask.request.args.get("server")
     if not code or not base_url:
         app.logger.error("Missing required parameter in mastodon oauth callback")
         flask.abort(400)
@@ -122,4 +122,4 @@ def mastodon_oauth_callback():
     app.logger.info("Successfully logged in mastodon")
 
     # redirect to feed creation with masto pre-selected
-    return flask.redirect(flask.url_for('feed_add', masto_acct=account.id))
+    return flask.redirect(flask.url_for("feed_add", masto_acct=account.id))

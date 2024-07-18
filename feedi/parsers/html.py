@@ -20,33 +20,34 @@ def fetch(url):
     if not response.ok:
         raise Exception()
 
-    soup = BeautifulSoup(response.content, 'lxml')
+    soup = BeautifulSoup(response.content, "lxml")
     metadata = scraping.all_meta(soup)
 
-    title = metadata.get('og:title', metadata.get('twitter:title', getattr(soup.title, 'text')))
+    title = metadata.get("og:title", metadata.get("twitter:title", getattr(soup.title, "text")))
     if not title:
         raise ValueError(f"{url} is missing article metadata")
 
-    if 'og:article:published_time' in metadata:
-        display_date = dateparser.parse(metadata['og:article:published_time'])
+    if "og:article:published_time" in metadata:
+        display_date = dateparser.parse(metadata["og:article:published_time"])
     else:
         display_date = datetime.datetime.utcnow()
 
-    username = metadata.get('author', '').split(',')[0]
+    username = metadata.get("author", "").split(",")[0]
 
     icon_url = scraping.get_favicon(url, html=response.content)
 
     entry = {
-        'remote_id': url,
-        'title': title,
-        'username': username,
-        'display_date': display_date,
-        'sort_date': datetime.datetime.utcnow(),
-        'content_short': metadata.get('og:description', metadata.get('description')),
-        'media_url': metadata.get('og:image', metadata.get('twitter:image')),
-        'target_url': url,
-        'content_url': url,
-        'raw_data': json.dumps(metadata),
-        'icon_url': icon_url}
+        "remote_id": url,
+        "title": title,
+        "username": username,
+        "display_date": display_date,
+        "sort_date": datetime.datetime.utcnow(),
+        "content_short": metadata.get("og:description", metadata.get("description")),
+        "media_url": metadata.get("og:image", metadata.get("twitter:image")),
+        "target_url": url,
+        "content_url": url,
+        "raw_data": json.dumps(metadata),
+        "icon_url": icon_url,
+    }
 
     return entry
