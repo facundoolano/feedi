@@ -12,7 +12,7 @@ venv:
 	$(venv) pip install uv
 
 deps: venv
-	$(venv) uv pip sync
+	$(venv) uv pip sync requirements.txt
 
 deps-dev: deps
 	$(venv) uv pip sync requirements.txt requirements-dev.txt
