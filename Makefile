@@ -9,17 +9,17 @@ all: deps node_modules
 
 venv:
 	python -m venv venv
-	$(venv) pip install pip-tools==7.4.1
+	$(venv) pip install uv
 
 deps: venv
-	$(venv) pip-sync
+	$(venv) uv pip sync
 
 deps-dev: deps
-	$(venv) pip-sync requirements.txt requirements-dev.txt
+	$(venv) uv pip sync requirements.txt requirements-dev.txt
 
-deps-lock:
-	$(venv) pip-compile -o requirements.txt pyproject.toml
-	$(venv) pip-compile --extra dev -o requirements-dev.txt pyproject.toml
+deps-lock: venv
+	$(venv) uv pip compile -o requirements.txt pyproject.toml
+	$(venv) uv pip compile --extra dev -o requirements-dev.txt pyproject.toml
 
 node_modules:
 	npm install || true
