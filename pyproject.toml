@@ -1,0 +1,49 @@
+[project]
+name = "feedi"
+description = "A personal news aggregator and Mastodon client"
+version = "0.1.0"
+requires-python = ">= 3.9"
+authors = [
+    { name = "Facundo Olano", email = "facundo.olano@gmail.com" }
+]
+dependencies = [
+    "flask",
+    "feedparser",
+    "favicon",
+    "requests",
+    "sqlalchemy",
+    "flask-sqlalchemy",
+    "beautifulsoup4",
+    "lxml",
+    "Mastodon-py",
+    "gevent",
+    "huey",
+    "alembic",
+    "gunicorn",
+    "pyopml",
+    "flask-login",
+    "Werkzeug",
+    "dateparser",
+    "Pillow"
+]
+
+[project.optional-dependencies]
+dev = [
+    "ipython",
+    "ipdb",
+    "flask-shell-ipython",
+    "pytest",
+    "httpretty",
+    "feedgen",
+    "ruff"
+]
+
+[tool.ruff]
+exclude = [
+    "venv",
+    "migrations"
+]
+
+line-length = 120
+target-version = "py39"
+

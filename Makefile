@@ -1,4 +1,4 @@
-.PHONY: all deps dev-deps run docker shell dbreset dbshell feed-* prod-* user-* db-*
+.PHONY: all deps deps-dev deps-lock run docker docker-flask shell test lint format feed-* prod-* user-* db-*
 
 venv=. venv/bin/activate &&
 flask=$(venv) flask --app feedi/app.py
@@ -9,12 +9,17 @@ all: deps node_modules
 
 venv:
 	python -m venv venv
+	$(venv) pip install uv
 
 deps: venv
-	$(venv) pip install -r requirements.txt
+	$(venv) uv pip sync requirements.txt
 
 deps-dev: deps
-	$(venv) pip install -r requirements-dev.txt
+	$(venv) uv pip sync requirements.txt requirements-dev.txt
+
+deps-lock: venv
+	$(venv) uv pip compile -o requirements.txt pyproject.toml
+	$(venv) uv pip compile --extra dev -o requirements-dev.txt pyproject.toml
 
 node_modules:
 	npm install || true
@@ -24,9 +29,14 @@ node_modules:
 test:
 	$(venv) FLASK_ENV=testing pytest --disable-warnings -v $(if $(TEST),-k $(TEST))
 
+format:
+	$(venv) ruff format
+
 lint:
-	$(venv) flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics --exclude venv,migrations
-	$(venv) flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude venv,migrations
+	$(venv) ruff check
+	# FIXME uncomment in another PR, and apply formatting
+	# $(venv) ruff format --check
+	# $(venv) flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude venv,migrations
 
 # Serve the app in development mode
 run:
