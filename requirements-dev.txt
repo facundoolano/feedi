@@ -43,8 +43,6 @@ feedgen==1.0.0
     # via feedi (pyproject.toml)
 feedparser==6.0.11
     # via feedi (pyproject.toml)
-flake8==7.1.0
-    # via feedi (pyproject.toml)
 flask==3.0.3
     # via
     #   feedi (pyproject.toml)
@@ -102,8 +100,6 @@ mastodon-py==1.8.1
     # via feedi (pyproject.toml)
 matplotlib-inline==0.1.7
     # via ipython
-mccabe==0.7.0
-    # via flake8
 packaging==24.1
     # via
     #   gunicorn
@@ -122,10 +118,6 @@ ptyprocess==0.7.0
     # via pexpect
 pure-eval==0.2.2
     # via stack-data
-pycodestyle==2.12.0
-    # via flake8
-pyflakes==3.2.0
-    # via flake8
 pygments==2.18.0
     # via ipython
 pyopml==1.0.0
@@ -148,6 +140,8 @@ requests==2.32.3
     #   favicon
     #   feedi (pyproject.toml)
     #   mastodon-py
+ruff==0.5.2
+    # via feedi (pyproject.toml)
 sgmllib3k==1.0.0
     # via feedparser
 six==1.16.0
