@@ -1,4 +1,4 @@
-.PHONY: all deps deps-dev deps-lock run docker shell dbreset dbshell feed-* prod-* user-* db-*
+.PHONY: all deps deps-dev deps-lock run docker docker-flask shell test lint format feed-* prod-* user-* db-*
 
 venv=. venv/bin/activate &&
 flask=$(venv) flask --app feedi/app.py
