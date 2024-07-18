@@ -34,7 +34,7 @@ format:
 
 lint:
 	$(venv) ruff check
-        # TODO uncomment in and apply formatting
+	# FIXME uncomment in another PR, and apply formatting
 	# $(venv) ruff format --check
 	# $(venv) flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude venv,migrations
 
