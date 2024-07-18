@@ -29,10 +29,13 @@ node_modules:
 test:
 	$(venv) FLASK_ENV=testing pytest --disable-warnings -v $(if $(TEST),-k $(TEST))
 
+format:
+	$(venv) ruff format
+
 lint:
-	$(venv) ruff check --exclude venv,migrations
+	$(venv) ruff check
         # TODO uncomment in and apply formatting
-	$(venv) ruff format --exclude venv,migrations
+	$(venv) ruff format --check
 	# $(venv) flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics --exclude venv,migrations
 
 # Serve the app in development mode
