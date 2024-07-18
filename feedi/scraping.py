@@ -6,6 +6,7 @@ import urllib
 import zipfile
 
 import dateparser
+
 # use internal module to access unexported .tags function
 import favicon.favicon as favicon
 from bs4 import BeautifulSoup
@@ -19,21 +20,20 @@ logger = logging.getLogger(__name__)
 def get_favicon(url, html=None):
     "Return the best favicon from the given url, or None."
     url_parts = urllib.parse.urlparse(url)
-    url = f'{url_parts.scheme}://{url_parts.netloc}'
+    url = f"{url_parts.scheme}://{url_parts.netloc}"
 
     try:
         if not html:
-            favicons = favicon.get(url, headers={'User-Agent': USER_AGENT}, timeout=2)
+            favicons = favicon.get(url, headers={"User-Agent": USER_AGENT}, timeout=2)
         else:
-            favicons = sorted(favicon.tags(url, html),
-                              key=lambda i: i.width + i.height, reverse=True)
+            favicons = sorted(favicon.tags(url, html), key=lambda i: i.width + i.height, reverse=True)
     except Exception:
         logger.exception("error fetching favicon: %s", url)
         return
 
     # if there's an .ico one, prefer it since it's more likely to be
     # a square icon rather than a banner
-    ico_format = [f for f in favicons if f.format == 'ico']
+    ico_format = [f for f in favicons if f.format == "ico"]
     if ico_format:
         return ico_format[0].url
 
@@ -68,23 +68,23 @@ class CachingRequestsMixin:
         """
         GET the body of the url (which could be already cached) and extract the content of the given meta tag.
         """
-        soup = BeautifulSoup(self.request(url), 'lxml')
+        soup = BeautifulSoup(self.request(url), "lxml")
         return extract_meta(soup, *tags)
 
 
 def extract_meta(soup, *tags):
     for tag in tags:
-        for attr in ['property', 'name', 'itemprop']:
+        for attr in ["property", "name", "itemprop"]:
             meta_tag = soup.find("meta", {attr: tag}, content=True)
             if meta_tag:
-                return meta_tag['content']
+                return meta_tag["content"]
 
 
 def all_meta(soup):
     result = {}
-    for attr in ['property', 'name', 'itemprop']:
+    for attr in ["property", "name", "itemprop"]:
         for meta_tag in soup.find_all("meta", {attr: True}, content=True):
-            result[meta_tag[attr]] = meta_tag['content']
+            result[meta_tag[attr]] = meta_tag["content"]
     return result
 
 
@@ -104,26 +104,25 @@ def extract(url=None, html=None):
     if url:
         html = requests.get(url).content
     elif not html:
-        raise ValueError('Expected either url or html')
+        raise ValueError("Expected either url or html")
 
-    r = subprocess.run(["feedi/extract_article.js", "--stdin", url], input=html,
-                       capture_output=True, check=True)
+    r = subprocess.run(["feedi/extract_article.js", "--stdin", url], input=html, capture_output=True, check=True)
 
     article = json.loads(r.stdout)
 
     # load lazy images by replacing putting the data-src into src and stripping other attrs
-    soup = BeautifulSoup(article['content'], 'lxml')
+    soup = BeautifulSoup(article["content"], "lxml")
 
-    LAZY_DATA_ATTRS = ['data-src', 'data-lazy-src', 'data-td-src-property', 'data-srcset']
+    LAZY_DATA_ATTRS = ["data-src", "data-lazy-src", "data-td-src-property", "data-srcset"]
     for data_attr in LAZY_DATA_ATTRS:
-        for img in soup.findAll('img', attrs={data_attr: True}):
-            img.attrs = {'src': img[data_attr]}
+        for img in soup.findAll("img", attrs={data_attr: True}):
+            img.attrs = {"src": img[data_attr]}
 
     # prevent video iframes to force dimensions
-    for iframe in soup.findAll('iframe', height=True):
-        del iframe['height']
+    for iframe in soup.findAll("iframe", height=True):
+        del iframe["height"]
 
-    article['content'] = str(soup)
+    article["content"] = str(soup)
 
     return article
 
@@ -135,27 +134,27 @@ def package_epub(url, article):
     """
 
     output_buffer = io.BytesIO()
-    with zipfile.ZipFile(output_buffer, 'w') as zip:
+    with zipfile.ZipFile(output_buffer, "w") as zip:
         # mimetype should be the first file in the container and it should be uncompressed
         # https://www.w3.org/TR/epub-33/#sec-zip-container-mime
-        zip.writestr('mimetype', "application/epub+zip", compress_type=zipfile.ZIP_STORED)
+        zip.writestr("mimetype", "application/epub+zip", compress_type=zipfile.ZIP_STORED)
 
-        soup = BeautifulSoup(article['content'], 'lxml')
-        for img in soup.findAll('img'):
-            img_url = img['src']
-            img_filename = 'article_files/' + img['src'].split('/')[-1].split('?')[0]
-            img_filename = img_filename.replace('.webp', '.jpg')
+        soup = BeautifulSoup(article["content"], "lxml")
+        for img in soup.findAll("img"):
+            img_url = img["src"]
+            img_filename = "article_files/" + img["src"].split("/")[-1].split("?")[0]
+            img_filename = img_filename.replace(".webp", ".jpg")
 
             # update each img src url to point to the local copy of the file
-            img['src'] = img_filename
+            img["src"] = img_filename
 
             # download the image and save into the files subdir of the zip
             response = requests.get(img_url)
             if not response.ok:
                 continue
 
-            with zip.open(img_filename, 'w') as dest_file:
-                if img_url.endswith('.webp'):
+            with zip.open(img_filename, "w") as dest_file:
+                if img_url.endswith(".webp"):
                     # when the image is of a known unsupported format, convert it to jpg first
                     jpg_img = Image.open(io.BytesIO(response.content)).convert("RGB")
                     jpg_img.save(dest_file, "JPEG")
@@ -163,26 +162,32 @@ def package_epub(url, article):
                     # else write as is
                     dest_file.write(response.content)
 
-        zip.writestr('article.html', str(soup), compress_type=zipfile.ZIP_DEFLATED)
+        zip.writestr("article.html", str(soup), compress_type=zipfile.ZIP_DEFLATED)
 
         # epub boilerplate based on https://github.com/thansen0/sample-epub-minimal
-        zip.writestr('META-INF/container.xml', """<?xml version="1.0"?>
+        zip.writestr(
+            "META-INF/container.xml",
+            """<?xml version="1.0"?>
 <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
   <rootfiles>
     <rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>
   </rootfiles>
-</container>""", compress_type=zipfile.ZIP_DEFLATED)
+</container>""",
+            compress_type=zipfile.ZIP_DEFLATED,
+        )
 
-        author = article['byline'] or article['siteName']
+        author = article["byline"] or article["siteName"]
         if not author:
             # if no explicit author in the website, use the domain
-            author = urllib.parse.urlparse(url).netloc.replace('www.', '')
+            author = urllib.parse.urlparse(url).netloc.replace("www.", "")
 
-        published = article.get('publishedTime') or ''
+        published = article.get("publishedTime") or ""
         published = published and dateparser.parse(published)
         published = published and published.date().isoformat()
 
-        zip.writestr('content.opf', f"""<?xml version="1.0" encoding="UTF-8"?>
+        zip.writestr(
+            "content.opf",
+            f"""<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" xml:lang="en" unique-identifier="uid" prefix="cc: http://creativecommons.org/ns#">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:title id="title">{article['title']}</dc:title>
@@ -196,6 +201,8 @@ def package_epub(url, article):
   <spine toc="ncx">
    <itemref idref="article" />
   </spine>
-</package>""", compress_type=zipfile.ZIP_DEFLATED)
+</package>""",
+            compress_type=zipfile.ZIP_DEFLATED,
+        )
 
     return output_buffer.getvalue()

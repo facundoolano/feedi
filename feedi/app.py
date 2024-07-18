@@ -15,7 +15,7 @@ import feedi.models as models  # noqa: E402
 def create_app():
     app = flask.Flask(__package__)
     load_config(app)
-    app.logger.info('Starting app with FLASK_ENV=%s', os.getenv('FLASK_ENV'))
+    app.logger.info("Starting app with FLASK_ENV=%s", os.getenv("FLASK_ENV"))
 
     with app.app_context():
         from . import auth, filters, routes, tasks  # noqa
@@ -24,7 +24,7 @@ def create_app():
 
         auth.init()
 
-        if not is_running_from_reloader() and not os.environ.get('DISABLE_CRON_TASKS'):
+        if not is_running_from_reloader() and not os.environ.get("DISABLE_CRON_TASKS"):
             # we want only one huey scheduler running, so we make sure
             # this isn't the dev server reloader process
 
@@ -49,14 +49,14 @@ def create_huey_app():
     Construct a minimal flask app for exposing to the huey tasks.
     This is necessary to make config and db session available to the periodic tasks.
     """
-    app = flask.Flask('huey_app')
+    app = flask.Flask("huey_app")
     load_config(app)
 
     with app.app_context():
         # since huey tasks share the db engine pool, we want to have a big enough pool
         # so all concurrent tasks get their own connection
-        pool_size = round(app.config['HUEY_POOL_SIZE'] * 1.1)
-        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {'pool_size': pool_size}
+        pool_size = round(app.config["HUEY_POOL_SIZE"] * 1.1)
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"pool_size": pool_size}
 
         models.init_db(app)
 
@@ -65,10 +65,10 @@ def create_huey_app():
 
 def load_config(app):
     app.logger.setLevel(logging.INFO)
-    env = os.getenv('FLASK_ENV')
+    env = os.getenv("FLASK_ENV")
     if not env:
-        app.logger.error('FLASK_ENV not set')
+        app.logger.error("FLASK_ENV not set")
         exit()
 
-    app.config.from_object('feedi.config.default')
-    app.config.from_object(f'feedi.config.{env}')
+    app.config.from_object("feedi.config.default")
+    app.config.from_object(f"feedi.config.{env}")
