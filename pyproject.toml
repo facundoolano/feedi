@@ -1,6 +1,6 @@
 [project]
 name = "feedi"
-description = "A personal news aggregator and Mastodon client "
+description = "A personal news aggregator and Mastodon client"
 version = "0.1.0"
 requires-python = ">= 3.9"
 authors = [
@@ -39,7 +39,6 @@ dev = [
 ]
 
 [tool.ruff]
-# Exclude a variety of commonly ignored directories.
 exclude = [
     "venv",
     "migrations"
