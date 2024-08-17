@@ -4,6 +4,7 @@ import requests
 
 USER_AGENT = "feedi/0.1.0 (+https://github.com/facundoolano/feedi)"
 TIMEOUT_SECONDS = 5
+TIMEOUT_SLOWER = 10
 
 requests = requests.Session()
 requests.headers.update({"User-Agent": USER_AGENT})
