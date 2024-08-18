@@ -12,7 +12,8 @@ import favicon.favicon as favicon
 from bs4 import BeautifulSoup
 from PIL import Image
 
-from feedi.requests import USER_AGENT, requests
+from feedi.requests import USER_AGENT, requests, TIMEOUT_SLOWER
+from requests.exceptions import RequestException
 
 logger = logging.getLogger(__name__)
 
@@ -149,8 +150,12 @@ def package_epub(url, article):
             img["src"] = img_filename
 
             # download the image and save into the files subdir of the zip
-            response = requests.get(img_url)
-            if not response.ok:
+            try:
+                response = requests.get(img_url, timeout=TIMEOUT_SLOWER)
+                if not response.ok:
+                    continue
+            except RequestException:
+                logger.exception("error fetching image during epub generation: %s", img_url)
                 continue
 
             with zip.open(img_filename, "w") as dest_file:
