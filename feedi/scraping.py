@@ -155,6 +155,7 @@ def package_epub(url, article):
                 if not response.ok:
                     continue
             except RequestException:
+                logger.exception("error fetching image during epub generation: %s", img_url)
                 continue
 
             with zip.open(img_filename, "w") as dest_file:
