@@ -112,8 +112,8 @@ prod-update-code:
 feedi/config/production.py:
 	echo "DEFAULT_AUTH_USER = None \nSECRET_KEY = '$$(python -c 'import secrets; print(secrets.token_hex())')'" >> feedi/config/production.py
 
-prod-db-push:
-	scp instance/feedi.db $(SSH):/home/feedi/feedi/instance/feedi.db
+# prod-db-push:
+# 	scp instance/feedi.db $(SSH):/home/feedi/feedi/instance/feedi.db
 
 prod-db-pull:
 	scp $(SSH):/home/feedi/feedi/instance/feedi.db instance/feedi.db
