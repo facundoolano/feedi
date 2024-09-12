@@ -304,7 +304,7 @@ def discover_feed(url):
     feed_url = None
     # first try with the common link tags for feeds
     for type in link_types:
-        link = soup.find("link", type=type, href=True)
+        link = soup.find(["link", "a"], type=type, href=True)
         if link:
             feed_url = scraping.make_absolute(url, link["href"])
             return feed_url, title
