@@ -5,3 +5,6 @@ raw_env = ["FLASK_ENV=production"]
 preload = True
 workers = 1
 timeout = 0
+
+# restart periodically to avoid leaked memory becoming an issue
+max_requests = 500
