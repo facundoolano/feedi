@@ -3,6 +3,7 @@ import json
 
 import dateparser
 from bs4 import BeautifulSoup
+
 from feedi.requests import requests
 from feedi.scraping import CachingRequestsMixin
 
@@ -111,7 +112,7 @@ class EternaCadenciaParser(CustomParser):
 
         entry_values = []
         for article in soup.find_all(class_="news"):
-            content_url = self.BASE_URL + article.find("a")["href"]
+            content_url = self.BASE_URL + article.select("a:not(.newsCategory)")[0]["href"]
             author = article.find(class_="tag")
             if author:
                 author = author.text
@@ -127,6 +128,38 @@ class EternaCadenciaParser(CustomParser):
                     "display_date": date,
                     "sort_date": date,
                     "content_short": article.find(class_="newsSummary").text,
+                    "media_url": article.find("img")["src"],
+                    "target_url": content_url,
+                    "content_url": content_url,
+                }
+            )
+
+        return entry_values
+
+
+class PanamaRevistaParser(CustomParser):
+    BASE_URL = "https://panamarevista.com"
+
+    def fetch(self):
+        url = f"{self.BASE_URL}/todas-las-notas/"
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, "lxml")
+
+        entry_values = []
+        for article in soup.find_all(class_="notaindv"):
+            content_url = article.find("a")["href"]
+            author = article.find(class_="abtninfoautor").text.strip()
+
+            date_str = article.find(class_="pfechanota").text
+            date = dateparser.parse(date_str, languages=["es"])
+
+            entry_values.append(
+                {
+                    "remote_id": content_url.strip("/").split("/")[-1],
+                    "title": article.find(class_="ptitulonota").text,
+                    "username": author,
+                    "display_date": date,
+                    "sort_date": date,
                     "media_url": article.find("img")["src"],
                     "target_url": content_url,
                     "content_url": content_url,

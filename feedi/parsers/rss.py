@@ -9,6 +9,7 @@ import urllib
 
 import feedparser
 from bs4 import BeautifulSoup
+
 from feedi import scraping
 from feedi.requests import USER_AGENT, requests
 from feedi.scraping import CachingRequestsMixin
@@ -385,6 +386,11 @@ class RedditParser(RSSParser):
         return self.fetch_meta(link_anchor["href"], "og:description", "description")
 
     def parse_content_url(self, entry):
+        target = self.parse_target_url(entry)
+        # use old.reddit for content fetching, which I think is less likely to be blocked?
+        return target.replace("www.", "").replace("https://reddit.com", "https://old.reddit.com")
+
+    def parse_target_url(self, entry):
         soup = BeautifulSoup(entry["summary"], "lxml")
         return soup.find("a", string="[link]")["href"]
 
