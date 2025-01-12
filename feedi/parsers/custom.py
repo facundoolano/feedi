@@ -3,6 +3,7 @@ import json
 
 import dateparser
 from bs4 import BeautifulSoup
+
 from feedi.requests import requests
 from feedi.scraping import CachingRequestsMixin
 
@@ -111,7 +112,7 @@ class EternaCadenciaParser(CustomParser):
 
         entry_values = []
         for article in soup.find_all(class_="news"):
-            content_url = self.BASE_URL + article.find("a")["href"]
+            content_url = self.BASE_URL + article.select("a:not(.newsCategory)")[0]["href"]
             author = article.find(class_="tag")
             if author:
                 author = author.text
