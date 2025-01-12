@@ -3,6 +3,7 @@ import json
 
 import dateparser
 from bs4 import BeautifulSoup
+
 from feedi import scraping
 from feedi.requests import requests
 
@@ -11,7 +12,7 @@ def fetch(url):
     """
     Return the entry values for an article at the given url.
     Raises ValueError if the url doesn't seem to point to an article (it doesn't have a title).
-    Raises HTTPError if the request is not successfull.
+    Raises HTTPError if the request is not successful.
     """
 
     response = requests.get(url)
