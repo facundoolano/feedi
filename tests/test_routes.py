@@ -22,9 +22,9 @@ def test_feed_add(client):
 
     assert "my-first-article" in response.text, "article should be included in entry list"
     assert "my-second-article" in response.text, "article should be included in entry list"
-    assert response.text.find("my-second-article") < response.text.find(
-        "my-first-article"
-    ), "articles should be sorted by publication date"
+    assert response.text.find("my-second-article") < response.text.find("my-first-article"), (
+        "articles should be sorted by publication date"
+    )
 
     # check same entries show up in home feed
     response = client.get("/")
@@ -32,9 +32,9 @@ def test_feed_add(client):
 
     assert "my-first-article" in response.text, "article should be included in entry list"
     assert "my-second-article" in response.text, "article should be included in entry list"
-    assert response.text.find("my-second-article") < response.text.find(
-        "my-first-article"
-    ), "articles should be sorted by publication date"
+    assert response.text.find("my-second-article") < response.text.find("my-first-article"), (
+        "articles should be sorted by publication date"
+    )
 
 
 def test_folders(client):
@@ -402,9 +402,3 @@ def test_feed_delete(client):
     assert "pin-entry" not in response.text
     assert "fav-entry" not in response.text
     assert "plain-entry" not in response.text
-
-
-def test_mastodon_feed(client):
-    # TODO mock mastodon api requests
-    # check that entries show up in feed
-    pass

@@ -10,7 +10,6 @@ CONTENT_PREFETCH_MINUTES = "*/15"
 RSS_SKIP_OLDER_THAN_DAYS = 7
 DELETE_AFTER_DAYS = 7
 RSS_MINIMUM_ENTRY_AMOUNT = 5
-MASTODON_FETCH_LIMIT = 50
 
 # How many tasks to allow running concurrently. eg. how many feeds to sync at a time.
 # This affects the sqlalchemy engine pool size
