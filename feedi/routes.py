@@ -10,7 +10,7 @@ import feedi.models as models
 import feedi.tasks as tasks
 from feedi import scraping
 from feedi.models import db
-from feedi.parsers import mastodon, rss
+from feedi.parsers import rss
 
 
 @app.route("/users/<username>")
@@ -149,7 +149,6 @@ def autocomplete():
         ("Favorites", flask.url_for("favorites", favorited=True), "far fa-star"),
         ("Add Feed", flask.url_for("feed_add"), "fas fa-plus"),
         ("Manage Feeds", flask.url_for("feed_list"), "fas fa-edit"),
-        ("Mastodon login", flask.url_for("mastodon_oauth"), "fab fa-mastodon"),
         ("Kindle setup", flask.url_for("kindle_add"), "fas fa-tablet-alt"),
         ("Kindle log", flask.url_for("sent_to_kindle"), "fas fa-tablet-alt"),
     ]
@@ -199,37 +198,6 @@ def entry_favorite(id):
         entry.favorited = datetime.datetime.utcnow()
 
     db.session.commit()
-    return "", 204
-
-
-@app.put("/mastodon/favorites/<int:id>")
-@login_required
-def mastodon_favorite(id):
-    entry = db.get_or_404(models.Entry, id)
-    if entry.feed.user_id != current_user.id:
-        flask.abort(404)
-
-    if not entry.feed.is_mastodon:
-        flask.abort(400)
-
-    masto_acct = entry.feed.account
-    mastodon.favorite(masto_acct.app.api_base_url, masto_acct.access_token, entry.remote_id)
-    return "", 204
-
-
-@app.put("/mastodon/boosts/<int:id>")
-@login_required
-def mastodon_boost(id):
-    entry = db.get_or_404(models.Entry, id)
-    if entry.feed.user_id != current_user.id:
-        flask.abort(404)
-
-    if not entry.feed.is_mastodon:
-        flask.abort(400)
-
-    masto_acct = entry.feed.account
-    mastodon.boost(masto_acct.app.api_base_url, masto_acct.access_token, entry.remote_id)
-
     return "", 204
 
 
@@ -283,7 +251,7 @@ def feed_add_submit():
     if not values.get("name"):
         return flask.render_template("feed_edit.html", error_msg="name is required", **values)
 
-    if not values.get("url") and not values.get("type", "").startswith("mastodon"):
+    if not values.get("url"):
         return flask.render_template("feed_edit.html", error_msg="url is required", **values)
 
     name = values.get("name")
@@ -292,10 +260,6 @@ def feed_add_submit():
         return flask.render_template("feed_edit.html", error_msg=f"A feed with name '{name}' already exists", **values)
 
     feed_cls = models.Feed.resolve(values["type"])
-
-    # FIXME this is an ugly patch
-    if not values["type"].startswith("mastodon") and values.get("mastodon_account_id"):
-        del values["mastodon_account_id"]
 
     feed = feed_cls(**values)
     feed.user_id = current_user.id
