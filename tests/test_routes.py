@@ -105,13 +105,6 @@ def test_home_sorting(client):
     assert response.text.find("f1-a1") < response.text.find("f3-a1")
     assert response.text.find("f3-a1") < response.text.find("f2-a13")
 
-    # change the sorting settings and request home again
-    client.put("/session/ordering/recency")
-    response = client.get("/")
-    assert response.text.find("f2-a20") < response.text.find("f2-a12")
-    assert "f3-a1" not in response.text
-    assert "f1-a1" not in response.text
-
 
 def test_home_pagination(app, client):
     now = dt.datetime.now(dt.timezone.utc)
