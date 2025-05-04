@@ -15,7 +15,6 @@ dependencies = [
     "flask-sqlalchemy",
     "beautifulsoup4",
     "lxml",
-    "Mastodon-py",
     "gevent",
     "huey",
     "alembic",
