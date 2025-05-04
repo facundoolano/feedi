@@ -3,9 +3,10 @@ import re
 import uuid
 
 import feedgen.feed as feedgen
-import feedi.app as feedi_app
 import httpretty
 import pytest
+
+import feedi.app as feedi_app
 from feedi.models import db
 
 
@@ -69,7 +70,7 @@ def mock_feed(domain, items):
     fg.description(f"{domain} feed")
 
     for item in items:
-        entry_url = f'{base_url}/{item["title"]}'
+        entry_url = f"{base_url}/{item['title']}"
         entry = fg.add_entry()
         entry.id()
         entry.link(href=entry_url)

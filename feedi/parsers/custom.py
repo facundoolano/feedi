@@ -49,7 +49,7 @@ class AgendaBAParser(CustomParser):
             # keep only the date since the time is unreliable
             created = datetime.datetime.fromisoformat(item["created_at"]).date()
 
-            content_url = f'{self.BASE_URL}?contenido={item["id"]}'
+            content_url = f"{self.BASE_URL}?contenido={item['id']}"
             entry_values.append(
                 {
                     "remote_id": item["id"],
@@ -156,7 +156,7 @@ class PioneerWorksParser(CustomParser):
             if datetime.datetime.now() - pub_date > datetime.timedelta(days=30):
                 continue
 
-            article_url = f'{self.BASE_URL}/broadcast/{article["slug"]["current"]}'
+            article_url = f"{self.BASE_URL}/broadcast/{article['slug']['current']}"
 
             entry_values.append(
                 {

@@ -11,9 +11,9 @@ import dateparser
 import favicon.favicon as favicon
 from bs4 import BeautifulSoup
 from PIL import Image
-
-from feedi.requests import USER_AGENT, requests, TIMEOUT_SLOWER
 from requests.exceptions import RequestException
+
+from feedi.requests import TIMEOUT_SLOWER, USER_AGENT, requests
 
 logger = logging.getLogger(__name__)
 
@@ -195,9 +195,9 @@ def package_epub(url, article):
             f"""<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" xml:lang="en" unique-identifier="uid" prefix="cc: http://creativecommons.org/ns#">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
-    <dc:title id="title">{article['title']}</dc:title>
+    <dc:title id="title">{article["title"]}</dc:title>
     <dc:creator>{author}</dc:creator>
-    <dc:language>{article.get('lang', '')}</dc:language>
+    <dc:language>{article.get("lang", "")}</dc:language>
     <dc:date>{published}</dc:date>
   </metadata>
   <manifest>
