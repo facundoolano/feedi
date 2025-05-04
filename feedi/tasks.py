@@ -217,7 +217,7 @@ def csv_dump(file, user):
 
     with open(file, "w") as csv_file:
         feed_writer = csv.writer(csv_file)
-        for feed in db.session.execute(db.select(models.Feed).filter_by(user_id=user.id, is_mastodon=False)).scalars():
+        for feed in db.session.execute(db.select(models.Feed).filter_by(user_id=user.id)).scalars():
             feed_writer.writerow(feed.to_valuelist())
             app.logger.info("written %s", feed)
 

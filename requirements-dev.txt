@@ -10,8 +10,6 @@ beautifulsoup4==4.12.3
     #   favicon
 blinker==1.8.2
     # via flask
-blurhash==1.1.4
-    # via mastodon-py
 certifi==2024.7.4
     # via requests
 charset-normalizer==3.3.2
@@ -26,7 +24,6 @@ decorator==5.1.1
     # via
     #   ipdb
     #   ipython
-    #   mastodon-py
 exceptiongroup==1.2.2
     # via
     #   ipython
@@ -92,8 +89,6 @@ markupsafe==2.1.5
     #   jinja2
     #   mako
     #   werkzeug
-mastodon-py==1.8.1
-    # via feedi (pyproject.toml)
 matplotlib-inline==0.1.7
     # via ipython
 packaging==24.1
@@ -124,9 +119,6 @@ python-dateutil==2.9.0.post0
     # via
     #   dateparser
     #   feedgen
-    #   mastodon-py
-python-magic==0.4.27
-    # via mastodon-py
 pytz==2024.1
     # via dateparser
 regex==2024.5.15
@@ -135,7 +127,6 @@ requests==2.32.3
     # via
     #   feedi (pyproject.toml)
     #   favicon
-    #   mastodon-py
 ruff==0.5.2
     # via feedi (pyproject.toml)
 setuptools==71.0.0
@@ -147,7 +138,6 @@ sgmllib3k==1.0.0
 six==1.16.0
     # via
     #   asttokens
-    #   mastodon-py
     #   python-dateutil
 soupsieve==2.5
     # via beautifulsoup4

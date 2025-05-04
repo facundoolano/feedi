@@ -55,11 +55,7 @@
                           hx-swap="innerHTML show:top"
                           {% endif %}>
                          <div class="content" tabindex="-1">
-                         {% if entry.feed.type == 'mastodon' %}
-                         {{ entry.content_short | sanitize(truncate=False) | safe }}
-                         {% else %}
-                             {{ entry.content_short | sanitize | safe | default("[click to read]", true) }}
-                         {% endif %}
+                           {{ entry.content_short | sanitize | safe | default("[click to read]", true) }}
                          </div>
                      </div>
                  </div>

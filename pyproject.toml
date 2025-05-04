@@ -1,6 +1,6 @@
 [project]
 name = "feedi"
-description = "A personal news aggregator and Mastodon client"
+description = "A personal news aggregator"
 version = "0.1.0"
 requires-python = ">= 3.9"
 authors = [
@@ -15,7 +15,6 @@ dependencies = [
     "flask-sqlalchemy",
     "beautifulsoup4",
     "lxml",
-    "Mastodon-py",
     "gevent",
     "huey",
     "alembic",
