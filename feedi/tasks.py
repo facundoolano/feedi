@@ -92,7 +92,7 @@ def content_prefetch():
     for user_id in db.session.scalars(db.select(models.User.id)):
         start_at = datetime.datetime.utcnow()
         query = (
-            models.Entry.sorted_by(user_id, models.Entry.ORDER_FREQUENCY, start_at, hide_seen=True)
+            models.Entry.filter_by(user_id, start_at, hide_seen=True)
             .filter(models.Entry.content_full.is_(None), models.Entry.content_url.isnot(None))
             .limit(15)
         )

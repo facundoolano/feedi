@@ -265,12 +265,6 @@ class Entry(db.Model):
     Represents an item within a Feed.
     """
 
-    "Sort entries in reverse chronological order."
-    ORDER_RECENCY = "recency"
-
-    "Sort entries based on the post frequency of the parent feed."
-    ORDER_FREQUENCY = "frequency"
-
     __tablename__ = "entries"
 
     id = sa.Column(sa.Integer, primary_key=True)
@@ -460,7 +454,7 @@ class Entry(db.Model):
         return db.session.scalars(query).all()
 
     @classmethod
-    def sorted_by(cls, user_id, ordering, start_at, **filters):
+    def filter_by(cls, user_id, start_at, **filters):
         """
         Return a query to filter entries added after the `start_at` datetime,
         sorted according to the specified `ordering` criteria and with optional filters.
@@ -473,26 +467,19 @@ class Entry(db.Model):
         elif filters.get("sent_to_kindle"):
             return query.order_by(cls.sent_to_kindle.desc())
 
-        elif ordering == cls.ORDER_RECENCY:
-            # reverse chronological order
-            return query.order_by(cls.sort_date.desc())
+        # Order entries by least frequent feeds first then reverse-chronologically for entries in the same
+        # frequency rank.
+        subquery = Feed.frequency_rank_query()
 
-        elif ordering == cls.ORDER_FREQUENCY:
-            # Order entries by least frequent feeds first then reverse-chronologically for entries in the same
-            # frequency rank.
-            subquery = Feed.frequency_rank_query()
+        # exhaust last n hours of all ranks before moving to older stuff
+        # if smaller delta, more chances to bury infrequent posts
+        # if bigger, more chances to bury recent stuff under old unseen infrequent posts
+        recency_bucket_date = datetime.datetime.utcnow() - datetime.timedelta(hours=24)
 
-            # exhaust last n hours of all ranks before moving to older stuff
-            # if smaller delta, more chances to bury infrequent posts
-            # if bigger, more chances to bury recent stuff under old unseen infrequent posts
-            recency_bucket_date = datetime.datetime.utcnow() - datetime.timedelta(hours=24)
-
-            # isouter = true so that if a feed with only old stuff is added, entries still show up
-            # even without having a freq rank
-            return (
-                query.join(Feed, isouter=True)
-                .join(subquery, Feed.id == subquery.c.id, isouter=True)
-                .order_by((cls.sort_date >= recency_bucket_date).desc(), subquery.c.rank, cls.sort_date.desc())
-            )
-        else:
-            raise ValueError("unknown ordering %s" % ordering)
+        # isouter = true so that if a feed with only old stuff is added, entries still show up
+        # even without having a freq rank
+        return (
+            query.join(Feed, isouter=True)
+            .join(subquery, Feed.id == subquery.c.id, isouter=True)
+            .order_by((cls.sort_date >= recency_bucket_date).desc(), subquery.c.rank, cls.sort_date.desc())
+        )
