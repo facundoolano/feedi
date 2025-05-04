@@ -1,5 +1,3 @@
-import urllib
-
 import flask
 import flask_login
 from flask import current_app as app

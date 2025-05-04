@@ -1,5 +1,3 @@
-# coding: utf-8
-
 import datetime
 import json
 import logging
@@ -10,7 +8,6 @@ import sqlalchemy.dialects.sqlite as sqlite
 import werkzeug.security as security
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.ext.hybrid import hybrid_property
 
 import feedi.parsers as parsers
 from feedi import scraping
