@@ -123,7 +123,7 @@
                        <hr class="dropdown-divider is-hidden-mobile"/>
                        <form>
                            <label class="radio dropdown-item">
-                               <p class="menu-label">Display settings</p>
+                               <p class="menu-label">Settings</p>
                                <div class="buttons has-addons are-small view-settings-buttons">
                                    <button class="button {% if not session.view or session.view == "full" %} is-selected is-info {% endif %}" title="Full preview"
                                            hx-put="{{ url_for('update_setting', setting='view', value='full' ) }}"
@@ -153,22 +153,6 @@
                            </label>
 
                            {% if is_mixed_feed_view %}
-                           <hr class="dropdown-divider"/>
-                           <label class="radio dropdown-item">
-                               <p class="menu-label">Feed settings</p>
-                               <div class="buttons has-addons are-small ordering-settings-buttons">
-                                   <button class="button {% if not session.ordering or session.ordering == "frequency" %} is-selected is-info {% endif %}" title="Least frequent"
-                                           hx-put="{{ url_for('update_setting', setting='ordering', value='frequency') }}"
-                                           _="on htmx:afterRequest go to the top of the body then reload() the location of the window">
-                                       <span class="icon"><i class="far fa-calendar-check fa-lg"></i></span>
-                                   </button>
-                                   <button class="button {% if session.ordering == "recency" %} is-selected is-info {% endif %}" title="Most recent"
-                                           hx-put="{{ url_for('update_setting', setting='ordering', value='recency') }}"
-                                           _="on htmx:afterRequest go to the top of the body then reload() the location of the window">
-                                       <span class="icon"><i class="far fa-clock fa-lg"></i></span>
-                                   </button>
-                               </div>
-                           </label>
                        <label class="checkbox dropdown-item">
                            <input
                                hx-post="{{ url_for('toggle_setting', setting='hide_seen') }}" _="on htmx:afterRequest go to the top of the body then reload() the location of the window"
