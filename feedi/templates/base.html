@@ -17,16 +17,18 @@
     <nav class="navbar is-hidden-tablet is-fixed-bottom is-light" role="navigation" aria-label="main navigation">
         <div class="navbar-menu">
             <div class="navbar-end">
-                {% if shortcut_folders %}
                 <a class="dropdown-item {% if filters.favorited %}is-active{% endif %}" href="{{ url_for('favorites') }}">
                     <icon class="icon"><i class="far fa-star"></i></icon> favorites</a>
                 {% if current_user.kindle_email %}
                 <a class="dropdown-item {% if filters.sent_to_kindle %}is-active{% endif %}" href="{{ url_for('sent_to_kindle') }}">
                     <icon class="icon"><i class="fas fa-tablet-alt"></i></icon> kindle log</a>
+                <a class="dropdown-item" href="{{ url_for('feed_list') }}"><icon class="icon"><i class="far fa-edit"></i></icon> feeds</a>
+                <a class="dropdown-item" href="#"><icon class="icon"><i class="fas fa-cog"></i></icon> settings</a>
                 <hr class="dropdown-divider"/>
-                {% endif %}
+
                 {% endif %}
                 {{ self.sidebar_right() }}
+
             </div>
         </div>
         {% block mobile_navbar %}
@@ -83,6 +85,22 @@
                                 </div>
                             </div>
                         </li>
+                        <li>
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <a href="{{ url_for('feed_list') }}"><icon class="icon"><i class="fas fa-edit"></i></icon>
+                                        feeds</a>
+                                </div>
+                            </div>
+                        </li>
+                                                <li>
+                            <div class="level-left">
+                                <div class="level-item">
+                                    <a href="#"><icon class="icon"><i class="fas fa-cog"></i></icon>
+                                        settings</a>
+                                </div>
+                            </div>
+                        </li>
                         </ul>
                 </aside>
                 {% endblock %}
@@ -97,17 +115,13 @@
                    <ul class="menu-list">
                        {% if current_user.is_authenticated %}
                        {% include "autocomplete.html" %}
-                       <hr class="dropdown-divider"/>
                        {% endif %}
                        {% block sidebar_right %}
-                       <a class="dropdown-item is-hidden-mobile" href="{{ url_for('feed_add') }}"><icon class="icon"><i class="fas fa-plus"></i></icon> Add feed</a>
-                       <a class="dropdown-item is-hidden-mobile" href="{{ url_for('feed_list') }}"><icon class="icon"><i class="fas fa-edit"></i></icon> Manage feeds</a>
                        {% if filters.feed_name %}
                        <a class="dropdown-item is-hidden-mobile" href="{{ url_for('feed_edit', feed_name=filters.feed_name ) }}"><icon class="icon"><i class="fas fa-edit"></i></icon> Edit {{filters.feed_name}}</a>
                        <a class="dropdown-item" hx-post="{{ url_for('feed_sync', feed_name=filters.feed_name ) }}"
                           _="on htmx:beforeRequest add .fa-spin to <i/> in me"><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{filters.feed_name}}</a>
                        {% endif %}
-                       <hr class="dropdown-divider is-hidden-mobile"/>
                        <form>
                            <label class="radio dropdown-item">
                                <p class="menu-label">Settings</p>
