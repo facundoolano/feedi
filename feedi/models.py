@@ -403,6 +403,7 @@ class Entry(db.Model):
         username=None,
         folder=None,
         older_than=None,
+        newer_than=None,
         text=None,
     ):
         """
@@ -419,6 +420,9 @@ class Entry(db.Model):
                 # (those previous entries need to be included for a correct calculation of the limit/offset
                 # next time a page is fetch).
                 query = query.filter(cls.viewed.is_(None) | (cls.viewed.isnot(None) & (cls.viewed > older_than)))
+
+        if newer_than:
+            query = query.filter(cls.created > newer_than)
 
         if favorited:
             query = query.filter(cls.favorited.is_not(None))

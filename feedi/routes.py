@@ -78,6 +78,9 @@ def fetch_entries_page(page_arg, user_id, hide_seen_setting, is_mixed_feed_list,
         start_at = datetime.datetime.utcnow()
         page_num = 1
 
+    if is_mixed_feed_list:
+        filters["newer_than"] = datetime.datetime.utcnow() - datetime.timedelta(days=14)
+
     query = models.Entry.filter_by(user_id, start_at, **filters)
     entry_page = db.paginate(query, per_page=app.config["ENTRY_PAGE_SIZE"], page=page_num)
     next_page = f"{start_at.timestamp()}:{page_num + 1}" if entry_page.has_next else None
