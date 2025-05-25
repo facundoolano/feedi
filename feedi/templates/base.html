@@ -18,10 +18,6 @@
         <div class="navbar-menu">
             <div class="navbar-end">
                 {% if shortcut_folders %}
-                {% for folder in shortcut_folders %}
-                <a class="dropdown-item {% if filters.folder == folder %}is-active"{% endif %}" href="{{ url_for('entry_list', folder=folder ) }}">
-                    <icon class="icon"><i class="far {% if filters.folder == folder %}fa-folder-open{% else %}fa-folder{% endif %}"></i></icon> {{ folder }}</a>
-                {% endfor %}
                 <a class="dropdown-item {% if filters.favorited %}is-active{% endif %}" href="{{ url_for('favorites') }}">
                     <icon class="icon"><i class="far fa-star"></i></icon> favorites</a>
                 {% if current_user.kindle_email %}
@@ -70,15 +66,6 @@
                     <a  class="navbar-item" href="{{ url_for('entry_list') }}"><h1 class="title is-4">feedi</h1></a>
                         <ul class="menu-list">
 
-                        {% if shortcut_folders %}
-                        <hr class="dropdown-divider"/>
-                        {% for folder in shortcut_folders %}
-                        <li>
-                            <a class="level-left {% if filters.folder == folder %}is-active"{% endif %}" href="{{ url_for('entry_list', folder=folder ) }}">
-                                <icon class="icon"><i class="far {% if filters.folder == folder %}fa-folder-open{% else %}fa-folder{% endif %}"></i></icon> {{ folder }}</a>
-                        </li>
-                          {% endfor %}
-                        {% endif %}
                         <hr class="dropdown-divider"/>
                         <li>
                             <div class="level-left {% if filters.favorited %}is-active{% endif %}">
