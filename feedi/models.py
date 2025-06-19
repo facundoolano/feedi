@@ -147,8 +147,13 @@ class Feed(db.Model):
             values["updated"] = utcnow
             values["feed_id"] = self.id
             values["user_id"] = self.user_id
+
+            update_values = dict(**values)
+            update_values.pop("sort_date", None)
             db.session.execute(
-                sqlite.insert(Entry).values(**values).on_conflict_do_update(("feed_id", "remote_id"), set_=values)
+                sqlite.insert(Entry)
+                .values(**values)
+                .on_conflict_do_update(("feed_id", "remote_id"), set_=update_values)
             )
 
     def fetch_entry_data(self, _force=False):
