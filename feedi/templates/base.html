@@ -16,7 +16,8 @@
         _="on htmx:responseError alert('The server responded with an error')">
     <nav class="navbar is-hidden-tablet is-fixed-bottom is-light" role="navigation" aria-label="main navigation">
         <div class="navbar-menu">
-            <div class="navbar-end">
+          <div class="navbar-end">
+                {% if current_user.is_authenticated %}
                 <a class="dropdown-item {% if filters.favorited %}is-active{% endif %}" href="{{ url_for('favorites') }}">
                     <icon class="icon"><i class="far fa-star"></i></icon> favorites</a>
                 {% if current_user.kindle_email %}
@@ -26,6 +27,7 @@
                 <a class="dropdown-item" href="#"><icon class="icon"><i class="fas fa-cog"></i></icon> settings</a>
                 <hr class="dropdown-divider"/>
 
+                {% endif %}
                 {% endif %}
                 {{ self.sidebar_right() }}
 
@@ -67,7 +69,7 @@
                 <aside class="menu feeds-sidebar">
                     <a  class="navbar-item" href="{{ url_for('entry_list') }}"><h1 class="title is-4">feedi</h1></a>
                         <ul class="menu-list">
-
+                        {% if current_user.is_authenticated %}
                         <hr class="dropdown-divider"/>
                         <li>
                             <div class="level-left {% if filters.favorited %}is-active{% endif %}">
@@ -100,7 +102,8 @@
                                         settings</a>
                                 </div>
                             </div>
-                        </li>
+                                                </li>
+                        {% endif %} 
                         </ul>
                 </aside>
                 {% endblock %}
