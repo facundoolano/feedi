@@ -1,5 +1,3 @@
-import urllib
-
 import flask
 import flask_login
 from flask import current_app as app
@@ -66,60 +64,3 @@ def kindle_add_submit():
     current_user.kindle_email = kindle_email
     db.session.commit()
     return flask.redirect(flask.url_for("entry_list"))
-
-
-@app.get("/auth/mastodon")
-@login_required
-def mastodon_oauth():
-    "Displays the form to initiate a mastodon oauth login flow."
-    return flask.render_template("mastodon.html")
-
-
-@app.post("/auth/mastodon")
-@login_required
-def mastodon_oauth_submit():
-    """
-    Starts the Oauth login flow to a user submitted mastodon instance.
-    If there's no app already registered for that instance, one is created.
-    Returns a redirect to the mastodon authorization url on that instance, which
-    will then redirect to the callback route.
-    """
-    base_url = flask.request.form.get("url")
-    if not base_url:
-        return flask.render_template("mastodon.html", error_msg="The instance url is required")
-
-    # normalize base url
-    url_parts = urllib.parse.urlparse(base_url)
-    base_url = f"https://{url_parts.netloc}"
-
-    app.logger.info("Registering mastodon application for %s", base_url)
-    masto_app = models.MastodonApp.get_or_create(base_url)
-    return flask.redirect(masto_app.auth_redirect_url())
-
-
-@app.get("/auth/mastodon/callback")
-@login_required
-def mastodon_oauth_callback():
-    """
-    The route the user will be redirected to after granting feedi permission to access
-    the mastodon account. The account will be logged in with the received authorization code
-    and an access token will be stored in the DB for subsequent access to the mastodon api.
-    Redirects to the feed add form to proceed creating a mastodon feed associated with the new account.
-    """
-    code = flask.request.args.get("code")
-    base_url = flask.request.args.get("server")
-    if not code or not base_url:
-        app.logger.error("Missing required parameter in mastodon oauth callback")
-        flask.abort(400)
-
-    masto_app = db.session.scalar(db.select(models.MastodonApp).filter_by(api_base_url=base_url))
-    if not masto_app:
-        app.logger.error("Mastodon application not found for %s", base_url)
-        flask.abort(404)
-
-    app.logger.info("Authenticating mastodon user %s at %s", current_user.id, base_url)
-    account = masto_app.create_account(current_user.id, code)
-    app.logger.info("Successfully logged in mastodon")
-
-    # redirect to feed creation with masto pre-selected
-    return flask.redirect(flask.url_for("feed_add", masto_acct=account.id))

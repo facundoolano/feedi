@@ -1,5 +1,3 @@
-# coding: utf-8
-
 import datetime as dt
 import re
 
@@ -106,13 +104,6 @@ def test_home_sorting(client):
     response = client.get("/")
     assert response.text.find("f1-a1") < response.text.find("f3-a1")
     assert response.text.find("f3-a1") < response.text.find("f2-a13")
-
-    # change the sorting settings and request home again
-    client.put("/session/ordering/recency")
-    response = client.get("/")
-    assert response.text.find("f2-a20") < response.text.find("f2-a12")
-    assert "f3-a1" not in response.text
-    assert "f1-a1" not in response.text
 
 
 def test_home_pagination(app, client):
@@ -402,9 +393,3 @@ def test_feed_delete(client):
     assert "pin-entry" not in response.text
     assert "fav-entry" not in response.text
     assert "plain-entry" not in response.text
-
-
-def test_mastodon_feed(client):
-    # TODO mock mastodon api requests
-    # check that entries show up in feed
-    pass

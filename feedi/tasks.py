@@ -92,7 +92,7 @@ def content_prefetch():
     for user_id in db.session.scalars(db.select(models.User.id)):
         start_at = datetime.datetime.utcnow()
         query = (
-            models.Entry.sorted_by(user_id, models.Entry.ORDER_FREQUENCY, start_at, hide_seen=True)
+            models.Entry.filter_by(user_id, start_at, hide_seen=True)
             .filter(models.Entry.content_full.is_(None), models.Entry.content_url.isnot(None))
             .limit(15)
         )
@@ -217,7 +217,7 @@ def csv_dump(file, user):
 
     with open(file, "w") as csv_file:
         feed_writer = csv.writer(csv_file)
-        for feed in db.session.execute(db.select(models.Feed).filter_by(user_id=user.id, is_mastodon=False)).scalars():
+        for feed in db.session.execute(db.select(models.Feed).filter_by(user_id=user.id)).scalars():
             feed_writer.writerow(feed.to_valuelist())
             app.logger.info("written %s", feed)
 

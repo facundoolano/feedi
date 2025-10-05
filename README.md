@@ -4,7 +4,6 @@ feedi is a web feed reader with a minimal interface akin to a Mastodon or Twitte
 
 Features:
 - Easy local and self-hosted environment setup.
-- Mastodon home and notification streams support.
 - Mobile-friendly UI.
 - Installable as a Progressive Web App.
 - Custom parsers for Reddit, Github and Goodreads.
@@ -30,7 +29,6 @@ For background about the development of this project, see [this blog post](https
     - [Deleting old articles](#deleting-old-articles)
 - [Advanced features](#advanced-features)
     - [Bulk import/export feeds from csv and OPML files](#bulk-importexport-feeds-from-csv-and-opml-files)
-    - [Mastodon account setup](#mastodon-account-setup)
     - [Github notification feed](#github-notification-feed)
     - [Goodreads home feed](#goodreads-home-feed)
     - [Reddit feeds](#reddit-feeds)
@@ -68,7 +66,6 @@ By default, your feed will be empty. You can load content in a number of ways:
 * Discovering a website RSS feed by pasting or dragging its url to the search input.
 * Loading a set of default websites included in [this repo](feeds.csv) by running: `make feed-load feed-sync`.
 * Importing a collection of feeds from an [OPML or CSV file]((#bulk-importexport-feeds-from-csv-and-opml-files)).
-* Logging into a [mastodon account](#mastodon-account-setup).
 
 When you first add a feed, the app  will fetch its most recent articles, then it will check periodically for new content (every 30 minutes [by default](https://github.com/facundoolano/feedi/blob/15add28488c5800eef2dbcb43adf1355da9133c3/feedi/config/default.py#L5)).
 
@@ -77,7 +74,7 @@ When you first add a feed, the app  will fetch its most recent articles, then it
 - Sources can be put into folders, accesible on the left sidebar (desktop) or on the navbar menu (mobile).
 - The feed behavior can be tweaked with the controls on the right sidebar (desktop) or on the navbar menu:
 - Entries are auto-marked as viewed as the user scrolls down the feed. By default, already seen entries are skipped next time the app is open.
-- The default sorting puts least frequent sources at the top. Alternatively, there's are are strict chronological sorting.
+- The entry sorting puts least frequent sources at the top.
 
 ### Reading articles
 There are different ways to interact with a feed entry:
@@ -101,13 +98,6 @@ in case you want to see some content right away.
 There's also a `make feed-load-opml` to import a list of RSS feeds from a `feeds.opml` file in the [OPML format](https://en.wikipedia.org/wiki/OPML).
 
 There are analogous `make feed-dump` and `make feed-dump-opml` targets to export feed data from the app.
-
-### Mastodon account setup
-
-The Mastodon integration allows ingesting both the user home feed and the notification inbox as feeds.
-feedi first needs to be authorized to access the Mastodon account by navigating to
-`Manage feeds > Mastodon login` or to the url `/auth/mastodon`. After filling the instance name
-and grating access, feedi will redirect to the add feed form, where either mastodon or mastodon notifications feeds (or both) can be added.
 
 ### Github notification feed
 You can ingest the notifications from GitHub into feedi. To do so, navigate to your home feed at https://github.com/, open the page HTML source and search for an atom feed link. It should look something like:
@@ -160,7 +150,7 @@ After this setup the "Send to Kindle" command will be available when browsing ar
 ### Feed parsing
 
 The app works by [periodically](https://github.com/facundoolano/feedi/blob/bf2df4c313e7e719a16d3c2f8216452031a38e58/feedi/config/default.py#L12) fetching
-items from different feed sources (RSS/Atom, Mastodon toots and notifications, custom scrapers) and adjusting them to an
+items from different feed sources (RSS/Atom, custom scrapers) and adjusting them to an
 [Entry db model](https://github.com/facundoolano/feedi/blob/bf2df4c313e7e719a16d3c2f8216452031a38e58/feedi/models.py#L107) which more or less matches what we expect to display in the front end.
 
 #### RSS/Atom feeds
@@ -195,7 +185,7 @@ You can see several custom RSS parsers in [this module](https://github.com/facun
 
 #### Custom feeds
 
-Other than RSS and Mastodon feeds, the app can ingest arbitrary sources with custom parsers. This is useful for scraping websites that don't provide feeds or consuming JSON APIs directly.
+Other than RSS feeds, the app can ingest arbitrary sources with custom parsers. This is useful for scraping websites that don't provide feeds or consuming JSON APIs directly.
 
 To add a custom parser, subclass [feedi.parsers.custom.CustomParser](https://github.com/facundoolano/feedi/blob/4e6b7974b70c70abb4a0f7091adbe344ef0b29a1/feedi/parsers/custom.py#L20). The `is_compatible` method determines wheter a given url should be parsed with that parser. The `fetch` method does the actual fetching and parsing of entries. See the [feedi.parsers.custom](https://github.com/facundoolano/feedi/blob/HEAD/feedi/parsers/custom.py) module for some examples.
 
