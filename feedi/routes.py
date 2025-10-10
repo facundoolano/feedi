@@ -512,23 +512,3 @@ def update_setting(setting, value):
 def toggle_setting(setting):
     flask.session[setting] = not flask.session.get(setting, True)
     return "", 204
-
-
-# TODO rename to shortcut_folders
-@app.context_processor
-def sidebar_feeds():
-    """
-    Fetch folders to make available to any template needing to render the sidebar.
-    """
-    if current_user.is_authenticated:
-        folders = db.session.scalars(
-            db.select(models.Feed.folder)
-            .filter_by(user_id=current_user.id)
-            .filter(models.Feed.folder.isnot(None), models.Feed.folder.isnot(""))
-            .group_by(models.Feed.folder)
-            .order_by(sa.func.count(models.Feed.folder).desc())
-        ).all()
-
-        return dict(shortcut_folders=folders, filters={})
-
-    return {}
