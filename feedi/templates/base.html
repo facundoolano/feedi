@@ -121,9 +121,9 @@
                        {% endif %}
                        {% block sidebar_right %}
                        {% if filters.feed_id %}
-                       <a class="dropdown-item is-hidden-mobile" href="{{ url_for('feed_edit', feed_id=filters.feed_id ) }}"><icon class="icon"><i class="fas fa-edit"></i></icon> Edit FIXME {{filters.feed_id}}</a>
+                       <a class="dropdown-item is-hidden-mobile" href="{{ url_for('feed_edit', feed_id=filters.feed_id ) }}"><icon class="icon"><i class="fas fa-edit"></i></icon> Edit {{filters.feed_id | feed_name}}</a>
                        <a class="dropdown-item" hx-post="{{ url_for('feed_sync', feed_id=filters.feed_id ) }}"
-                          _="on htmx:beforeRequest add .fa-spin to <i/> in me"><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync FIXME {{filters.feed_id}}</a>
+                          _="on htmx:beforeRequest add .fa-spin to <i/> in me"><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{filters.feed_id | feed_name}}</a>
                        {% endif %}
                        <form>
                            <label class="radio dropdown-item">

@@ -1,10 +1,12 @@
-# coding: utf-8
 import datetime
 import urllib
 
 import flask
 from bs4 import BeautifulSoup
 from flask import current_app as app
+
+import feedi.models as models
+from feedi.models import db
 
 
 # TODO unit test this
@@ -84,3 +86,9 @@ def entry_excerpt(entry):
         return body_text[:max_body_length] + "…"
 
     return body_text
+
+
+@app.template_filter("feed_name")
+def feed_name(feed_id):
+    feed = db.get_or_404(models.Feed, feed_id)
+    return feed.name
