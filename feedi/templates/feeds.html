@@ -13,6 +13,7 @@
                 <th>Updated</th>
                 <th>Count</th>
                 <th>Rank</th>
+                <th>Rank v2</th>
                 <th></th>
             </tr>
         </thead>
@@ -36,6 +37,7 @@
                 <td>{% if last_seen %}{{last_seen | humanize}}{% endif %}</td>
                 <td>{{entries}}</td>
                 <td>{{freq or ''}}</td>
+                <td>{{feed.bucket or ''}}</td>
                 <td class="is-narrow">
                     <span class="level-left">
                     <a class="level-item" hx-delete="{{ url_for('feed_delete', feed_id=feed.id )}}" title="delete" _="on htmx:afterRequest remove the closest <tr/>"

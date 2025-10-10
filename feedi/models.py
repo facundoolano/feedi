@@ -143,9 +143,6 @@ class Feed(db.Model):
         entries = self.fetch_entry_data(force)
         self.last_fetch = utcnow
 
-        if entries:
-            self.bucket = self._calculate_bucket_from_entries(entries)
-
         for values in entries:
             # upsert to handle already seen entries.
             # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
@@ -161,6 +158,10 @@ class Feed(db.Model):
                 .on_conflict_do_update(("feed_id", "remote_id"), set_=update_values)
             )
 
+        # Calculate and store bucket after entries are inserted
+        self.bucket = self._calculate_bucket_from_db()
+        db.session.commit()
+
     def fetch_entry_data(self, _force=False):
         """
         To be implemented by subclasses, this should contact the remote feed source, parse any new entries
@@ -168,30 +169,42 @@ class Feed(db.Model):
         """
         raise NotImplementedError
 
-    def _calculate_bucket_from_entries(self, entries):
+    def _calculate_bucket_from_db(self):
+        """
+        Calculate frequency bucket based on entries currently in the database.
+        """
+        from flask import current_app as app
+
+        retention_days = app.config["DELETE_AFTER_DAYS"]
+        retention_date = datetime.datetime.utcnow() - datetime.timedelta(days=retention_days)
+
+        entries = (
+            db.session.query(Entry.sort_date)
+            .filter(Entry.feed_id == self.id, Entry.sort_date >= retention_date)
+            .order_by(Entry.sort_date)
+            .all()
+        )
+
         if len(entries) <= 1:
             return 0
 
-        dates = [e["sort_date"] for e in entries if "sort_date" in e]
-        if not dates:
-            return 0
-
+        dates = [e.sort_date for e in entries]
         delta = max(dates) - min(dates)
         days = max(1, delta.days)
         posts_per_day = len(entries) / days
 
         if posts_per_day <= 1 / 30:
-            return 0
+            return 0  # once a month or less
         elif posts_per_day <= 1 / 7:
-            return 1
+            return 1  # once a week or less
         elif posts_per_day <= 1:
-            return 2
+            return 2  # once a day or less
         elif posts_per_day <= 5:
-            return 3
+            return 3  # 5 times a day or less
         elif posts_per_day <= 20:
-            return 4
+            return 4  # 20 times a day or less
         else:
-            return 5
+            return 5  # more
 
     def load_icon(self):
         ""
