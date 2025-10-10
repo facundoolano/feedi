@@ -13,12 +13,11 @@
                 <th>Updated</th>
                 <th>Count</th>
                 <th>Rank</th>
-                <th>Rank v2</th>
                 <th></th>
             </tr>
         </thead>
         <tbody>
-            {% for (feed, freq, entries, last_seen) in feeds %}
+            {% for (feed, entries, last_seen) in feeds %}
             <tr>
                 <td>
                     <a href="{{ url_for('entry_list', feed_id=feed.id )}}">
@@ -36,7 +35,6 @@
 
                 <td>{% if last_seen %}{{last_seen | humanize}}{% endif %}</td>
                 <td>{{entries}}</td>
-                <td>{{freq or ''}}</td>
                 <td>{{feed.bucket or ''}}</td>
                 <td class="is-narrow">
                     <span class="level-left">

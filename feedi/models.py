@@ -171,7 +171,9 @@ class Feed(db.Model):
 
     def _calculate_bucket_from_db(self):
         """
-        Calculate frequency bucket based on entries currently in the database.
+        Count the daily average amount of entries per feed currently in the db
+        and put the result into "buckets". The rationale is to show least frequent first,
+        but not long sequences of the same feed if there are several at the frequency ballpark.
         """
         from flask import current_app as app
 
@@ -209,49 +211,6 @@ class Feed(db.Model):
     def load_icon(self):
         ""
         self.icon_url = scraping.get_favicon(self.url)
-
-    @classmethod
-    def frequency_rank_query(cls):
-        """
-        Count the daily average amount of entries per feed currently in the db
-        and put the result into "buckets". The rationale is to show least frequent first,
-        but not long sequences of the same feed if there are several at the frequency ballpark.
-        """
-        from flask import current_app as app
-
-        retention_days = app.config["DELETE_AFTER_DAYS"]
-        retention_date = datetime.datetime.utcnow() - datetime.timedelta(days=retention_days)
-        days_since_creation = 1 + sa.func.min(
-            retention_days, sa.func.round(sa.func.julianday("now") - sa.func.julianday(cls.created))
-        )
-
-        # this expression ranks feeds (puts them in "buckets") according to how much daily entries they have on average
-        # NOTE: some of this categories are impossible with a low retention period
-        # (e.g. we can't distinguish between weekly and monthly if we only keep 5 days or records)
-        rank_func = sa.case(
-            (sa.func.count(cls.id) / days_since_creation < 1 / 30, 0),  # once a month or less
-            (sa.func.count(cls.id) / days_since_creation < 1 / 7, 1),  # once week or less
-            (sa.func.count(cls.id) / days_since_creation < 1, 2),  # once a day or less
-            (sa.func.count(cls.id) / days_since_creation < 5, 3),  # 5 times a day or less
-            (sa.func.count(cls.id) / days_since_creation < 20, 4),  # 20 times a day or less
-            else_=5,  # more
-        )
-
-        return (
-            db.select(cls.id, rank_func.label("rank"))
-            .join(Entry)
-            .filter(Entry.sort_date >= retention_date)
-            .group_by(cls)
-            .subquery()
-        )
-
-    def frequency_rank(self):
-        """
-        Return the frequency rank of this feed.
-        """
-        subquery = self.frequency_rank_query()
-        query = db.select(subquery.c.rank).select_from(Feed).join(subquery, subquery.c.id == self.id)
-        return db.session.scalar(query)
 
 
 class RssFeed(Feed):
@@ -521,8 +480,6 @@ class Entry(db.Model):
 
         # Order entries by least frequent feeds first then reverse-chronologically for entries in the same
         # frequency rank.
-        subquery = Feed.frequency_rank_query()
-
         # exhaust last n hours of all ranks before moving to older stuff
         # if smaller delta, more chances to bury infrequent posts
         # if bigger, more chances to bury recent stuff under old unseen infrequent posts
@@ -530,8 +487,6 @@ class Entry(db.Model):
 
         # isouter = true so that if a feed with only old stuff is added, entries still show up
         # even without having a freq rank
-        return (
-            query.join(Feed, isouter=True)
-            .join(subquery, Feed.id == subquery.c.id, isouter=True)
-            .order_by((cls.sort_date >= recency_bucket_date).desc(), subquery.c.rank, cls.sort_date.desc())
+        return query.join(Feed, isouter=True).order_by(
+            (cls.sort_date >= recency_bucket_date).desc(), Feed.bucket, cls.sort_date.desc()
         )
