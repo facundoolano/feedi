@@ -90,6 +90,8 @@ class Feed(db.Model):
     )
     last_fetch = sa.Column(sa.TIMESTAMP)
 
+    bucket = sa.Column(sa.Integer, doc="TODO")
+
     entries = sa.orm.relationship("Entry", back_populates="feed", cascade="all, delete-orphan", lazy="dynamic")
     raw_data = sa.orm.deferred(sa.Column(sa.String, doc="The original feed data received from the feed, as JSON"))
 
