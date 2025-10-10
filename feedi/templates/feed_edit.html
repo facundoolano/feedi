@@ -73,7 +73,7 @@
                 {% if feed %}
                 <p class="control"><button class="button is-danger"
                                            type="button"
-                                           hx-delete="{{ url_for('feed_delete', feed_name=feed.name )}}"
+                                           hx-delete="{{ url_for('feed_delete', feed_id=feed.id )}}"
                                            _="on htmx:afterRequest go to url {{ url_for('entry_list') }}" >Delete</button></p>
                 {% endif  %}
             </div>
@@ -97,7 +97,7 @@
 
 {% block sidebar_right %}
 {% if feed %}
-<a class="dropdown-item" hx-post="{{ url_for('feed_sync', feed_name=feed.name )}}"
+<a class="dropdown-item" hx-post="{{ url_for('feed_sync', feed_id=feed.id )}}"
    _="on htmx:beforeRequest add .fa-spin to <i/> in me"
 ><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{feed.name}}</a>
 {% endif %}

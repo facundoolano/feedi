@@ -16,7 +16,7 @@ from feedi.parsers import rss
 @app.route("/users/<username>")
 @app.route("/favorites", defaults={"favorited": True}, endpoint="favorites")
 @app.route("/folder/<folder>")
-@app.route("/feeds/<feed_name>/entries")
+@app.route("/feeds/<feed_id>/entries")
 @app.get("/entries/kindle", defaults={"sent_to_kindle": True}, endpoint="sent_to_kindle")
 @app.route("/")
 @login_required
@@ -129,17 +129,19 @@ def autocomplete():
         ).all()
         options += [(f, flask.url_for("entry_list", folder=f), "far fa-folder") for f in folders]
 
-        feed_names = db.session.scalars(
-            db.select(models.Feed.name)
+        matching_feeds = db.session.scalars(
+            db.select((models.Feed.id, models.Feed.name))
             .filter(models.Feed.name.icontains(term), models.Feed.user_id == current_user.id)
             .distinct()
         ).all()
-        options += [(f, flask.url_for("entry_list", feed_name=f), "far fa-list-alt") for f in feed_names]
+        options += [(name, flask.url_for("entry_list", feed_id=id), "far fa-list-alt") for (id, name) in matching_feeds]
 
         # search is less important than quick access but more than edit
         options.append(("Search: " + term, flask.url_for("entry_list", q=term), "fas fa-search"))
 
-        options += [("Edit " + f, flask.url_for("feed_edit", feed_name=f), "fas fa-edit") for f in feed_names]
+        options += [
+            ("Edit " + name, flask.url_for("feed_edit", feed_id=id), "fas fa-edit") for (id, name) in matching_feeds
+        ]
 
     # TODO home and favorites should have more priority than search
     static_options = [
@@ -274,13 +276,13 @@ def feed_add_submit():
     # NOTE it would be better to redirect to the feed itself, but since we load it async
     # we'd have to show a spinner or something and poll until it finishes loading
     # or alternatively hang the response until the feed is processed, neither of which is ideal
-    return flask.redirect(flask.url_for("entry_list", feed_name=feed.name))
+    return flask.redirect(flask.url_for("entry_list", feed_id=feed.id))
 
 
-@app.get("/feeds/<feed_name>")
+@app.get("/feeds/<feed_id>")
 @login_required
-def feed_edit(feed_name):
-    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name, user_id=current_user.id))
+def feed_edit(feed_id):
+    feed = db.session.scalar(db.select(models.Feed).filter_by(id=feed_id, user_id=current_user.id))
     if not feed:
         flask.abort(404, "Feed not found")
 
@@ -294,10 +296,10 @@ def feed_edit(feed_name):
     return flask.render_template("feed_edit.html", feed=feed, folders=folders)
 
 
-@app.post("/feeds/<feed_name>")
+@app.post("/feeds/<feed_id>")
 @login_required
-def feed_edit_submit(feed_name):
-    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name, user_id=current_user.id))
+def feed_edit_submit(feed_id):
+    feed = db.session.scalar(db.select(models.Feed).filter_by(id=feed_id, user_id=current_user.id))
     if not feed:
         flask.abort(404, "Feed not found")
 
@@ -315,11 +317,11 @@ def feed_edit_submit(feed_name):
     return flask.redirect(flask.url_for("feed_list"))
 
 
-@app.delete("/feeds/<feed_name>")
+@app.delete("/feeds/<feed_id>")
 @login_required
-def feed_delete(feed_name):
+def feed_delete(feed_id):
     "Remove a feed and its entries from the database. Pinned and favorited entries are preserved."
-    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name, user_id=current_user.id))
+    feed = db.session.scalar(db.select(models.Feed).filter_by(id=feed_id, user_id=current_user.id))
 
     if not feed:
         flask.abort(404, "Feed not found")
@@ -340,11 +342,11 @@ def feed_delete(feed_name):
     return "", 204
 
 
-@app.post("/feeds/<feed_name>/entries")
+@app.post("/feeds/<feed_id>/entries")
 @login_required
-def feed_sync(feed_name):
+def feed_sync(feed_id):
     "Force sync the given feed and redirect to the entry list for it."
-    feed = db.session.scalar(db.select(models.Feed).filter_by(name=feed_name, user_id=current_user.id))
+    feed = db.session.scalar(db.select(models.Feed).filter_by(id=feed_id, user_id=current_user.id))
     if not feed:
         flask.abort(404, "Feed not found")
 
@@ -352,7 +354,7 @@ def feed_sync(feed_name):
     task.get()
 
     response = flask.make_response()
-    response.headers["HX-Redirect"] = flask.url_for("entry_list", feed_name=feed.name)
+    response.headers["HX-Redirect"] = flask.url_for("entry_list", feed_id=feed.id)
     return response
 
 
@@ -463,15 +465,15 @@ def send_to_kindle():
     return "", 204
 
 
-@app.route("/feeds/<feed_name>/debug")
+@app.route("/feeds/<feed_id>/debug")
 @login_required
-def raw_feed(feed_name):
+def raw_feed(feed_id):
     """
     Shows a JSON dump of the feed data as received from the source.
     """
     feed = db.session.scalar(
         db.select(models.Feed)
-        .filter_by(name=feed_name, user_id=current_user.id)
+        .filter_by(id=feed_id, user_id=current_user.id)
         .options(sa.orm.undefer(models.Feed.raw_data))
     )
     if not feed:
@@ -510,23 +512,3 @@ def update_setting(setting, value):
 def toggle_setting(setting):
     flask.session[setting] = not flask.session.get(setting, True)
     return "", 204
-
-
-# TODO rename to shortcut_folders
-@app.context_processor
-def sidebar_feeds():
-    """
-    Fetch folders to make available to any template needing to render the sidebar.
-    """
-    if current_user.is_authenticated:
-        folders = db.session.scalars(
-            db.select(models.Feed.folder)
-            .filter_by(user_id=current_user.id)
-            .filter(models.Feed.folder.isnot(None), models.Feed.folder.isnot(""))
-            .group_by(models.Feed.folder)
-            .order_by(sa.func.count(models.Feed.folder).desc())
-        ).all()
-
-        return dict(shortcut_folders=folders, filters={})
-
-    return {}
