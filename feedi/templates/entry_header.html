@@ -21,7 +21,7 @@
                     {{ entry.display_name or entry.username }}
                 </a>
                 {% else %}
-                <a href="{{ url_for('entry_list', feed_name=entry.feed.name ) }}">
+                <a href="{{ url_for('entry_list', feed_id=entry.feed.id ) }}">
                     {{ entry.feed.name}}
                 </a>
                 {% endif %}

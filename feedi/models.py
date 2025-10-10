@@ -404,7 +404,7 @@ class Entry(db.Model):
         hide_seen=False,
         favorited=None,
         sent_to_kindle=None,
-        feed_name=None,
+        feed_id=None,
         username=None,
         folder=None,
         older_than=None,
@@ -435,8 +435,8 @@ class Entry(db.Model):
         if sent_to_kindle:
             query = query.filter(cls.sent_to_kindle.is_not(None))
 
-        if feed_name:
-            query = query.filter(cls.feed.has(name=feed_name))
+        if feed_id:
+            query = query.filter(cls.feed.has(id=feed_id))
 
         if folder:
             query = query.filter(cls.feed.has(folder=folder))

@@ -3,7 +3,7 @@
         <img class="is-rounded feed-avatar" src="{{ entry.avatar_url }}" alt="{{ entry.username }}" title="{{ entry.username }}">
     </a>
     {% elif entry.feed %}
-    <a href="{{ url_for('entry_list', feed_name=entry.feed.name ) }}">
+    <a href="{{ url_for('entry_list', feed_id=entry.feed.id ) }}">
         <img class="is-rounded feed-avatar" {% if entry.feed.icon_url %}src="{{ entry.feed.icon_url }}"{% endif %} alt="{{ entry.feed.name.0.upper() }}" title="{{ entry.feed.name }}">
     </a>
     {% else %}
