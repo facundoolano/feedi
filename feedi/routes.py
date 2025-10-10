@@ -512,3 +512,9 @@ def update_setting(setting, value):
 def toggle_setting(setting):
     flask.session[setting] = not flask.session.get(setting, True)
     return "", 204
+
+
+@app.context_processor
+def template_defaults():
+    # templates expect this to exist
+    return dict(filters={})
