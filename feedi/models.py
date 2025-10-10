@@ -143,6 +143,9 @@ class Feed(db.Model):
         entries = self.fetch_entry_data(force)
         self.last_fetch = utcnow
 
+        if entries:
+            self.bucket = self._calculate_bucket_from_entries(entries)
+
         for values in entries:
             # upsert to handle already seen entries.
             # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
@@ -164,6 +167,31 @@ class Feed(db.Model):
         and return a list of values for each one.
         """
         raise NotImplementedError
+
+    def _calculate_bucket_from_entries(self, entries):
+        if len(entries) <= 1:
+            return 0
+
+        dates = [e["sort_date"] for e in entries if "sort_date" in e]
+        if not dates:
+            return 0
+
+        delta = max(dates) - min(dates)
+        days = max(1, delta.days)
+        posts_per_day = len(entries) / days
+
+        if posts_per_day <= 1 / 30:
+            return 0
+        elif posts_per_day <= 1 / 7:
+            return 1
+        elif posts_per_day <= 1:
+            return 2
+        elif posts_per_day <= 5:
+            return 3
+        elif posts_per_day <= 20:
+            return 4
+        else:
+            return 5
 
     def load_icon(self):
         ""
