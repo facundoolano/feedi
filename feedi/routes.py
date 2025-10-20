@@ -122,13 +122,6 @@ def autocomplete():
         if current_user.kindle_email:
             options += [("Send to Kindle", flask.url_for("send_to_kindle", url=term), "fas fa-tablet-alt", "POST")]
     else:
-        folders = db.session.scalars(
-            db.select(models.Feed.folder)
-            .filter(models.Feed.folder.icontains(term), models.Feed.user_id == current_user.id)
-            .distinct()
-        ).all()
-        options += [(f, flask.url_for("entry_list", folder=f), "far fa-folder") for f in folders]
-
         matching_feeds = db.session.execute(
             db.select(models.Feed.id, models.Feed.name)
             .filter(models.Feed.name.icontains(term), models.Feed.user_id == current_user.id)
