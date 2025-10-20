@@ -204,14 +204,12 @@ def entry_favorite(id):
 @app.route("/feeds")
 @login_required
 def feed_list():
-    subquery = models.Feed.frequency_rank_query()
     feeds = db.session.execute(
-        db.select(models.Feed, subquery.c.rank, sa.func.count(1), sa.func.max(models.Entry.sort_date).label("updated"))
+        db.select(models.Feed, sa.func.count(1), sa.func.max(models.Entry.sort_date).label("updated"))
         .filter(models.Feed.user_id == current_user.id)
-        .join(subquery, models.Feed.id == subquery.c.id, isouter=True)
         .join(models.Entry, models.Feed.id == models.Entry.feed_id, isouter=True)
         .group_by(models.Feed)
-        .order_by(sa.text("rank desc"), sa.text("updated desc"))
+        .order_by(sa.text("bucket desc"), sa.text("updated desc"))
     )
 
     return flask.render_template("feeds.html", feeds=feeds)

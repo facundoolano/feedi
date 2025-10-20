@@ -59,8 +59,7 @@
             <label class="label">Frequency rank</label>
             <p class="help">This is a ranking based on how frequently new entries arrive through this feed. It's used by the Least frequent sorting.</p>
             <div class="control">
-                {% set rank = feed.frequency_rank() %}
-                <input class="input" type="text" value="{{ rank if rank != None }}" readonly>
+                <input class="input" type="text" value="{{ feed.bucket or 0 }}" readonly>
             </div>
         </div>
         {% endif %}

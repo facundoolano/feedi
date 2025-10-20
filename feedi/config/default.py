@@ -7,9 +7,9 @@ DELETE_OLD_CRON_HOURS = "*/12"
 
 SKIP_RECENTLY_UPDATED_MINUTES = 10
 CONTENT_PREFETCH_MINUTES = "*/15"
-RSS_SKIP_OLDER_THAN_DAYS = 7
-DELETE_AFTER_DAYS = 7
-RSS_MINIMUM_ENTRY_AMOUNT = 5
+RSS_SKIP_OLDER_THAN_DAYS = 30
+DELETE_AFTER_DAYS = 30
+RSS_MINIMUM_ENTRY_AMOUNT = 10
 
 # How many tasks to allow running concurrently. eg. how many feeds to sync at a time.
 # This affects the sqlalchemy engine pool size

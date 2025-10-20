@@ -299,3 +299,17 @@ def user_delete(email):
     stmt = db.delete(models.User).where(models.User.email == email)
     db.session.execute(stmt)
     db.session.commit()
+
+
+@feed_cli.command("recalculate-buckets")
+def recalculate_buckets():
+    """Recalculate frequency buckets for all feeds."""
+    feeds = db.session.query(models.Feed).all()
+
+    for feed in feeds:
+        old_bucket = feed.bucket
+        feed.bucket = feed._calculate_bucket_from_db()
+        app.logger.info(f"Feed {feed.id}/{feed.name}: bucket {old_bucket} -> {feed.bucket}")
+
+    db.session.commit()
+    app.logger.info(f"Recalculated buckets for {len(feeds)} feeds")
