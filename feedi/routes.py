@@ -129,8 +129,8 @@ def autocomplete():
         ).all()
         options += [(f, flask.url_for("entry_list", folder=f), "far fa-folder") for f in folders]
 
-        matching_feeds = db.session.scalars(
-            db.select((models.Feed.id, models.Feed.name))
+        matching_feeds = db.session.execute(
+            db.select(models.Feed.id, models.Feed.name)
             .filter(models.Feed.name.icontains(term), models.Feed.user_id == current_user.id)
             .distinct()
         ).all()
