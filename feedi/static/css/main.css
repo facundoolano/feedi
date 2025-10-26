@@ -274,6 +274,14 @@ img[src=""] {
 .feeds-sidebar {
     min-width: 80%;
 }
+.feeds-sidebar .navbar-item {
+        justify-content: flex-end;
+}
+
+.feeds-sidebar .level-item a {
+    display: flex; justify-content: flex-end;
+        gap: 0.4rem; /* adjust as needed */
+}
 
 .feeds-sidebar li, .feed-sidebar .dropdown-item  {
     font-size: 0.9rem;
