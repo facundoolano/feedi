@@ -54,9 +54,13 @@ def create_feed(client, domain, items, folder=None):
     feed_url = mock_feed(domain, items)
 
     # create a new feed with a form post
-    return client.post(
+    response = client.post(
         "/feeds/new", data={"type": "rss", "name": domain, "url": feed_url, "folder": folder}, follow_redirects=True
     )
+
+    matches = re.search(r"/feeds/(\d+)/", response.request.path)
+    feed_id = matches and matches.group(1)
+    return response, feed_id
 
 
 def mock_feed(domain, items):

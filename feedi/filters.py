@@ -1,10 +1,12 @@
-# coding: utf-8
 import datetime
 import urllib
 
 import flask
 from bs4 import BeautifulSoup
 from flask import current_app as app
+
+import feedi.models as models
+from feedi.models import db
 
 
 # TODO unit test this
@@ -29,26 +31,6 @@ def humanize_date(dt):
 def feed_domain(url):
     parts = urllib.parse.urlparse(url)
     return parts.netloc.replace("www.", "")
-
-
-@app.template_filter("should_unfold_folder")
-def should_unfold_folder(filters, folder_name, folder_feeds):
-    if filters.get("folder") == folder_name:
-        return True
-
-    if filters.get("feed_name"):
-        if filters["feed_name"] in [f.name for f in folder_feeds]:
-            return True
-
-    return False
-
-
-@app.template_filter("contains_feed_name")
-def contains_feed_name(feed_list, selected_name):
-    for feed in feed_list:
-        if feed.name == selected_name:
-            return True
-    return False
 
 
 @app.template_filter("sanitize")
@@ -104,3 +86,9 @@ def entry_excerpt(entry):
         return body_text[:max_body_length] + "…"
 
     return body_text
+
+
+@app.template_filter("feed_name")
+def feed_name(feed_id):
+    feed = db.get_or_404(models.Feed, feed_id)
+    return feed.name

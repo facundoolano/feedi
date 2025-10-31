@@ -66,44 +66,49 @@
         <div class="columns">
             <div class="column is-hidden-touch">
                 {% block sidebar_left %}
-                <aside class="menu feeds-sidebar">
-                    <a  class="navbar-item" href="{{ url_for('entry_list') }}"><h1 class="title is-4">feedi</h1></a>
+                <aside class="menu feeds-sidebar is-pulled-right">
+                    <a  class="navbar-item" href="{{ url_for('entry_list') }}"><h1 class="title  ">feedi</h1></a>
                         <ul class="menu-list">
                         {% if current_user.is_authenticated %}
                         <hr class="dropdown-divider"/>
                         <li>
-                            <div class="level-left {% if filters.favorited %}is-active{% endif %}">
+                            <div class="level-right {% if filters.favorited %}is-active{% endif %}">
                                 <div class="level-item">
-                                    <a href="{{ url_for('favorites') }}"><icon class="icon"><i class="far fa-star"></i></icon>
-                                        favorites</a>
+                                  <a href="{{ url_for('favorites') }}">favorites
+                                    <icon class="icon"><i class="far fa-star"></i></icon>
+                                  </a>
                                 </div>
                             </div>
                         </li>
                         <li>
-                            <div class="level-left {% if filters.sent_to_kindle %}is-active{% endif %}">
+                            <div class="level-right {% if filters.sent_to_kindle %}is-active{% endif %}">
                                 <div class="level-item">
-                                    <a href="{{ url_for('sent_to_kindle') }}"><icon class="icon"><i class="fas fa-tablet-alt"></i></icon>
-                                        kindle log</a>
+                                    <a href="{{ url_for('sent_to_kindle') }}">
+                                      kindle log
+                                      <icon class="icon"><i class="fas fa-tablet-alt"></i></icon>
+                                    </a>
                                 </div>
                             </div>
                         </li>
                         <li>
-                            <div class="level-left">
+                            <div class="level-right">
                                 <div class="level-item">
-                                    <a href="{{ url_for('feed_list') }}"><icon class="icon"><i class="fas fa-edit"></i></icon>
-                                        feeds</a>
+                                  <a href="{{ url_for('feed_list') }}">                                  feeds <icon class="icon"><i class="fas fa-edit"></i></icon>
+                                  </a>
                                 </div>
                             </div>
                         </li>
                                                 <li>
-                            <div class="level-left">
+                            <div class="level-right">
                                 <div class="level-item">
-                                    <a href="#"><icon class="icon"><i class="fas fa-cog"></i></icon>
-                                        settings</a>
+                                    <a href="#">
+                                      settings
+                                      <icon class="icon"><i class="fas fa-cog"></i></icon>
+                                    </a>
                                 </div>
                             </div>
                                                 </li>
-                        {% endif %} 
+                        {% endif %}
                         </ul>
                 </aside>
                 {% endblock %}
@@ -120,10 +125,10 @@
                        {% include "autocomplete.html" %}
                        {% endif %}
                        {% block sidebar_right %}
-                       {% if filters.feed_name %}
-                       <a class="dropdown-item is-hidden-mobile" href="{{ url_for('feed_edit', feed_name=filters.feed_name ) }}"><icon class="icon"><i class="fas fa-edit"></i></icon> Edit {{filters.feed_name}}</a>
-                       <a class="dropdown-item" hx-post="{{ url_for('feed_sync', feed_name=filters.feed_name ) }}"
-                          _="on htmx:beforeRequest add .fa-spin to <i/> in me"><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{filters.feed_name}}</a>
+                       {% if filters.feed_id %}
+                       <a class="dropdown-item is-hidden-mobile" href="{{ url_for('feed_edit', feed_id=filters.feed_id ) }}"><icon class="icon"><i class="fas fa-edit"></i></icon> Edit {{filters.feed_id | feed_name}}</a>
+                       <a class="dropdown-item" hx-post="{{ url_for('feed_sync', feed_id=filters.feed_id ) }}"
+                          _="on htmx:beforeRequest add .fa-spin to <i/> in me"><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{filters.feed_id | feed_name}}</a>
                        {% endif %}
                        <form>
                            <label class="radio dropdown-item">

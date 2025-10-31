@@ -75,6 +75,9 @@ feed-dump-opml:
 feed-sync:
 	$(flask) feed sync
 
+feed-buckets:
+	$(flask) feed recalculate-buckets
+
 feed-debug:
 	$(flask) feed debug $(URL)
 

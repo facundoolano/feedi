@@ -17,10 +17,10 @@
             </tr>
         </thead>
         <tbody>
-            {% for (feed, freq, entries, last_seen) in feeds %}
+            {% for (feed, entries, last_seen) in feeds %}
             <tr>
                 <td>
-                    <a href="{{ url_for('entry_list', feed_name=feed.name )}}">
+                    <a href="{{ url_for('entry_list', feed_id=feed.id )}}">
                         <span class="level-left">
                         <figure class="level-item image is-24x24 ">
                             <img class="feed-avatar is-rounded" {%if feed.icon_url%}src="{{ feed.icon_url }}"{%endif%} alt="{{ feed.name.0 }}">
@@ -35,12 +35,12 @@
 
                 <td>{% if last_seen %}{{last_seen | humanize}}{% endif %}</td>
                 <td>{{entries}}</td>
-                <td>{{freq or ''}}</td>
+                <td>{{feed.bucket or ''}}</td>
                 <td class="is-narrow">
                     <span class="level-left">
-                    <a class="level-item" hx-delete="{{ url_for('feed_delete', feed_name=feed.name )}}" title="delete" _="on htmx:afterRequest remove the closest <tr/>"
+                    <a class="level-item" hx-delete="{{ url_for('feed_delete', feed_id=feed.id )}}" title="delete" _="on htmx:afterRequest remove the closest <tr/>"
                     ><span class="icon"><i class="far fa-trash-alt"></i></span></a>
-                    <a class="level-item" href="{{ url_for('feed_edit', feed_name=feed.name )}}" title="edit"><span class="icon"><i class="fas fa-edit"></i></span></a>
+                    <a class="level-item" href="{{ url_for('feed_edit', feed_id=feed.id )}}" title="edit"><span class="icon"><i class="fas fa-edit"></i></span></a>
                     </span>
                 </td>
             </tr>

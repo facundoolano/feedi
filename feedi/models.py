@@ -90,6 +90,8 @@ class Feed(db.Model):
     )
     last_fetch = sa.Column(sa.TIMESTAMP)
 
+    bucket = sa.Column(sa.Integer, doc="TODO")
+
     entries = sa.orm.relationship("Entry", back_populates="feed", cascade="all, delete-orphan", lazy="dynamic")
     raw_data = sa.orm.deferred(sa.Column(sa.String, doc="The original feed data received from the feed, as JSON"))
 
@@ -156,6 +158,10 @@ class Feed(db.Model):
                 .on_conflict_do_update(("feed_id", "remote_id"), set_=update_values)
             )
 
+        # Calculate and store bucket after entries are inserted
+        self.bucket = self._calculate_bucket_from_db()
+        db.session.commit()
+
     def fetch_entry_data(self, _force=False):
         """
         To be implemented by subclasses, this should contact the remote feed source, parse any new entries
@@ -163,12 +169,7 @@ class Feed(db.Model):
         """
         raise NotImplementedError
 
-    def load_icon(self):
-        ""
-        self.icon_url = scraping.get_favicon(self.url)
-
-    @classmethod
-    def frequency_rank_query(cls):
+    def _calculate_bucket_from_db(self):
         """
         Count the daily average amount of entries per feed currently in the db
         and put the result into "buckets". The rationale is to show least frequent first,
@@ -178,37 +179,38 @@ class Feed(db.Model):
 
         retention_days = app.config["DELETE_AFTER_DAYS"]
         retention_date = datetime.datetime.utcnow() - datetime.timedelta(days=retention_days)
-        days_since_creation = 1 + sa.func.min(
-            retention_days, sa.func.round(sa.func.julianday("now") - sa.func.julianday(cls.created))
+
+        entries = (
+            db.session.query(Entry.sort_date)
+            .filter(Entry.feed_id == self.id, Entry.sort_date >= retention_date)
+            .order_by(Entry.sort_date)
+            .all()
         )
 
-        # this expression ranks feeds (puts them in "buckets") according to how much daily entries they have on average
-        # NOTE: some of this categories are impossible with a low retention period
-        # (e.g. we can't distinguish between weekly and monthly if we only keep 5 days or records)
-        rank_func = sa.case(
-            (sa.func.count(cls.id) / days_since_creation < 1 / 30, 0),  # once a month or less
-            (sa.func.count(cls.id) / days_since_creation < 1 / 7, 1),  # once week or less
-            (sa.func.count(cls.id) / days_since_creation < 1, 2),  # once a day or less
-            (sa.func.count(cls.id) / days_since_creation < 5, 3),  # 5 times a day or less
-            (sa.func.count(cls.id) / days_since_creation < 20, 4),  # 20 times a day or less
-            else_=5,  # more
-        )
+        if len(entries) <= 1:
+            return 0
 
-        return (
-            db.select(cls.id, rank_func.label("rank"))
-            .join(Entry)
-            .filter(Entry.sort_date >= retention_date)
-            .group_by(cls)
-            .subquery()
-        )
+        dates = [e.sort_date for e in entries]
+        delta = max(dates) - min(dates)
+        days = max(1, delta.days)
+        posts_per_day = len(entries) / days
 
-    def frequency_rank(self):
-        """
-        Return the frequency rank of this feed.
-        """
-        subquery = self.frequency_rank_query()
-        query = db.select(subquery.c.rank).select_from(Feed).join(subquery, subquery.c.id == self.id)
-        return db.session.scalar(query)
+        if posts_per_day <= 1 / 30:
+            return 0  # once a month or less
+        elif posts_per_day <= 1 / 7:
+            return 1  # once a week or less
+        elif posts_per_day <= 1:
+            return 2  # once a day or less
+        elif posts_per_day <= 5:
+            return 3  # 5 times a day or less
+        elif posts_per_day <= 20:
+            return 4  # 20 times a day or less
+        else:
+            return 5  # more
+
+    def load_icon(self):
+        ""
+        self.icon_url = scraping.get_favicon(self.url)
 
 
 class RssFeed(Feed):
@@ -279,7 +281,7 @@ class Entry(db.Model):
     feed = sa.orm.relationship("Feed", back_populates="entries")
     remote_id = sa.Column(sa.String, nullable=False, doc="The identifier of this entry in its source feed.")
 
-    title = sa.Column(sa.String)
+    title = sa.Column(sa.String, index=True)
     username = sa.Column(sa.String, index=True)
     user_url = sa.Column(sa.String)
     display_name = sa.Column(sa.String, doc="For cases where there's a full display name in addition to username.")
@@ -404,7 +406,7 @@ class Entry(db.Model):
         hide_seen=False,
         favorited=None,
         sent_to_kindle=None,
-        feed_name=None,
+        feed_id=None,
         username=None,
         folder=None,
         older_than=None,
@@ -435,8 +437,8 @@ class Entry(db.Model):
         if sent_to_kindle:
             query = query.filter(cls.sent_to_kindle.is_not(None))
 
-        if feed_name:
-            query = query.filter(cls.feed.has(name=feed_name))
+        if feed_id:
+            query = query.filter(cls.feed.has(id=feed_id))
 
         if folder:
             query = query.filter(cls.feed.has(folder=folder))
@@ -478,8 +480,6 @@ class Entry(db.Model):
 
         # Order entries by least frequent feeds first then reverse-chronologically for entries in the same
         # frequency rank.
-        subquery = Feed.frequency_rank_query()
-
         # exhaust last n hours of all ranks before moving to older stuff
         # if smaller delta, more chances to bury infrequent posts
         # if bigger, more chances to bury recent stuff under old unseen infrequent posts
@@ -487,8 +487,6 @@ class Entry(db.Model):
 
         # isouter = true so that if a feed with only old stuff is added, entries still show up
         # even without having a freq rank
-        return (
-            query.join(Feed, isouter=True)
-            .join(subquery, Feed.id == subquery.c.id, isouter=True)
-            .order_by((cls.sort_date >= recency_bucket_date).desc(), subquery.c.rank, cls.sort_date.desc())
+        return query.join(Feed, isouter=True).order_by(
+            (cls.sort_date >= recency_bucket_date).desc(), Feed.bucket, cls.sort_date.desc()
         )

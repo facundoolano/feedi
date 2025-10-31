@@ -6,7 +6,7 @@ from tests.conftest import create_feed, extract_entry_ids, mock_feed, mock_reque
 
 def test_feed_add(client):
     feed_domain = "feed1.com"
-    response = create_feed(
+    response, feed_id = create_feed(
         client,
         feed_domain,
         [
@@ -16,7 +16,7 @@ def test_feed_add(client):
     )
 
     assert response.status_code == 200
-    assert response.request.path == f"/feeds/{feed_domain}/entries", "feed submit should redirect to entry list"
+    assert response.request.path == f"/feeds/{feed_id}/entries", "feed submit should redirect to entry list"
 
     assert "my-first-article" in response.text, "article should be included in entry list"
     assert "my-second-article" in response.text, "article should be included in entry list"
@@ -157,7 +157,7 @@ def test_sync_old_entries(client):
 
 def test_sync_updates(client):
     feed_domain = "feed1.com"
-    response = create_feed(
+    response, feed_id = create_feed(
         client,
         feed_domain,
         [
@@ -180,7 +180,7 @@ def test_sync_updates(client):
     )
 
     # force resync
-    response = client.post(f"/feeds/{feed_domain}/entries")
+    response = client.post(f"/feeds/{feed_id}/entries")
     assert response.status_code == 200
 
     # verify changes took effect
@@ -200,7 +200,7 @@ def test_sync_between_pages(client):
 
 def test_favorites(client):
     feed_domain = "feed1.com"
-    response = create_feed(
+    response, _feed_id = create_feed(
         client,
         feed_domain,
         [
@@ -227,7 +227,7 @@ def test_favorites(client):
 
 
 def test_pinned(client):
-    response = create_feed(
+    response, _feed_id = create_feed(
         client,
         "feed1.com",
         [{"title": "f1-a1", "date": "2023-10-01 00:00Z"}, {"title": "f1-a2", "date": "2023-10-10 00:00Z"}],
@@ -235,7 +235,7 @@ def test_pinned(client):
     )
     f1a2_pin_url = re.search(r"/pinned/(\d+)", response.text).group(0)
 
-    response = create_feed(
+    response, _ = create_feed(
         client,
         "feed2.com",
         [{"title": "f2-a1", "date": "2023-10-01 00:00Z"}, {"title": "f2-a2", "date": "2023-10-10 00:00Z"}],
@@ -286,7 +286,7 @@ def test_view_entry_content(client):
     # create feed with a sample entry
     with open("tests/sample.html") as sample:
         body = sample.read()
-    response = create_feed(
+    response, _ = create_feed(
         client,
         "olano.dev",
         [
@@ -349,7 +349,7 @@ def test_feed_edit(client):
 
 
 def test_feed_delete(client):
-    response = create_feed(
+    response, feed_id = create_feed(
         client,
         "feed1.com",
         [
@@ -365,7 +365,7 @@ def test_feed_delete(client):
     assert "plain-entry" in response.text
 
     # check the 3 appear when requesting by feed name
-    response = client.get("/feeds/feed1.com/entries")
+    response = client.get(f"/feeds/{feed_id}/entries")
     assert "pin-entry" in response.text
     assert "fav-entry" in response.text
     assert "plain-entry" in response.text
@@ -379,7 +379,7 @@ def test_feed_delete(client):
     assert response.status_code == 204
 
     # delete the feed
-    response = client.delete("/feeds/feed1.com")
+    response = client.delete(f"/feeds/{feed_id}")
     assert response.status_code == 204
 
     # check pinned and favorited appear on home, the other is deleted
@@ -389,7 +389,7 @@ def test_feed_delete(client):
     assert "plain-entry" not in response.text
 
     # check empty when requesting by feed name
-    response = client.get("/feeds/feed1.com/entries")
+    response = client.get(f"/feeds/{feed_id}/entries")
     assert "pin-entry" not in response.text
     assert "fav-entry" not in response.text
     assert "plain-entry" not in response.text

@@ -59,8 +59,7 @@
             <label class="label">Frequency rank</label>
             <p class="help">This is a ranking based on how frequently new entries arrive through this feed. It's used by the Least frequent sorting.</p>
             <div class="control">
-                {% set rank = feed.frequency_rank() %}
-                <input class="input" type="text" value="{{ rank if rank != None }}" readonly>
+                <input class="input" type="text" value="{{ feed.bucket or 0 }}" readonly>
             </div>
         </div>
         {% endif %}
@@ -73,7 +72,7 @@
                 {% if feed %}
                 <p class="control"><button class="button is-danger"
                                            type="button"
-                                           hx-delete="{{ url_for('feed_delete', feed_name=feed.name )}}"
+                                           hx-delete="{{ url_for('feed_delete', feed_id=feed.id )}}"
                                            _="on htmx:afterRequest go to url {{ url_for('entry_list') }}" >Delete</button></p>
                 {% endif  %}
             </div>
@@ -97,7 +96,7 @@
 
 {% block sidebar_right %}
 {% if feed %}
-<a class="dropdown-item" hx-post="{{ url_for('feed_sync', feed_name=feed.name )}}"
+<a class="dropdown-item" hx-post="{{ url_for('feed_sync', feed_id=feed.id )}}"
    _="on htmx:beforeRequest add .fa-spin to <i/> in me"
 ><icon class="icon"><i class="fas fa-sync-alt"></i></icon> Sync {{feed.name}}</a>
 {% endif %}
