@@ -32,8 +32,7 @@ The application will be available at `http://localhost:9988/`.
 
 Alternatively, see the instructions for [running with Docker](#running-with-docker) or in a [non-local setup](#non-local-setup).
 
-## Basic usage
-### Pulling content
+## Fetching content
 By default, your feed will be empty. You can add a source by pasting a url into the search box and clicking `Discover RSS`.
 
 Alternatively, you can bulk load sources in the command line:
@@ -44,14 +43,14 @@ This will load a set of default websites included in [this repo](feeds.csv). You
 
 When you first add a feed, the app  will fetch its most recent articles, then it will check periodically for new content (every 30 minutes [by default](https://github.com/facundoolano/feedi/blob/15add28488c5800eef2dbcb43adf1355da9133c3/feedi/config/default.py#L5)).
 
-### Browsing the feed
+## Browsing
 
 - The entry sorting puts least frequent sources at the top.
 - Entries are auto-marked as viewed as the user scrolls down the feed. By default, already seen entries are skipped next time the app is open.
 - Pinned entries will be kept at the top until unpinned.
 - Favorited entries will be preserved at the favorites section.
 
-### Reading articles
+## Reading
 There are different ways to interact with a feed entry:
 
 - If you click on the article title the original website will be open on a new browser tab.
@@ -59,12 +58,13 @@ There are different ways to interact with a feed entry:
 - If you click on the content or press Enter when focusing on the entry, the article content will be fetch and displayed on the local reader. This will be a stripped-down version of the article (removing some site links, ads and paywalls) powered by the [mozilla/readability](https://github.com/mozilla/readability) library. Note that for this to work you need node >= 20 installed when setting up the project.
   -  The reader can also be used to preview arbitrary articles by dragging their url to the searchbox.
 
+## Advanced configuration
 ### Deleting old articles
 
 Entries get deleted automatically some days after their publication ([defaulting to 30](https://github.com/facundoolano/feedi/blob/029885cf08c1457d59f3758b11ec826409277a29/feedi/config/default.py#L11)).
 Pinned and favorited entries are never deleted. Additionally, a minimum of entries ([defaulting to 10](https://github.com/facundoolano/feedi/blob/029885cf08c1457d59f3758b11ec826409277a29/feedi/config/default.py#L12)) is kept for all sources, regardless of their publication date.
 
-## Advanced features
+
 ### Bulk import/export feeds from csv and OPML files
 
 `make feed-load` will load feeds from a local `feeds.csv` file. A [sample file](https://github.com/facundoolano/feedi/blob/HEAD/feeds.csv) is included in the repo
@@ -166,24 +166,6 @@ To add a custom parser, subclass [feedi.parsers.custom.CustomParser](https://git
 
 Once the parser is implemented, it will be used when a new feed of type "Custom" is added in the webapp with the expected url.
 
-
-### Keyboard shortcuts
-
-| shortcut                              | when                         | action                              |
-| -----------                           | -----------                  | ---------                           |
-| Cmd+k                                 |                              | focus search input                  |
-| Enter                                 | search focused               | submit first suggestion             |
-| Escape                                | search or suggestion focused | hide suggestions                    |
-| Down Arrow, Ctrl+n                    | search or suggestion focused | next suggestion                     |
-| Up Arrow, Ctrl+n                      | suggestion focused           | previous suggestion                 |
-| Enter                                 | entry focused                | open entry content                  |
-| Cmd+Enter, Cmd+Left Click             | entry focused                | open entry content on new tab       |
-| Cmd+Shift+Enter, Cmd+Shift+Left Click | entry focused                | open entry discussion on new window |
-| Down Arrow, Tab                       | entry focused                | focus next entry                    |
-| Up Arrow, Shift+Tab                   | entry focused                | focus previous entry                |
-| p                                     | entry focused                | pin entry                           |
-| f                                     | entry focused                | favorite entry                      |
-| Escape                                | viewing entry content        | go back                             |
 
 ### User management
 
