@@ -1,7 +1,6 @@
 .PHONY: all deps deps-dev deps-lock run docker docker-flask shell test lint format feed-* prod-* user-* db-*
 
-venv=. venv/bin/activate &&
-flask=$(venv) flask --app feedi/app.py
+flask=uv run flask --app feedi/app.py
 
 export FLASK_ENV ?= development
 
@@ -15,19 +14,11 @@ uv:
 		(echo "Error: Neither curl nor wget is available. Cannot install uv." && exit 1)
 
 
-venv:
-	python -m venv venv
-	$(venv) pip install uv
+deps: uv
+	uv sync --no-dev
 
-deps: venv
-	$(venv) uv pip sync requirements.txt
-
-deps-dev: deps
-	$(venv) uv pip sync requirements.txt requirements-dev.txt
-
-deps-lock: venv
-	$(venv) uv pip compile -o requirements.txt pyproject.toml
-	$(venv) uv pip compile --extra dev -o requirements-dev.txt pyproject.toml
+deps-dev:
+	uv sync
 
 node_modules:
 	npm install || true
@@ -35,14 +26,14 @@ node_modules:
 # make test
 # make test TEST=test_feed_ad
 test:
-	$(venv) FLASK_ENV=testing pytest --disable-warnings -v $(if $(TEST),-k $(TEST))
+	uv run FLASK_ENV=testing pytest --disable-warnings -v $(if $(TEST),-k $(TEST))
 
 format:
-	$(venv) ruff format
+	uv run ruff format
 
 lint:
-	$(venv) ruff check
-	$(venv) ruff format --check
+	uv run ruff check
+	uv run ruff format --check
 
 # Serve the app in development mode
 run:
@@ -97,7 +88,7 @@ user-del:
 
 # Serve the app in production mode, with gunicorn
 prod: feedi/config/production.py
-	$(venv) gunicorn
+	uv run gunicorn
 
 # Install feedi on a fresh debian server.
 # usage:   make prod-install SSH=pi@feedi.local
@@ -117,7 +108,7 @@ prod-update-code:
 	git pull origin $(BRANCH) --ff-only
 	git stash apply
 	make deps
-	$(venv) alembic upgrade head
+	uv run alembic upgrade head
 
 # one-time generate the production configuration, including the flask app secret key
 feedi/config/production.py:
