@@ -115,9 +115,9 @@ def autocomplete():
         # we can reasonably assume this is a url
 
         options += [
-            ("Add to feed", flask.url_for("entry_add", url=term), "fas fa-download", "POST"),
+            ("Discover RSS", flask.url_for("feed_add", url=term), "fas fa-rss"),
+            ("Add as entry", flask.url_for("entry_add", url=term), "fas fa-download", "POST"),
             ("View in reader", flask.url_for("entry_add", url=term, redirect=1), "fas fa-book-reader", "POST"),
-            ("Discover feed", flask.url_for("feed_add", url=term), "fas fa-rss"),
         ]
         if current_user.kindle_email:
             options += [("Send to Kindle", flask.url_for("send_to_kindle", url=term), "fas fa-tablet-alt", "POST")]

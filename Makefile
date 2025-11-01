@@ -1,25 +1,24 @@
 .PHONY: all deps deps-dev deps-lock run docker docker-flask shell test lint format feed-* prod-* user-* db-*
 
-venv=. venv/bin/activate &&
-flask=$(venv) flask --app feedi/app.py
+flask=uv run flask --app feedi/app.py
 
 export FLASK_ENV ?= development
 
-all: deps node_modules
+all: uv deps node_modules
 
-venv:
-	python -m venv venv
-	$(venv) pip install uv
+.PHONY: uv
+uv:
+	@command -v uv >/dev/null 2>&1 || \
+		(command -v curl >/dev/null 2>&1 && curl -LsSf https://astral.sh/uv/install.sh | sh) || \
+		(command -v wget >/dev/null 2>&1 && wget -qO- https://astral.sh/uv/install.sh | sh) || \
+		(echo "Error: Neither curl nor wget is available. Cannot install uv." && exit 1)
 
-deps: venv
-	$(venv) uv pip sync requirements.txt
 
-deps-dev: deps
-	$(venv) uv pip sync requirements.txt requirements-dev.txt
+deps:
+	uv sync --no-dev
 
-deps-lock: venv
-	$(venv) uv pip compile -o requirements.txt pyproject.toml
-	$(venv) uv pip compile --extra dev -o requirements-dev.txt pyproject.toml
+deps-dev:
+	uv sync
 
 node_modules:
 	npm install || true
@@ -27,14 +26,14 @@ node_modules:
 # make test
 # make test TEST=test_feed_ad
 test:
-	$(venv) FLASK_ENV=testing pytest --disable-warnings -v $(if $(TEST),-k $(TEST))
+	FLASK_ENV=testing uv run pytest --disable-warnings -v $(if $(TEST),-k $(TEST))
 
 format:
-	$(venv) ruff format
+	uv run ruff format
 
 lint:
-	$(venv) ruff check
-	$(venv) ruff format --check
+	uv run ruff check
+	uv run ruff format --check
 
 # Serve the app in development mode
 run:
@@ -89,7 +88,7 @@ user-del:
 
 # Serve the app in production mode, with gunicorn
 prod: feedi/config/production.py
-	$(venv) gunicorn
+	uv run gunicorn
 
 # Install feedi on a fresh debian server.
 # usage:   make prod-install SSH=pi@feedi.local
@@ -99,7 +98,7 @@ prod-install:
 # Update the version running on a remote server (initialized according to setup_server.sh)
 BRANCH ?= main
 prod-deploy:
-	ssh $(SSH) "cd /home/feedi/feedi && sudo su feedi -c \"make prod-update-code BRANCH=$(BRANCH)\" && sudo systemctl restart gunicorn"
+	ssh $(SSH) "sudo su feedi -l -c \"cd ~/feedi && make prod-update-code BRANCH=$(BRANCH)\" && sudo systemctl restart gunicorn"
 
 BRANCH ?= main
 prod-update-code:
@@ -109,7 +108,7 @@ prod-update-code:
 	git pull origin $(BRANCH) --ff-only
 	git stash apply
 	make deps
-	$(venv) alembic upgrade head
+	uv run alembic upgrade head
 
 # one-time generate the production configuration, including the flask app secret key
 feedi/config/production.py:

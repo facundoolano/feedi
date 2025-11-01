@@ -1,31 +1,70 @@
 {% if entry.target_url %}
-<a href="{{ entry.target_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="fas fa-external-link-alt"></i></span> Go to source</a>
+<a href="{{ entry.target_url }}" target="_blank" class="dropdown-item"
+  ><span class="icon"><i class="fas fa-external-link-alt"></i></span> Go to
+  source</a
+>
+{% endif %} {% if entry.comments_url %}
+<a href="{{ entry.comments_url }}" target="_blank" class="dropdown-item"
+  ><span class="icon"><i class="far fa-comment-alt"></i></span> Go to
+  comments</a
+>
+{% endif %} {% if entry.content_url and entry.id and request.path !=
+url_for('entry_view', id=entry.id) %}
+<a
+  hx-boost="true"
+  href="{{ url_for('entry_view', id=entry.id) }}"
+  class="dropdown-item"
+  ><span class="icon"><i class="fas fa-book-reader"></i></span> View in
+  reader</a
+>
 {% endif %}
-{% if entry.comments_url %}
-<a href="{{ entry.comments_url }}" target="_blank" class="dropdown-item"><span class="icon"><i class="far fa-comment-alt"></i></span> Go to comments</a>
-{% endif %}
-{% if entry.content_url and entry.id and request.path != url_for('entry_view', id=entry.id) %}
-<a hx-boost="true" href="{{ url_for('entry_view', id=entry.id) }}" class="dropdown-item"><span class="icon"><i class="fas fa-book-reader"></i></span> View in reader</a>
-{% endif %}
-<hr class="dropdown-divider">
-<a class="dropdown-item" _="on click writeText('{{ entry.content_url }}') into the navigator's clipboard"><span class="icon"><i class="fas fa-link"></i></span> Copy URL</a>
+<hr class="dropdown-divider" />
+<a
+  class="dropdown-item"
+  _="on click writeText('{{ entry.content_url }}') into the navigator's clipboard"
+  ><span class="icon"><i class="fas fa-link"></i></span> Copy URL</a
+>
 
 {% if entry.is_external_link %}
-<a href="{{ url_for('feed_add', url=entry.content_url) }}" class="dropdown-item"><span class="icon"><i class="fas fa-rss"></i></span> Discover feed</a>
-{% endif %}
-{% if entry.content_url and current_user.kindle_email %}
-<a class="dropdown-item" hx-post="{{ url_for('send_to_kindle', url=entry.content_url ) }}"
-   _="on htmx:beforeRequest or htmx:afterRequest toggle .fa-spin on <i/> in me"
-><span class="icon"><i class="fas fa-tablet-alt "></i></span> Send to Kindle</a>
+<a href="{{ url_for('feed_add', url=entry.content_url) }}" class="dropdown-item"
+  ><span class="icon"><i class="fas fa-rss"></i></span> Discover RSS</a
+>
+{% endif %} {% if entry.content_url and current_user.kindle_email %}
+<a
+  class="dropdown-item"
+  hx-post="{{ url_for('send_to_kindle', url=entry.content_url ) }}"
+  _="on htmx:beforeRequest or htmx:afterRequest toggle .fa-spin on <i/> in me"
+  ><span class="icon"><i class="fas fa-tablet-alt"></i></span> Send to Kindle</a
+>
 {% endif %}
 
-<hr class="dropdown-divider">
+<hr class="dropdown-divider" />
 
 {% if entry.username %}
-<a class="dropdown-item" href="{{ url_for('entry_list', username=entry.username ) }}"><span class="icon"><i class="fas fa-user"></i></span> View {{ entry.username }}</a>
-{% endif %}
-{% if entry.feed %}
-<a class="dropdown-item" href="{{ url_for('entry_list', feed_id=entry.feed.id ) }}"><span class="icon"><i class="far fa-list-alt"></i></span> View {{ entry.feed.name }}</a>
-<a href="{{ url_for('feed_edit', feed_id=entry.feed.id ) }}" class="dropdown-item"><span class="icon"><i class="far fa-edit"></i></span> Edit {{ entry.feed.name }}</a>
-<a hx-delete="{{ url_for('feed_delete', feed_id=entry.feed.id ) }}" _="on htmx:afterRequest go to url {{ url_for('entry_list') }}" class="dropdown-item"><span class="icon"><i class="far fa-trash-alt"></i></span> Delete {{ entry.feed.name }}</a>
+<a
+  class="dropdown-item"
+  href="{{ url_for('entry_list', username=entry.username ) }}"
+  ><span class="icon"><i class="fas fa-user"></i></span> View {{ entry.username
+  }}</a
+>
+{% endif %} {% if entry.feed %}
+<a
+  class="dropdown-item"
+  href="{{ url_for('entry_list', feed_id=entry.feed.id ) }}"
+  ><span class="icon"><i class="far fa-list-alt"></i></span> View {{
+  entry.feed.name }}</a
+>
+<a
+  href="{{ url_for('feed_edit', feed_id=entry.feed.id ) }}"
+  class="dropdown-item"
+  ><span class="icon"><i class="far fa-edit"></i></span> Edit {{ entry.feed.name
+  }}</a
+>
+<a
+  hx-delete="{{ url_for('feed_delete', feed_id=entry.feed.id ) }}"
+  _="on htmx:afterRequest go to url {{ url_for('entry_list') }}"
+  class="dropdown-item"
+  ><span class="icon"><i class="far fa-trash-alt"></i></span> Delete {{
+  entry.feed.name }}</a
+>
 {% endif %}

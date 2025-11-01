@@ -20,9 +20,9 @@ def test_feed_add(client):
 
     assert "my-first-article" in response.text, "article should be included in entry list"
     assert "my-second-article" in response.text, "article should be included in entry list"
-    assert response.text.find("my-second-article") < response.text.find(
-        "my-first-article"
-    ), "articles should be sorted by publication date"
+    assert response.text.find("my-second-article") < response.text.find("my-first-article"), (
+        "articles should be sorted by publication date"
+    )
 
     # check same entries show up in home feed
     response = client.get("/")
@@ -30,9 +30,9 @@ def test_feed_add(client):
 
     assert "my-first-article" in response.text, "article should be included in entry list"
     assert "my-second-article" in response.text, "article should be included in entry list"
-    assert response.text.find("my-second-article") < response.text.find(
-        "my-first-article"
-    ), "articles should be sorted by publication date"
+    assert response.text.find("my-second-article") < response.text.find("my-first-article"), (
+        "articles should be sorted by publication date"
+    )
 
 
 def test_folders(client):

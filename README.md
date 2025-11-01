@@ -1,6 +1,6 @@
 # feedi
 
-feedi is a web feed reader with a minimal interface akin to a Mastodon or Twitter feed.
+feedi is a web feed reader with a minimal interface similar to Mastodon or Twitter.
 
 Features:
 - Easy local and self-hosted environment setup.
@@ -19,64 +19,38 @@ Features:
 
 For background about the development of this project, see [this blog post](https://olano.dev/2023-12-12-reclaiming-the-web-with-a-personal-reader/).
 
-## Documentation
-
-- [Installation](#installation)
-- [Basic usage](#basic-usage)
-    - [Adding sources](#adding-sources)
-    - [Browsing the feed](#browsing-the-feed)
-    - [Reading articles](#reading-articles)
-    - [Deleting old articles](#deleting-old-articles)
-- [Advanced features](#advanced-features)
-    - [Bulk import/export feeds from csv and OPML files](#bulk-importexport-feeds-from-csv-and-opml-files)
-    - [Github notification feed](#github-notification-feed)
-    - [Goodreads home feed](#goodreads-home-feed)
-    - [Reddit feeds](#reddit-feeds)
-    - [Kindle device support](#kindle-device-support)
-    - [Feed parsing](#feed-parsing)
-        - [RSS/Atom feeds](#rssatom-feeds)
-        - [Custom feeds](#custom-feeds)
-    - [Keyboard shortcuts](#keyboard-shortcuts)
-    - [User management](#user-management)
-    - [Running with Docker](#running-with-docker)
-    - [Non-local setup](#non-local-setup)
-
 ## Installation
-feedi requires Python >= 3.9. If you don't have it installed already consider using [pyenv](https://github.com/pyenv/pyenv#installation) or [asdf](https://asdf-vm.com/guide/getting-started.html).
+feedi uses [uv](https://docs.astral.sh/uv/) to install the required python environment. If you don't have it already, you can install with `make uv`.
 
-To install feedi on a local environment:
+To install and run the app on your local environment:
 
     git clone https://github.com/facundoolano/feedi.git
     cd feedi
-    make
-
-Then, to run the app:
-
     make run
 
 The application will be available at `http://localhost:9988/`.
 
 Alternatively, see the instructions for [running with Docker](#running-with-docker) or in a [non-local setup](#non-local-setup).
 
-## Basic usage
-### Adding sources
-By default, your feed will be empty. You can load content in a number of ways:
+## Fetching content
+By default, your feed will be empty. You can add a source by pasting a url into the search box and clicking `Discover RSS`.
 
-* Manually adding a feed by clicking the `+ Add Feed` button or navigating to `/feeds/new`.
-* Discovering a website RSS feed by pasting or dragging its url to the search input.
-* Loading a set of default websites included in [this repo](feeds.csv) by running: `make feed-load feed-sync`.
-* Importing a collection of feeds from an [OPML or CSV file]((#bulk-importexport-feeds-from-csv-and-opml-files)).
+Alternatively, you can bulk load sources in the command line:
+
+    make feed-load feed-sync
+
+This will load a set of default websites included in [this repo](feeds.csv). You can also load an [OPML file]((#bulk-importexport-feeds-from-csv-and-opml-files)).
 
 When you first add a feed, the app  will fetch its most recent articles, then it will check periodically for new content (every 30 minutes [by default](https://github.com/facundoolano/feedi/blob/15add28488c5800eef2dbcb43adf1355da9133c3/feedi/config/default.py#L5)).
 
-### Browsing the feed
+## Browsing
 
-- Sources can be put into folders, accesible on the left sidebar (desktop) or on the navbar menu (mobile).
-- The feed behavior can be tweaked with the controls on the right sidebar (desktop) or on the navbar menu:
-- Entries are auto-marked as viewed as the user scrolls down the feed. By default, already seen entries are skipped next time the app is open.
 - The entry sorting puts least frequent sources at the top.
+- Entries are auto-marked as viewed as the user scrolls down the feed. By default, already seen entries are skipped next time the app is open.
+- Pinned entries will be kept at the top until unpinned.
+- Favorited entries will be preserved at the favorites section.
 
-### Reading articles
+## Reading
 There are different ways to interact with a feed entry:
 
 - If you click on the article title the original website will be open on a new browser tab.
@@ -84,12 +58,13 @@ There are different ways to interact with a feed entry:
 - If you click on the content or press Enter when focusing on the entry, the article content will be fetch and displayed on the local reader. This will be a stripped-down version of the article (removing some site links, ads and paywalls) powered by the [mozilla/readability](https://github.com/mozilla/readability) library. Note that for this to work you need node >= 20 installed when setting up the project.
   -  The reader can also be used to preview arbitrary articles by dragging their url to the searchbox.
 
+## Advanced configuration
 ### Deleting old articles
 
-Entries get deleted automatically some days after their publication ([defaulting to 7](https://github.com/facundoolano/feedi/blob/f9aaa582d8e690ab8d64baf3286ada8fb64e9f45/feedi/config/default.py#L10)).
-Pinned and favorited entries are never deleted. Additionally, a minimum of entries ([defaulting to 5](https://github.com/facundoolano/feedi/blob/f9aaa582d8e690ab8d64baf3286ada8fb64e9f45/feedi/config/default.py#L11)) is kept for all sources, regardless of their publication date.
+Entries get deleted automatically some days after their publication ([defaulting to 30](https://github.com/facundoolano/feedi/blob/029885cf08c1457d59f3758b11ec826409277a29/feedi/config/default.py#L11)).
+Pinned and favorited entries are never deleted. Additionally, a minimum of entries ([defaulting to 10](https://github.com/facundoolano/feedi/blob/029885cf08c1457d59f3758b11ec826409277a29/feedi/config/default.py#L12)) is kept for all sources, regardless of their publication date.
 
-## Advanced features
+
 ### Bulk import/export feeds from csv and OPML files
 
 `make feed-load` will load feeds from a local `feeds.csv` file. A [sample file](https://github.com/facundoolano/feedi/blob/HEAD/feeds.csv) is included in the repo
@@ -191,24 +166,6 @@ To add a custom parser, subclass [feedi.parsers.custom.CustomParser](https://git
 
 Once the parser is implemented, it will be used when a new feed of type "Custom" is added in the webapp with the expected url.
 
-
-### Keyboard shortcuts
-
-| shortcut                              | when                         | action                              |
-| -----------                           | -----------                  | ---------                           |
-| Cmd+k                                 |                              | focus search input                  |
-| Enter                                 | search focused               | submit first suggestion             |
-| Escape                                | search or suggestion focused | hide suggestions                    |
-| Down Arrow, Ctrl+n                    | search or suggestion focused | next suggestion                     |
-| Up Arrow, Ctrl+n                      | suggestion focused           | previous suggestion                 |
-| Enter                                 | entry focused                | open entry content                  |
-| Cmd+Enter, Cmd+Left Click             | entry focused                | open entry content on new tab       |
-| Cmd+Shift+Enter, Cmd+Shift+Left Click | entry focused                | open entry discussion on new window |
-| Down Arrow, Tab                       | entry focused                | focus next entry                    |
-| Up Arrow, Shift+Tab                   | entry focused                | focus previous entry                |
-| p                                     | entry focused                | pin entry                           |
-| f                                     | entry focused                | favorite entry                      |
-| Escape                                | viewing entry content        | go back                             |
 
 ### User management
 
