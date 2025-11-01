@@ -18,7 +18,7 @@ deps:
 	uv sync --no-dev
 
 deps-dev: deps
-	uv sync --dev
+	uv sync
 
 node_modules:
 	npm install || true

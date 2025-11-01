@@ -39,7 +39,7 @@ dev = [
 
 [tool.ruff]
 exclude = [
-    "venv",
+    ".venv",
     "migrations"
 ]
 
