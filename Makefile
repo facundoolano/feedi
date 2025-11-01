@@ -5,7 +5,15 @@ flask=$(venv) flask --app feedi/app.py
 
 export FLASK_ENV ?= development
 
-all: deps node_modules
+all: uv deps node_modules
+
+.PHONY: uv
+uv:
+	@command -v uv >/dev/null 2>&1 || \
+		(command -v curl >/dev/null 2>&1 && curl -LsSf https://astral.sh/uv/install.sh | sh) || \
+		(command -v wget >/dev/null 2>&1 && wget -qO- https://astral.sh/uv/install.sh | sh) || \
+		(echo "Error: Neither curl nor wget is available. Cannot install uv." && exit 1)
+
 
 venv:
 	python -m venv venv
