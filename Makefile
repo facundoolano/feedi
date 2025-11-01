@@ -17,7 +17,7 @@ uv:
 deps:
 	uv sync --no-dev
 
-deps-dev: deps
+deps-dev:
 	uv sync
 
 node_modules:

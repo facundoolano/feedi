@@ -353,7 +353,7 @@ dependencies = [
     { name = "werkzeug" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "feedgen" },
     { name = "flask-shell-ipython" },
@@ -372,28 +372,31 @@ requires-dist = [
     { name = "beautifulsoup4" },
     { name = "dateparser" },
     { name = "favicon" },
-    { name = "feedgen", marker = "extra == 'dev'" },
     { name = "feedparser" },
     { name = "flask" },
     { name = "flask-login" },
-    { name = "flask-shell-ipython", marker = "extra == 'dev'" },
     { name = "flask-sqlalchemy" },
     { name = "gevent" },
     { name = "gunicorn" },
-    { name = "httpretty", marker = "extra == 'dev'" },
     { name = "huey" },
-    { name = "ipdb", marker = "extra == 'dev'" },
-    { name = "ipython", marker = "extra == 'dev'" },
     { name = "lxml" },
     { name = "pillow" },
     { name = "pyopml" },
-    { name = "pytest", marker = "extra == 'dev'" },
     { name = "requests" },
-    { name = "ruff", marker = "extra == 'dev'" },
     { name = "sqlalchemy" },
     { name = "werkzeug" },
 ]
-provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "feedgen" },
+    { name = "flask-shell-ipython" },
+    { name = "httpretty" },
+    { name = "ipdb" },
+    { name = "ipython" },
+    { name = "pytest" },
+    { name = "ruff" },
+]
 
 [[package]]
 name = "feedparser"
