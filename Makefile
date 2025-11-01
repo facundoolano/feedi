@@ -26,7 +26,7 @@ node_modules:
 # make test
 # make test TEST=test_feed_ad
 test:
-	uv run FLASK_ENV=testing pytest --disable-warnings -v $(if $(TEST),-k $(TEST))
+	FLASK_ENV=testing uv run pytest --disable-warnings -v $(if $(TEST),-k $(TEST))
 
 format:
 	uv run ruff format
