@@ -14,11 +14,11 @@ uv:
 		(echo "Error: Neither curl nor wget is available. Cannot install uv." && exit 1)
 
 
-deps: uv
+deps:
 	uv sync --no-dev
 
-deps-dev:
-	uv sync
+deps-dev: deps
+	uv sync --dev
 
 node_modules:
 	npm install || true
