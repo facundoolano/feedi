@@ -5,7 +5,7 @@
 # Tested on a raspberry Pi OS and debian 12.
 #
 # ssh pi@feedi.local 'bash -s' < setup_server.sh
-# TODO: allow to customize pulled git branch
+# TODO: update to explicitly install and leverage uv, eg no explicit python install
 
 set -e
 
@@ -43,7 +43,7 @@ sudo su feedi -c "mkdir -p instance"
 sed -i '/DEFAULT_AUTH_USER/s/^# //g' feedi/config/production.py
 
 # mark the database as already migrated
-sudo su feedi -c "venv/bin/alembic stamp head"
+sudo su feedi -c ".venv/bin/alembic stamp head"
 
 sudo chown -R feedi .
 
@@ -68,7 +68,7 @@ User=feedi
 Group=feedi
 RuntimeDirectory=gunicorn
 WorkingDirectory=$FEEDI_DIR/feedi
-ExecStart=$FEEDI_DIR/feedi/venv/bin/gunicorn
+ExecStart=$FEEDI_DIR/feedi/.venv/bin/gunicorn
 ExecReload=/bin/kill -s HUP \$MAINPID
 KillMode=mixed
 TimeoutStopSec=5
