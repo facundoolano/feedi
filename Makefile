@@ -98,7 +98,7 @@ prod-install:
 # Update the version running on a remote server (initialized according to setup_server.sh)
 BRANCH ?= main
 prod-deploy:
-	ssh $(SSH) "cd /home/feedi/feedi && sudo su feedi -c \"make prod-update-code BRANCH=$(BRANCH)\" && sudo systemctl restart gunicorn"
+	ssh $(SSH) "sudo su feedi -l -c \"cd ~/feedi && make prod-update-code BRANCH=$(BRANCH)\" && sudo systemctl restart gunicorn"
 
 BRANCH ?= main
 prod-update-code:
