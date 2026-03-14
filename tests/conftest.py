@@ -10,7 +10,7 @@ import feedi.app as feedi_app
 from feedi.models import db
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def app():
     assert os.getenv("FLASK_ENV") == "testing", "not running in testing mode"
 
@@ -27,27 +27,30 @@ def app():
         db.drop_all()
 
 
-@pytest.fixture
-def client(app):
-    "Return a test client authenticated with a fresh user."
-
+def create_user(app):
+    "Create a fresh user in the DB, return its email."
+    # kind of lousy to interact with DB directly, but need to work around
+    # user registering not exposed to the web
     email = f"user-{uuid.uuid4()}@mail.com"
     with app.app_context():
-        # kind of lousy to interact with DB directly, but need to work around
-        # user registering not exposed to the web
         from feedi import models
 
         user = models.User(email=email)
         user.set_password("password")
         db.session.add(user)
         db.session.commit()
+    return email
 
-    client = app.test_client()
-    response = client.post("/auth/login", data={"email": email, "password": "password"}, follow_redirects=True)
-    assert response.status_code == 200
 
+@pytest.fixture
+def client(app):
+    "Return a test client authenticated with a fresh user."
     httpretty.reset()
+    email = create_user(app)
+    client = app.test_client()
+    client.post("/auth/login", data={"email": email, "password": "password"}, follow_redirects=True)
     return client
+
 
 
 def create_feed(client, domain, items, folder=None):

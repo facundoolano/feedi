@@ -286,8 +286,8 @@ def discover_feed(url):
 
     # assume the url is already a feed url
     parsed = feedparser.parse(res.content)
-    if not parsed.bozo:
-        # no error, looks like a proper feed
+    if parsed.version:
+        # feedparser identified a known RSS/Atom version: it's a proper feed
         title = parsed.feed.get("title")
         return url, title
 
