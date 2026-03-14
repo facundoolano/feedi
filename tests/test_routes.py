@@ -544,13 +544,18 @@ def test_text_search(client):
 def test_entry_unpin(client):
     "Unpinning a pinned entry removes it from the pinned section of the home feed."
     response, _ = create_feed(client, "feed1.com", [{"title": "my-article", "date": "2023-10-01 00:00Z"}])
-    pin_url = re.search(r"/pinned/(\d+)", response.text).group(0)
+    entry_id = extract_entry_ids(response)[0]
 
-    # entry_pin returns the updated pinned list as a partial
-    response = client.put(pin_url)
+    # pin returns the updated pinned list as a partial
+    response = client.put(f"/pinned/{entry_id}")
     assert "my-article" in response.text
 
-    response = client.put(pin_url)
+    # unpin also returns the updated pinned list
+    response = client.delete(f"/pinned/{entry_id}")
+    assert "my-article" not in response.text
+
+    # idempotent: unpinning again has no effect
+    response = client.delete(f"/pinned/{entry_id}")
     assert "my-article" not in response.text
 
 
@@ -562,7 +567,11 @@ def test_unfavorite(client):
     client.put(f"/favorites/{entry_id}")
     assert "my-article" in client.get("/favorites").text
 
-    client.put(f"/favorites/{entry_id}")
+    client.delete(f"/favorites/{entry_id}")
+    assert "my-article" not in client.get("/favorites").text
+
+    # idempotent: unfavoriting again has no effect
+    client.delete(f"/favorites/{entry_id}")
     assert "my-article" not in client.get("/favorites").text
 
 

@@ -155,41 +155,60 @@ def autocomplete():
 @app.put("/pinned/<int:id>")
 @login_required
 def entry_pin(id):
-    """
-    Toggle the pinned status of the given entry and return the new list of pinned
-    entries, respecting the url filters.
-    """
+    "Pin the given entry and return the updated list of pinned entries."
     entry = db.get_or_404(models.Entry, id)
     if entry.user_id != current_user.id:
         flask.abort(404)
 
-    if entry.pinned:
-        entry.pinned = None
-    else:
+    if not entry.pinned:
         entry.fetch_content()
         entry.pinned = datetime.datetime.utcnow()
-    db.session.commit()
+        db.session.commit()
 
-    # get the new list of pinned based on filters
     filters = dict(**flask.request.args)
     pinned = models.Entry.select_pinned(current_user.id, **filters)
+    return flask.render_template("entry_list_page.html", is_pinned_list=True, filters=filters, entries=pinned)
 
+
+@app.delete("/pinned/<int:id>")
+@login_required
+def entry_unpin(id):
+    "Unpin the given entry and return the updated list of pinned entries."
+    entry = db.get_or_404(models.Entry, id)
+    if entry.user_id != current_user.id:
+        flask.abort(404)
+
+    entry.pinned = None
+    db.session.commit()
+
+    filters = dict(**flask.request.args)
+    pinned = models.Entry.select_pinned(current_user.id, **filters)
     return flask.render_template("entry_list_page.html", is_pinned_list=True, filters=filters, entries=pinned)
 
 
 @app.put("/favorites/<int:id>")
 @login_required
 def entry_favorite(id):
-    "Toggle the favorite status of the given entry."
+    "Favorite the given entry."
     entry = db.get_or_404(models.Entry, id)
     if entry.user_id != current_user.id:
         flask.abort(404)
 
-    if entry.favorited:
-        entry.favorited = None
-    else:
+    if not entry.favorited:
         entry.favorited = datetime.datetime.utcnow()
+        db.session.commit()
+    return "", 204
 
+
+@app.delete("/favorites/<int:id>")
+@login_required
+def entry_unfavorite(id):
+    "Unfavorite the given entry."
+    entry = db.get_or_404(models.Entry, id)
+    if entry.user_id != current_user.id:
+        flask.abort(404)
+
+    entry.favorited = None
     db.session.commit()
     return "", 204
 
