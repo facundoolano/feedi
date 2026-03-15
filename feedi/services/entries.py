@@ -1,3 +1,4 @@
+import datetime
 import io
 import json
 import logging
@@ -6,98 +7,130 @@ import urllib
 import zipfile
 
 import dateparser
-
-# use internal module to access unexported .tags function
-import favicon.favicon as favicon
 from bs4 import BeautifulSoup
+from flask import current_app as app
 from PIL import Image
 from requests.exceptions import RequestException
 
-from feedi.requests import TIMEOUT_SLOWER, USER_AGENT, requests
+import feedi.email as feedi_email
+import feedi.models as models
+from feedi.models import db
+from feedi.parsers.requests import TIMEOUT_SLOWER, requests
+from feedi.parsers.scraping import all_meta, get_favicon
 
 logger = logging.getLogger(__name__)
 
 
-def get_favicon(url, html=None):
-    "Return the best favicon from the given url, or None."
-    url_parts = urllib.parse.urlparse(url)
-    url = f"{url_parts.scheme}://{url_parts.netloc}"
+def fetch_page(user_id, page_arg, hide_seen, is_mixed, **filters):
+    """
+    Fetch a page of entries from db, optionally applying query filters.
+    Returns (entry_page, next_page).
 
-    try:
-        if not html:
-            favicons = favicon.get(url, headers={"User-Agent": USER_AGENT}, timeout=2)
+    When pages other than the first are requested, the previous page of entries
+    is marked as 'viewed'.
+    """
+    # already viewed entries should be skipped according to setting
+    # but only for views that mix multiple feeds (e.g. home page, folders).
+    # If a specific feed is being browsed, it makes sense to show all the entries.
+    filters["hide_seen"] = is_mixed and hide_seen
+
+    # pagination includes a start_at timestamp so the entry set remains the same
+    # even if new entries are added between requests
+    if page_arg:
+        start_at, page_num = page_arg.split(":")
+        page_num = int(page_num)
+        start_at = datetime.datetime.fromtimestamp(float(start_at))
+    else:
+        start_at = datetime.datetime.utcnow()
+        page_num = 1
+
+    if is_mixed:
+        filters["newer_than"] = datetime.datetime.utcnow() - datetime.timedelta(days=14)
+
+    query = models.Entry.filter_by(user_id, start_at, **filters)
+    entry_page = db.paginate(query, per_page=app.config["ENTRY_PAGE_SIZE"], page=page_num)
+    next_page = f"{start_at.timestamp()}:{page_num + 1}" if entry_page.has_next else None
+
+    if entry_page.has_prev:
+        # mark the previous page as viewed. The rationale is that the user fetches
+        # nth page we can assume the previous one can be marked as viewed.
+        previous_ids = [e.id for e in entry_page.prev().items]
+        update = (
+            db.update(models.Entry).where(models.Entry.id.in_(previous_ids)).values(viewed=datetime.datetime.utcnow())
+        )
+        db.session.execute(update)
+        db.session.commit()
+
+    return entry_page, next_page
+
+
+def get_from_url(user_id, url):
+    """Load an entry for the given article URL if it exists, otherwise fetch its metadata and create one."""
+    entry = db.session.scalar(db.select(models.Entry).filter_by(content_url=url, user_id=user_id))
+
+    if not entry:
+        response = requests.get(url)
+        response.raise_for_status()
+
+        if not response.ok:
+            raise Exception()
+
+        soup = BeautifulSoup(response.content, "lxml")
+        metadata = all_meta(soup)
+
+        title = metadata.get("og:title", metadata.get("twitter:title", getattr(soup.title, "text")))
+        if not title:
+            raise ValueError(f"{url} is missing article metadata")
+
+        if "og:article:published_time" in metadata:
+            display_date = dateparser.parse(metadata["og:article:published_time"])
         else:
-            favicons = sorted(favicon.tags(url, html), key=lambda i: i.width + i.height, reverse=True)
-    except Exception:
-        logger.exception("error fetching favicon: %s", url)
-        return
+            display_date = datetime.datetime.utcnow()
 
-    # if there's an .ico one, prefer it since it's more likely to be
-    # a square icon rather than a banner
-    ico_format = [f for f in favicons if f.format == "ico"]
-    if ico_format:
-        return ico_format[0].url
+        values = {
+            "remote_id": url,
+            "title": title,
+            "username": metadata.get("author", "").split(",")[0],
+            "display_date": display_date,
+            "sort_date": datetime.datetime.utcnow(),
+            "content_short": metadata.get("og:description", metadata.get("description")),
+            "media_url": metadata.get("og:image", metadata.get("twitter:image")),
+            "target_url": url,
+            "content_url": url,
+            "raw_data": json.dumps(metadata),
+            "icon_url": get_favicon(url, html=response.content),
+        }
+        entry = models.Entry(user_id=user_id, **values)
 
-    # otherwise return the first
-    return favicons[0].url if favicons else None
-
-
-class CachingRequestsMixin:
-    """
-    Exposes a request method that caches the response contents for subsequent requests.
-    """
-
-    def __init__(self):
-        self.response_cache = {}
-
-    # TODO make this a proper cache of any sort of request, and cache all.
-    def request(self, url):
-        """
-        GET the content of the given url, and if the response is successful
-        cache it for subsequent calls to this method.
-        """
-        if url in self.response_cache:
-            logger.debug("using cached response %s", url)
-            return self.response_cache[url]
-
-        logger.debug("making request %s", url)
-        content = requests.get(url).content
-        self.response_cache[url] = content
-        return content
-
-    def fetch_meta(self, url, *tags):
-        """
-        GET the body of the url (which could be already cached) and extract the content of the given meta tag.
-        """
-        soup = BeautifulSoup(self.request(url), "lxml")
-        return extract_meta(soup, *tags)
+    return entry
 
 
-def extract_meta(soup, *tags):
-    for tag in tags:
-        for attr in ["property", "name", "itemprop"]:
-            meta_tag = soup.find("meta", {attr: tag}, content=True)
-            if meta_tag:
-                return meta_tag["content"]
+def fetch_content(entry):
+    """Fetch and store the full article content for the given entry."""
+    if entry.content_url and not entry.content_full:
+        try:
+            entry.content_full = _extract(entry.content_url)["content"]
+        except Exception as e:
+            logger.debug("failed to fetch content %s", e)
 
 
-def all_meta(soup):
-    result = {}
-    for attr in ["property", "name", "itemprop"]:
-        for meta_tag in soup.find_all("meta", {attr: True}, content=True):
-            result[meta_tag[attr]] = meta_tag["content"]
-    return result
+def send_to_kindle(user, url):
+    """Extract the article at url, package it as epub, send to Kindle, and record the entry."""
+    article = _extract(url)
+    attach_data = _package_epub(url, article)
+    feedi_email.send(user.kindle_email, attach_data, filename=article["title"])
+
+    # save as read entry if not already, to keep track of sent to kindle urls
+    entry = get_from_url(user.id, url)
+    entry.sent_to_kindle = datetime.datetime.now()
+    entry.viewed = entry.viewed or datetime.datetime.utcnow()
+    entry.content_full = article["content"]
+
+    db.session.add(entry)
+    db.session.commit()
 
 
-def make_absolute(url, path):
-    "If `path` is a relative url, join it with the given absolute url."
-    if not urllib.parse.urlparse(path).netloc:
-        path = urllib.parse.urljoin(url, path)
-    return path
-
-
-# TODO this should be renamed, and maybe other things in this modules, using extract too much
-def extract(url=None, html=None):
+def _extract(url=None, html=None):
     # The mozilla/readability npm package shows better results at extracting the
     # article content than all the python libraries I've tried... even than the readabilipy
     # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
@@ -128,12 +161,11 @@ def extract(url=None, html=None):
     return article
 
 
-def package_epub(url, article):
+def _package_epub(url, article):
     """
-    Extract the article content, convert it to a valid html doc, localize its images, write
+    Convert the article to a valid html doc, localize its images, write
     everything as a zip and add the proper EPUB metadata. Returns the zipped bytes.
     """
-
     output_buffer = io.BytesIO()
     with zipfile.ZipFile(output_buffer, "w") as zip:
         # mimetype should be the first file in the container and it should be uncompressed

@@ -10,9 +10,9 @@ import urllib
 import feedparser
 from bs4 import BeautifulSoup
 
-from feedi import scraping
-from feedi.requests import USER_AGENT, requests
-from feedi.scraping import CachingRequestsMixin
+from . import scraping
+from .requests import USER_AGENT, requests
+from .scraping import CachingRequestsMixin
 
 logger = logging.getLogger(__name__)
 

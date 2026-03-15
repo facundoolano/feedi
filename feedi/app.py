@@ -1,5 +1,3 @@
-# coding: utf-8
-
 from gevent import monkey
 
 monkey.patch_all()  # noqa
@@ -18,11 +16,11 @@ def create_app():
     app.logger.info("Starting app with FLASK_ENV=%s", os.getenv("FLASK_ENV"))
 
     with app.app_context():
-        from . import auth, filters, routes, tasks  # noqa
+        from . import web, tasks, cli  # noqa
 
         models.init_db(app)
 
-        auth.init()
+        cli.register(app)
 
         if not is_running_from_reloader() and not os.environ.get("DISABLE_CRON_TASKS"):
             # we want only one huey scheduler running, so we make sure

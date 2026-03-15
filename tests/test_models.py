@@ -105,4 +105,4 @@ def add_entries(app, feed_id, user_id, dates):
 def bucket_for(app, feed_id):
     with app.app_context():
         feed = db.session.get(RssFeed, feed_id)
-        return feed._calculate_bucket_from_db()
+        return feed.calculate_bucket()

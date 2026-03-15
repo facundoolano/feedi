@@ -4,8 +4,8 @@ import json
 import dateparser
 from bs4 import BeautifulSoup
 
-from feedi.requests import requests
-from feedi.scraping import CachingRequestsMixin
+from .requests import requests
+from .scraping import CachingRequestsMixin
 
 
 def fetch(feed_name, url):

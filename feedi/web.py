@@ -1,16 +1,16 @@
 import datetime
+import urllib
 
 import flask
+import flask_login
 import sqlalchemy as sa
+from bs4 import BeautifulSoup
 from flask import current_app as app
 from flask_login import current_user, login_required
 
-import feedi.email as email
 import feedi.models as models
-import feedi.tasks as tasks
-from feedi import scraping
 from feedi.models import db
-from feedi.parsers import rss
+from feedi.services import entries, feeds
 
 
 @app.route("/users/<username>")
@@ -23,7 +23,7 @@ from feedi.parsers import rss
 def entry_list(**filters):
     """
     Generic view to fetch a list of entries. By default renders the home timeline.
-    If accessed with a feed name or a pagination timestam, filter the resuls accordingly.
+    If accessed with a feed name or a pagination timestamp, filter the results accordingly.
     If the request is an html AJAX request, respond only with the entry list HTML fragment.
     """
     page = flask.request.args.get("page")
@@ -36,66 +36,21 @@ def entry_list(**filters):
 
     is_mixed_feed_list = filters.get("folder") or (flask.request.path == "/" and not filters.get("text"))
 
-    (entries, next_page) = fetch_entries_page(page, current_user.id, hide_seen, is_mixed_feed_list, **filters)
+    entry_page, next_page = entries.fetch_page(current_user.id, page, hide_seen, is_mixed_feed_list, **filters)
 
     if page:
         # if it's a paginated request, render a single page of the entry list
-        return flask.render_template("entry_list_page.html", entries=entries, filters=filters, next_page=next_page)
+        return flask.render_template("entry_list_page.html", entries=entry_page, filters=filters, next_page=next_page)
 
     # render home, including feeds sidebar
     return flask.render_template(
         "entry_list.html",
         pinned=models.Entry.select_pinned(current_user.id, **filters),
-        entries=entries,
+        entries=entry_page,
         next_page=next_page,
         is_mixed_feed_view=is_mixed_feed_list,
         filters=filters,
     )
-
-
-def fetch_entries_page(page_arg, user_id, hide_seen_setting, is_mixed_feed_list, **filters):
-    """
-    Fetch a page of entries from db, optionally applying query filters (text search, feed, folder, etc.).
-    The entry ordering depends on current filters and user session settings.
-    The return value is a tuple with the page of resulting entries and a string to
-    be passed to fetch the next page in a subsequent request.
-
-    When pages other than the first are requested, the previous page of entries
-    is marked as 'viewed'.
-    """
-    # already viewed entries should be skipped according to setting
-    # but only for views that mix multiple feeds(e.g. home page, folders).
-    # If a specific feed is beeing browsed, it makes sense to show all the entries.
-    filters["hide_seen"] = is_mixed_feed_list and hide_seen_setting
-
-    # pagination includes a start at timestamp so the entry set remains the same
-    # even if new entries are added between requests
-    if page_arg:
-        start_at, page_num = page_arg.split(":")
-        page_num = int(page_num)
-        start_at = datetime.datetime.fromtimestamp(float(start_at))
-    else:
-        start_at = datetime.datetime.utcnow()
-        page_num = 1
-
-    if is_mixed_feed_list:
-        filters["newer_than"] = datetime.datetime.utcnow() - datetime.timedelta(days=14)
-
-    query = models.Entry.filter_by(user_id, start_at, **filters)
-    entry_page = db.paginate(query, per_page=app.config["ENTRY_PAGE_SIZE"], page=page_num)
-    next_page = f"{start_at.timestamp()}:{page_num + 1}" if entry_page.has_next else None
-
-    if entry_page.has_prev:
-        # mark the previous page as viewed. The rationale is that the user fetches
-        # nth page we can assume the previous one can be marked as viewed.
-        previous_ids = [e.id for e in entry_page.prev().items]
-        update = (
-            db.update(models.Entry).where(models.Entry.id.in_(previous_ids)).values(viewed=datetime.datetime.utcnow())
-        )
-        db.session.execute(update)
-        db.session.commit()
-
-    return entry_page, next_page
 
 
 @app.get("/autocomplete")
@@ -161,7 +116,7 @@ def entry_pin(id):
         flask.abort(404)
 
     if not entry.pinned:
-        entry.fetch_content()
+        entries.fetch_content(entry)
         entry.pinned = datetime.datetime.utcnow()
         db.session.commit()
 
@@ -216,7 +171,7 @@ def entry_unfavorite(id):
 @app.route("/feeds")
 @login_required
 def feed_list():
-    feeds = db.session.execute(
+    feed_rows = db.session.execute(
         db.select(models.Feed, sa.func.count(1), sa.func.max(models.Entry.sort_date).label("updated"))
         .filter(models.Feed.user_id == current_user.id)
         .join(models.Entry, models.Feed.id == models.Entry.feed_id, isouter=True)
@@ -224,7 +179,7 @@ def feed_list():
         .order_by(sa.text("bucket desc"), sa.text("updated desc"))
     )
 
-    return flask.render_template("feeds.html", feeds=feeds)
+    return flask.render_template("feeds.html", feeds=feed_rows)
 
 
 @app.get("/feeds/new")
@@ -235,7 +190,7 @@ def feed_add():
     error_msg = None
 
     if url:
-        result = rss.discover_feed(url)
+        result = feeds.discover(url)
         if result:
             (url, name) = result
 
@@ -269,24 +224,18 @@ def feed_add_submit():
     if feed:
         return flask.render_template("feed_edit.html", error_msg=f"A feed with name '{name}' already exists", **values)
 
-    feed_cls = models.Feed.resolve(values["type"])
+    from feedi import tasks
 
-    feed = feed_cls(**values)
-    feed.user_id = current_user.id
-    db.session.add(feed)
-    db.session.flush()
-
-    feed.load_icon()
-    db.session.commit()
+    new_feed = feeds.add(current_user.id, values)
 
     # trigger a sync of this feed to fetch its entries.
     # making it blocking with .get() so we have entries to show on the redirect
-    tasks.sync_feed(feed.id, feed.name).get()
+    tasks.sync_feed(new_feed.id, new_feed.name).get()
 
     # NOTE it would be better to redirect to the feed itself, but since we load it async
     # we'd have to show a spinner or something and poll until it finishes loading
     # or alternatively hang the response until the feed is processed, neither of which is ideal
-    return flask.redirect(flask.url_for("entry_list", feed_id=feed.id))
+    return flask.redirect(flask.url_for("entry_list", feed_id=new_feed.id))
 
 
 @app.get("/feeds/<feed_id>")
@@ -336,19 +285,7 @@ def feed_delete(feed_id):
     if not feed:
         flask.abort(404, "Feed not found")
 
-    # preserve pinned and favorited by moving them out of the feed before deleting it.
-    update = (
-        db.update(models.Entry)
-        .where(
-            (models.Entry.feed_id == feed.id) & (models.Entry.favorited.isnot(None) | models.Entry.pinned.isnot(None))
-        )
-        .values(feed_id=None)
-    )
-    db.session.execute(update)
-
-    # running from db.session ensures cascading effects
-    db.session.delete(feed)
-    db.session.commit()
+    feeds.delete(feed)
     return "", 204
 
 
@@ -359,6 +296,8 @@ def feed_sync(feed_id):
     feed = db.session.scalar(db.select(models.Feed).filter_by(id=feed_id, user_id=current_user.id))
     if not feed:
         flask.abort(404, "Feed not found")
+
+    from feedi import tasks
 
     task = tasks.sync_feed(feed.id, feed.name, force=True)
     task.get()
@@ -380,10 +319,10 @@ def entry_add():
     redirect = flask.request.args.get("redirect")
 
     try:
-        entry = models.Entry.from_url(current_user.id, url)
+        entry = entries.get_from_url(current_user.id, url)
     except Exception:
         if redirect:
-            return redirect_response(url)
+            return _redirect_response(url)
         else:
             return "failed to parse entry", 500
 
@@ -391,7 +330,7 @@ def entry_add():
     db.session.commit()
 
     if redirect:
-        return redirect_response(flask.url_for("entry_view", id=entry.id))
+        return _redirect_response(flask.url_for("entry_view", id=entry.id))
     else:
         return "", 204
 
@@ -423,29 +362,16 @@ def entry_view(id):
 
         # if it's a video site, just redirect. TODO add more sites
         if "youtube.com" in entry.content_url or "vimeo.com" in entry.content_url:
-            return redirect_response(entry.target_url)
+            return _redirect_response(entry.target_url)
 
         # if full browser load or explicit content request, fetch the article synchronously
-        entry.fetch_content()
+        entries.fetch_content(entry)
         if entry.content_full:
             entry.viewed = entry.viewed or datetime.datetime.utcnow()
             db.session.commit()
             return flask.render_template("entry_content.html", entry=entry, content=entry.content_full)
 
-        return redirect_response(entry.target_url)
-
-
-def redirect_response(url):
-    """
-    Issue the proper redirect depending on whether the current request came
-    is a regular one or an ajax/htmx one.
-    """
-    if "HX-Request" in flask.request.headers:
-        response = flask.make_response()
-        response.headers["HX-Redirect"] = url
-        return response
-    else:
-        return flask.redirect(url)
+        return _redirect_response(entry.target_url)
 
 
 @app.post("/entries/kindle")
@@ -458,19 +384,7 @@ def send_to_kindle():
         return "", 204
 
     url = flask.request.args["url"]
-
-    article = scraping.extract(url)
-    attach_data = scraping.package_epub(url, article)
-    email.send(current_user.kindle_email, attach_data, filename=article["title"])
-
-    # save as read entry if not already, to keep track of sent to kindle urls
-    entry = models.Entry.from_url(current_user.id, url)
-    entry.sent_to_kindle = datetime.datetime.now()
-    entry.viewed = entry.viewed or datetime.datetime.utcnow()
-    entry.content_full = article["content"]
-
-    db.session.add(entry)
-    db.session.commit()
+    entries.send_to_kindle(current_user, url)
 
     return "", 204
 
@@ -524,7 +438,170 @@ def toggle_setting(setting):
     return "", 204
 
 
+def _redirect_response(url):
+    """
+    Issue the proper redirect depending on whether the current request
+    is a regular one or an ajax/htmx one.
+    """
+    if "HX-Request" in flask.request.headers:
+        response = flask.make_response()
+        response.headers["HX-Redirect"] = url
+        return response
+    else:
+        return flask.redirect(url)
+
+
 @app.context_processor
 def template_defaults():
     # templates expect this to exist
     return dict(filters={})
+
+
+# Auth
+
+
+login_manager = flask_login.LoginManager()
+login_manager.login_view = "login"
+login_manager.init_app(app)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(models.User, int(user_id))
+
+
+@app.get("/auth/login")
+def login():
+    # if config has a default user it means auth is disabled
+    # just load the user so we know what to point feeds to in the DB
+    default_email = app.config.get("DEFAULT_AUTH_USER")
+    if default_email:
+        app.logger.debug("Logging default user %s", default_email)
+        user = db.session.scalar(db.select(models.User).filter_by(email=default_email))
+        flask_login.login_user(user, remember=True)
+        return flask.redirect(flask.url_for("entry_list"))
+
+    return flask.render_template("login.html")
+
+
+@app.post("/auth/login")
+def login_post():
+    email = flask.request.form.get("email")
+    password = flask.request.form.get("password")
+    if not email or not password:
+        return flask.render_template("login.html", error_msg="missing required field")
+
+    user = db.session.scalar(db.select(models.User).filter_by(email=email))
+
+    if not user or not user.check_password(password):
+        return flask.render_template("login.html", error_msg="authentication failed")
+
+    flask_login.login_user(user, remember=True)
+
+    return flask.redirect(flask.url_for("entry_list"))
+
+
+@app.get("/auth/kindle")
+@login_required
+def kindle_add():
+    feedi_email = app.config.get("FEEDI_EMAIL")
+    if not feedi_email:
+        return flask.abort(400, "no feedi email configured")
+    return flask.render_template("kindle.html", feedi_email=feedi_email)
+
+
+@app.post("/auth/kindle")
+@login_required
+def kindle_add_submit():
+    kindle_email = flask.request.form.get("kindle_email")
+    current_user.kindle_email = kindle_email
+    db.session.commit()
+    return flask.redirect(flask.url_for("entry_list"))
+
+
+# Template filters
+
+
+# TODO unit test this
+@app.template_filter("humanize")
+def humanize_date(dt):
+    delta = datetime.datetime.utcnow() - dt
+
+    if delta < datetime.timedelta(seconds=60):
+        return f"{delta.seconds}s"
+    elif delta < datetime.timedelta(hours=1):
+        return f"{delta.seconds // 60}m"
+    elif delta < datetime.timedelta(days=1):
+        return f"{delta.seconds // 60 // 60}h"
+    elif delta < datetime.timedelta(days=8):
+        return f"{delta.days}d"
+    elif delta < datetime.timedelta(days=365):
+        return dt.strftime("%b %d")
+    return dt.strftime("%b %d, %Y")
+
+
+@app.template_filter("url_domain")
+def feed_domain(url):
+    parts = urllib.parse.urlparse(url)
+    return parts.netloc.replace("www.", "")
+
+
+@app.template_filter("sanitize")
+def sanitize_content(html, truncate=True):
+    if not html:
+        return ""
+
+    # poor man's line truncating: reduce the amount of characters and let bs4 fix the html
+    soup = BeautifulSoup(html, "lxml")
+    if len(html) > 500 and truncate:
+        html = html[:500] + "…"
+        soup = BeautifulSoup(html, "lxml")
+
+    if soup.html:
+        if soup.html.body:
+            soup.html.body.unwrap()
+        soup.html.unwrap()
+
+    for a in soup.find_all("a", href=True):
+        # prevent link clicks triggering the container's click event
+        # add kb modifiers to open in reader
+        read_url = flask.url_for("entry_add", url=a["href"], redirect=1)
+        a["_"] = f"""
+        on click[shiftKey and not metaKey] go to url {read_url} then halt
+        then on click[shiftKey and metaKey] go to url {read_url} in new window then halt
+        then on click halt the event's bubbling
+        """
+
+    return str(soup)
+
+
+# FIXME this wouldn't be necessary if I could figure out the proper CSS
+# to make the text hide on overflow
+@app.template_filter("entry_excerpt")
+def entry_excerpt(entry):
+    if not entry.content_short:
+        return "[click to read]"
+
+    if entry.content_url and entry.title:
+        title = entry.title
+    elif entry.has_distinct_user:
+        title = entry.display_name or entry.username
+    else:
+        title = entry.feed.name
+
+    body_text = BeautifulSoup(entry.content_short, "lxml").text
+
+    # truncate according to display title length so all entries
+    # have aproximately the same length
+    max_length = 100
+    max_body_length = max(0, max_length - len(title))
+    if len(body_text) > max_body_length:
+        return body_text[:max_body_length] + "…"
+
+    return body_text
+
+
+@app.template_filter("feed_name")
+def feed_name(feed_id):
+    feed = db.get_or_404(models.Feed, feed_id)
+    return feed.name

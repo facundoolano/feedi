@@ -1,16 +1,11 @@
 import datetime
-import json
 import logging
 import urllib
 
 import sqlalchemy as sa
-import sqlalchemy.dialects.sqlite as sqlite
 import werkzeug.security as security
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
-
-import feedi.parsers as parsers
-from feedi import scraping
 
 # TODO consider adding explicit support for url columns
 
@@ -124,52 +119,7 @@ class Feed(db.Model):
     def to_valuelist(self):
         return [self.type, self.name, self.url, self.folder]
 
-    def sync_with_remote(self, force=False):
-        """
-        Fetch this feed entries from its remote sources, saving them to the database and updating
-        the feed metadata. The specific fetching logic is implemented by subclasses through the
-        `fetch_entry_data` method.
-        If `force` is True, syncing will be attempted even if it was already done recently.
-        """
-        from flask import current_app as app
-
-        utcnow = datetime.datetime.utcnow()
-
-        cooldown_minutes = datetime.timedelta(minutes=app.config["SKIP_RECENTLY_UPDATED_MINUTES"])
-        if not force and self.last_fetch and (utcnow - self.last_fetch < cooldown_minutes):
-            app.logger.info("skipping recently synced feed %s", self.name)
-            return
-
-        entries = self.fetch_entry_data(force)
-        self.last_fetch = utcnow
-
-        for values in entries:
-            # upsert to handle already seen entries.
-            # updated time set explicitly as defaults are not honored in manual on_conflict_do_update
-            values["updated"] = utcnow
-            values["feed_id"] = self.id
-            values["user_id"] = self.user_id
-
-            update_values = dict(**values)
-            update_values.pop("sort_date", None)
-            db.session.execute(
-                sqlite.insert(Entry)
-                .values(**values)
-                .on_conflict_do_update(("feed_id", "remote_id"), set_=update_values)
-            )
-
-        # Calculate and store bucket after entries are inserted
-        self.bucket = self._calculate_bucket_from_db()
-        db.session.commit()
-
-    def fetch_entry_data(self, _force=False):
-        """
-        To be implemented by subclasses, this should contact the remote feed source, parse any new entries
-        and return a list of values for each one.
-        """
-        raise NotImplementedError
-
-    def _calculate_bucket_from_db(self):
+    def calculate_bucket(self):
         """
         Count the daily average amount of entries per feed currently in the db
         and put the result into "buckets". The rationale is to show least frequent first,
@@ -208,10 +158,6 @@ class Feed(db.Model):
         else:
             return 5  # more
 
-    def load_icon(self):
-        ""
-        self.icon_url = scraping.get_favicon(self.url)
-
 
 class RssFeed(Feed):
     etag = sa.Column(sa.String, doc="Etag received on last parsed rss, to prevent re-fetching if it hasn't changed.")
@@ -234,37 +180,9 @@ class RssFeed(Feed):
     def to_valuelist(self):
         return [self.type, self.name, self.url, self.folder, self.filters]
 
-    def fetch_entry_data(self, force=False):
-        from flask import current_app as app
-
-        skip_older_than = datetime.datetime.utcnow() - datetime.timedelta(days=app.config["RSS_SKIP_OLDER_THAN_DAYS"])
-
-        feed_data, entries, etag, modified = parsers.rss.fetch(
-            self.name,
-            self.url,
-            skip_older_than,
-            app.config["RSS_MINIMUM_ENTRY_AMOUNT"],
-            None if force else self.last_fetch,
-            None if force else self.etag,
-            None if force else self.modified_header,
-            self.filters,
-        )
-
-        self.etag = etag
-        self.modified_header = modified
-        if feed_data:
-            self.raw_data = json.dumps(feed_data)
-        return entries
-
-    def load_icon(self):
-        self.icon_url = parsers.rss.fetch_icon(self.url)
-
 
 class CustomFeed(Feed):
     __mapper_args__ = {"polymorphic_identity": Feed.TYPE_CUSTOM}
-
-    def fetch_entry_data(self, _force=False):
-        return parsers.custom.fetch(self.name, self.url)
 
 
 class Entry(db.Model):
@@ -353,16 +271,6 @@ class Entry(db.Model):
 
     __table_args__ = (sa.UniqueConstraint("feed_id", "remote_id"), sa.Index("entry_sort_ts", sort_date.desc()))
 
-    @classmethod
-    def from_url(cls, user_id, url):
-        "Load an entry for the given article url if it exists, otherwise create a new one."
-        entry = db.session.scalar(db.select(cls).filter_by(content_url=url, user_id=user_id))
-
-        if not entry:
-            values = parsers.html.fetch(url)
-            entry = cls(user_id=user_id, **values)
-        return entry
-
     def __repr__(self):
         return f"<Entry {self.feed_id}/{self.remote_id}>"
 
@@ -391,13 +299,6 @@ class Entry(db.Model):
         it has an avatar and a name that can be displayed instead of a generic feed icon.
         """
         return self.avatar_url and (self.display_name or self.username)
-
-    def fetch_content(self):
-        if self.content_url and not self.content_full:
-            try:
-                self.content_full = scraping.extract(self.content_url)["content"]
-            except Exception as e:
-                logger.debug("failed to fetch content %s", e)
 
     @classmethod
     def _filtered_query(
