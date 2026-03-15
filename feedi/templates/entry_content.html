@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros.html" import toggle_attrs %}
 
 {% block title %}| {{ entry.title }}{% endblock %}
 
@@ -35,23 +36,7 @@
                 <i class="fas fa-arrow-left fa-lg"></i>
             </a>
         <a class="level-item icon is-white is-rounded fav-button {% if entry.favorited %}toggled{% endif %}" title="Favorite"
-           data-fav-url="{{ url_for('entry_favorite', id=entry.id) }}"
-           data-unfav-url="{{ url_for('entry_unfavorite', id=entry.id) }}"
-           {% if entry.favorited %}hx-delete="{{ url_for('entry_unfavorite', id=entry.id) }}"
-           {% else %}hx-put="{{ url_for('entry_favorite', id=entry.id) }}"{% endif %}
-           _="on click
-                 for btn in <.fav-button/>
-                   toggle .toggled on btn
-                 end
-               on htmx:afterRequest[detail.successful]
-                 for btn in <.fav-button/>
-                   if btn matches .toggled set btn @hx-delete to btn @data-unfav-url then remove @hx-put from btn
-                   else set btn @hx-put to btn @data-fav-url then remove @hx-delete from btn end
-                 end
-               on htmx:afterRequest[detail.failed]
-                 for btn in <.fav-button/>
-                   toggle .toggled on btn
-                 end"
+           {{ toggle_attrs(url_for('entry_favorite', id=entry.id), url_for('entry_unfavorite', id=entry.id), entry.favorited, 'fav-button') }}
         ><i class="fas fa-star"></i></a>
 
         {% if entry.comments_url %}
@@ -67,24 +52,8 @@
         {% endif %}
 
         <a class="level-item icon hover-icon is-white is-rounded pin-button {% if entry.pinned %}toggled{% endif %}" title="Pin"
-           data-pin-url="{{ url_for('entry_pin', id=entry.id, **filters) }}"
-           data-unpin-url="{{ url_for('entry_unpin', id=entry.id, **filters) }}"
-           {% if entry.pinned %}hx-delete="{{ url_for('entry_unpin', id=entry.id, **filters) }}"
-           {% else %}hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"{% endif %}
-           hx-swap="none"
-           _="on click
-                 for btn in <.pin-button/>
-                   toggle .toggled on btn
-                 end
-               on htmx:afterRequest[detail.successful]
-                 for btn in <.pin-button/>
-                   if btn matches .toggled set btn @hx-delete to btn @data-unpin-url then remove @hx-put from btn
-                   else set btn @hx-put to btn @data-pin-url then remove @hx-delete from btn end
-                 end
-               on htmx:afterRequest[detail.failed]
-                 for btn in <.pin-button/>
-                   toggle .toggled on btn
-                 end">
+           {{ toggle_attrs(url_for('entry_pin', id=entry.id, **filters), url_for('entry_unpin', id=entry.id, **filters), entry.pinned, 'pin-button') }}
+           hx-swap="none">
             <i class="fas fa-thumbtack"></i></a>
 
         <a class="level-item icon hover-icon is-white is-rounded" title="More"
@@ -119,43 +88,11 @@
             <div class="level entry-quick-actions">
                 <div class="level-left is-hidden-mobile">
                     <a tabindex="-1" class="level-item icon  is-white is-rounded fav-button {% if entry.favorited %}toggled{% endif %}" title="Favorite entry"
-                       data-fav-url="{{ url_for('entry_favorite', id=entry.id) }}"
-                       data-unfav-url="{{ url_for('entry_unfavorite', id=entry.id) }}"
-                       {% if entry.favorited %}hx-delete="{{ url_for('entry_unfavorite', id=entry.id) }}"
-                       {% else %}hx-put="{{ url_for('entry_favorite', id=entry.id) }}"{% endif %}
-                       _="on click
-                             for btn in <.fav-button/>
-                               toggle .toggled on btn
-                             end
-                           on htmx:afterRequest[detail.successful]
-                             for btn in <.fav-button/>
-                               if btn matches .toggled set btn @hx-delete to btn @data-unfav-url then remove @hx-put from btn
-                               else set btn @hx-put to btn @data-fav-url then remove @hx-delete from btn end
-                             end
-                           on htmx:afterRequest[detail.failed]
-                             for btn in <.fav-button/>
-                               toggle .toggled on btn
-                             end"
+                       {{ toggle_attrs(url_for('entry_favorite', id=entry.id), url_for('entry_unfavorite', id=entry.id), entry.favorited, 'fav-button') }}
                     ><i class="fas fa-star"></i></a>
                     <a tabindex="-1" class="level-item icon  is-white is-rounded pin-button {% if entry.pinned %}toggled{% endif %}" title="Pin entry"
-                       data-pin-url="{{ url_for('entry_pin', id=entry.id, **filters) }}"
-                       data-unpin-url="{{ url_for('entry_unpin', id=entry.id, **filters) }}"
-                       {% if entry.pinned %}hx-delete="{{ url_for('entry_unpin', id=entry.id, **filters) }}"
-                       {% else %}hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"{% endif %}
-                       hx-swap="none"
-                       _="on click
-                             for btn in <.pin-button/>
-                               toggle .toggled on btn
-                             end
-                           on htmx:afterRequest[detail.successful]
-                             for btn in <.pin-button/>
-                               if btn matches .toggled set btn @hx-delete to btn @data-unpin-url then remove @hx-put from btn
-                               else set btn @hx-put to btn @data-pin-url then remove @hx-delete from btn end
-                             end
-                           on htmx:afterRequest[detail.failed]
-                             for btn in <.pin-button/>
-                               toggle .toggled on btn
-                             end">
+                       {{ toggle_attrs(url_for('entry_pin', id=entry.id, **filters), url_for('entry_unpin', id=entry.id, **filters), entry.pinned, 'pin-button') }}
+                       hx-swap="none">
                         <i class="fas fa-thumbtack"></i></a>
                 </div>
             </div>

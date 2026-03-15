@@ -1,3 +1,4 @@
+{% from "macros.html" import toggle_attrs %}
 <div class="level feed-header is-mobile">
     <div class="level-left mobile-top-align">
         <div class="level-item is-hidden-tablet mobile-top-align">
@@ -60,70 +61,21 @@
             </div>
         </div>
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded pin-button {% if entry.pinned %}toggled{% endif %}" title="Pin entry"
-           data-pin-url="{{ url_for('entry_pin', id=entry.id, **filters) }}"
-           data-unpin-url="{{ url_for('entry_unpin', id=entry.id, **filters) }}"
-           {% if entry.pinned %}hx-delete="{{ url_for('entry_unpin', id=entry.id, **filters) }}"
-           {% else %}hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"{% endif %}
+           {{ toggle_attrs(url_for('entry_pin', id=entry.id, **filters), url_for('entry_unpin', id=entry.id, **filters), entry.pinned, 'pin-button', "[data-id='" ~ entry.id ~ "'] ") }}
            hx-target="#pinned-entry-list"
-           {% if not is_pinned_list %}hx-swap="none"{% endif %}
-           _="on click
-                 for btn in <[data-id='{{entry.id}}'] .pin-button/>
-                   toggle .toggled on btn
-                 end
-               on htmx:afterRequest[detail.successful]
-                 for btn in <[data-id='{{entry.id}}'] .pin-button/>
-                   if btn matches .toggled set btn @hx-delete to btn @data-unpin-url then remove @hx-put from btn
-                   else set btn @hx-put to btn @data-pin-url then remove @hx-delete from btn end
-                 end
-               on htmx:afterRequest[detail.failed]
-                 for btn in <[data-id='{{entry.id}}'] .pin-button/>
-                   toggle .toggled on btn
-                 end">
+           {% if not is_pinned_list %}hx-swap="none"{% endif %}>
             <i class="fas fa-thumbtack"></i></a>
     </div>
     <div class="is-hidden-desktop mobile-top-align mobile-actions">
         <a tabindex="-1" class="level-item is-pulled-right icon is-white is-rounded pin-button {% if entry.pinned %}toggled{% endif %}" title="Pin entry"
-           data-pin-url="{{ url_for('entry_pin', id=entry.id, **filters) }}"
-           data-unpin-url="{{ url_for('entry_unpin', id=entry.id, **filters) }}"
-           {% if entry.pinned %}hx-delete="{{ url_for('entry_unpin', id=entry.id, **filters) }}"
-           {% else %}hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"{% endif %}
+           {{ toggle_attrs(url_for('entry_pin', id=entry.id, **filters), url_for('entry_unpin', id=entry.id, **filters), entry.pinned, 'pin-button', "[data-id='" ~ entry.id ~ "'] ") }}
            hx-target="#pinned-entry-list"
-           {% if not is_pinned_list %}hx-swap="none"{% endif %}
-           _="on click
-                 for btn in <[data-id='{{entry.id}}'] .pin-button/>
-                   toggle .toggled on btn
-                 end
-               on htmx:afterRequest[detail.successful]
-                 for btn in <[data-id='{{entry.id}}'] .pin-button/>
-                   if btn matches .toggled set btn @hx-delete to btn @data-unpin-url then remove @hx-put from btn
-                   else set btn @hx-put to btn @data-pin-url then remove @hx-delete from btn end
-                 end
-               on htmx:afterRequest[detail.failed]
-                 for btn in <[data-id='{{entry.id}}'] .pin-button/>
-                   toggle .toggled on btn
-                 end">
+           {% if not is_pinned_list %}hx-swap="none"{% endif %}>
             <i class="fas fa-thumbtack"></i></a>
     </div>
     <div class="level-right is-hidden-touch desktop-actions">
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded fav-button {% if entry.favorited %}toggled{% endif %}" title="Favorite"
-           data-fav-url="{{ url_for('entry_favorite', id=entry.id) }}"
-           data-unfav-url="{{ url_for('entry_unfavorite', id=entry.id) }}"
-           {% if entry.favorited %}hx-delete="{{ url_for('entry_unfavorite', id=entry.id) }}"
-           {% else %}hx-put="{{ url_for('entry_favorite', id=entry.id) }}"{% endif %}
-           _="on click
-                 for btn in <[data-id='{{entry.id}}'] .fav-button/>
-                   toggle .toggled on btn
-                 end
-               on htmx:afterRequest[detail.successful]
-                 for btn in <[data-id='{{entry.id}}'] .fav-button/>
-                   if btn matches .toggled set btn @hx-delete to btn @data-unfav-url then remove @hx-put from btn
-                   else set btn @hx-put to btn @data-fav-url then remove @hx-delete from btn end
-                 end
-               on htmx:afterRequest[detail.failed]
-                 for btn in <[data-id='{{entry.id}}'] .fav-button/>
-                   toggle .toggled on btn
-                 end
-               then on keyup[key is 'f'] from the closest .feed-entry trigger click on me"
+           {{ toggle_attrs(url_for('entry_favorite', id=entry.id), url_for('entry_unfavorite', id=entry.id), entry.favorited, 'fav-button', "[data-id='" ~ entry.id ~ "'] ") }}
         ><i class="fas fa-star"></i></a>
         {% if entry.comments_url %}
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded" title="Comment"
@@ -144,26 +96,9 @@
             </div>
         </div>
         <a tabindex="-1" class="level-item icon hover-icon is-white is-rounded pin-button {% if entry.pinned %}toggled{% endif %}" title="Pin"
-           data-pin-url="{{ url_for('entry_pin', id=entry.id, **filters) }}"
-           data-unpin-url="{{ url_for('entry_unpin', id=entry.id, **filters) }}"
-           {% if entry.pinned %}hx-delete="{{ url_for('entry_unpin', id=entry.id, **filters) }}"
-           {% else %}hx-put="{{ url_for('entry_pin', id=entry.id, **filters) }}"{% endif %}
+           {{ toggle_attrs(url_for('entry_pin', id=entry.id, **filters), url_for('entry_unpin', id=entry.id, **filters), entry.pinned, 'pin-button', "[data-id='" ~ entry.id ~ "'] ") }}
            hx-target="#pinned-entry-list"
-           {% if not is_pinned_list %}hx-swap="none"{% endif %}
-           _="on click
-                 for btn in <[data-id='{{entry.id}}'] .pin-button/>
-                   toggle .toggled on btn
-                 end
-               on htmx:afterRequest[detail.successful]
-                 for btn in <[data-id='{{entry.id}}'] .pin-button/>
-                   if btn matches .toggled set btn @hx-delete to btn @data-unpin-url then remove @hx-put from btn
-                   else set btn @hx-put to btn @data-pin-url then remove @hx-delete from btn end
-                 end
-               on htmx:afterRequest[detail.failed]
-                 for btn in <[data-id='{{entry.id}}'] .pin-button/>
-                   toggle .toggled on btn
-                 end
-               then on keyup[key is 'p'] from the closest .feed-entry trigger click on me">
+           {% if not is_pinned_list %}hx-swap="none"{% endif %}>
             <i class="fas fa-thumbtack"></i></a>
     </div>
 </div>

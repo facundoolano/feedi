@@ -1,0 +1,18 @@
+{% macro toggle_attrs(on_url, off_url, is_active, btn_class, selector='') %}
+data-on-url="{{ on_url }}"
+data-off-url="{{ off_url }}"
+{% if is_active %}hx-delete="{{ off_url }}"{% else %}hx-put="{{ on_url }}"{% endif %}
+_="on click
+     for btn in <{{ selector }}.{{ btn_class }}/>
+       toggle .toggled on btn
+     end
+   on htmx:afterRequest[detail.successful]
+     for btn in <{{ selector }}.{{ btn_class }}/>
+       if btn matches .toggled set btn @hx-delete to btn @data-off-url then remove @hx-put from btn
+       else set btn @hx-put to btn @data-on-url then remove @hx-delete from btn end
+     end
+   on htmx:afterRequest[detail.failed]
+     for btn in <{{ selector }}.{{ btn_class }}/>
+       toggle .toggled on btn
+     end"
+{% endmacro %}

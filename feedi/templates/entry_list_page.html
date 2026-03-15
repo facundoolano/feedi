@@ -1,3 +1,4 @@
+{% from "macros.html" import toggle_attrs %}
 {% for entry in entries %}
 <div class="card feed-entry is-radiusless {% if entry.viewed %}viewed{% endif %}" tabindex="0"
      _="on keydown[key is 'ArrowDown'] focus() the next <.feed-entry:not(.is-hidden)/> then go to top of me then halt
@@ -64,23 +65,7 @@
      </div>
      <div class="level is-mobile is-hidden-desktop entry-mobile-footer">
          <a tabindex="-1" class="level-item icon  is-white is-rounded fav-button {% if entry.favorited %}toggled{% endif %}" title="Favorite"
-            data-fav-url="{{ url_for('entry_favorite', id=entry.id) }}"
-            data-unfav-url="{{ url_for('entry_unfavorite', id=entry.id) }}"
-            {% if entry.favorited %}hx-delete="{{ url_for('entry_unfavorite', id=entry.id) }}"
-            {% else %}hx-put="{{ url_for('entry_favorite', id=entry.id) }}"{% endif %}
-            _="on click
-                  for btn in <[data-id='{{entry.id}}'] .fav-button/>
-                    toggle .toggled on btn
-                  end
-                on htmx:afterRequest[detail.successful]
-                  for btn in <[data-id='{{entry.id}}'] .fav-button/>
-                    if btn matches .toggled set btn @hx-delete to btn @data-unfav-url then remove @hx-put from btn
-                    else set btn @hx-put to btn @data-fav-url then remove @hx-delete from btn end
-                  end
-                on htmx:afterRequest[detail.failed]
-                  for btn in <[data-id='{{entry.id}}'] .fav-button/>
-                    toggle .toggled on btn
-                  end"
+            {{ toggle_attrs(url_for('entry_favorite', id=entry.id), url_for('entry_unfavorite', id=entry.id), entry.favorited, 'fav-button', "[data-id='" ~ entry.id ~ "'] ") }}
          ><i class="fas fa-star"></i></a>
 
         {% if entry.comments_url %}
