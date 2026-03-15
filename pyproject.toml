@@ -21,6 +21,7 @@ dependencies = [
     "gunicorn",
     "pyopml",
     "flask-login",
+    "wtforms",
     "Werkzeug",
     "dateparser",
     "Pillow",

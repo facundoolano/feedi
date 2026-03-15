@@ -575,6 +575,18 @@ def test_unfavorite(client):
     assert "my-article" not in client.get("/favorites").text
 
 
+def test_feed_form_validation(client):
+    "The add feed form rejects missing or malformed fields."
+    response = client.post("/feeds/new", data={"type": "rss", "url": "http://feed1.com/feed"})
+    assert "name is required" in response.text
+
+    response = client.post("/feeds/new", data={"type": "rss", "name": "feed1"})
+    assert "url is required" in response.text
+
+    response = client.post("/feeds/new", data={"type": "rss", "name": "feed1", "url": "not-a-url"})
+    assert "valid URL" in response.text
+
+
 def test_feed_name_conflict(client):
     "Attempting to add a feed with a name that already exists shows an error and creates no duplicate."
     create_feed(client, "feed1.com", [{"title": "a1", "date": "2023-10-01 00:00Z"}])
@@ -587,6 +599,36 @@ def test_feed_name_conflict(client):
     )
     assert "already exists" in response.text
     assert "b1" not in client.get("/").text
+
+
+def test_feed_url_conflict(client):
+    "Adding a feed whose URL is already subscribed (including normalized variants) shows an error."
+    create_feed(client, "feed1.com", [{"title": "a1", "date": "2023-10-01 00:00Z"}])
+
+    # exact same URL, different name
+    response = client.post(
+        "/feeds/new",
+        data={"type": "rss", "name": "different-name", "url": "http://feed1.com/feed"},
+        follow_redirects=True,
+    )
+    assert "already subscribed" in response.text
+
+    # trailing slash variant
+    response = client.post(
+        "/feeds/new",
+        data={"type": "rss", "name": "another-name", "url": "http://feed1.com/feed/"},
+        follow_redirects=True,
+    )
+    assert "already subscribed" in response.text
+
+    # different query string — not a duplicate
+    feed_url = mock_feed("feed1.com", [{"title": "a1", "date": "2023-10-01 00:00Z"}], query="format=rss")
+    response = client.post(
+        "/feeds/new",
+        data={"type": "rss", "name": "feed1.com-rss", "url": feed_url},
+        follow_redirects=True,
+    )
+    assert "already subscribed" not in response.text
 
 
 def test_entry_security_isolation(app, client):

@@ -8,6 +8,9 @@ from bs4 import BeautifulSoup
 from flask import current_app as app
 from flask_login import current_user, login_required
 
+from wtforms import Form, StringField
+from wtforms.validators import InputRequired, Optional, URL
+
 import feedi.models as models
 from feedi.models import db
 from feedi.services import entries, feeds
@@ -182,6 +185,17 @@ def feed_list():
     return flask.render_template("feeds.html", feeds=feed_rows)
 
 
+class FeedForm(Form):
+    def _strip(value):
+        return value.strip() if value else value
+
+    # type is not included here because it's immutable after creation (disabled on edit, not submitted)
+    name    = StringField(filters=[_strip], validators=[InputRequired(message="name is required")])
+    url     = StringField(filters=[_strip], validators=[InputRequired(message="url is required"), URL(message="url must be a valid URL")])
+    folder  = StringField(filters=[_strip], validators=[Optional()])
+    filters = StringField(filters=[_strip], validators=[Optional()])
+
+
 @app.get("/feeds/new")
 @login_required
 def feed_add():
@@ -204,28 +218,52 @@ def feed_add():
         .distinct()
     )
 
-    return flask.render_template("feed_edit.html", url=url, name=name, folders=folders, error_msg=error_msg)
+    form = FeedForm(data={"url": url, "name": name})
+    return flask.render_template("feed_edit.html", form=form, folders=folders, error_msg=error_msg)
+
+
+def _normalize_url(url):
+    """Normalize a feed URL for duplicate detection: lowercase scheme/host, strip trailing slash and fragment."""
+    parsed = urllib.parse.urlparse(url)
+    return urllib.parse.urlunparse((
+        parsed.scheme.lower(),
+        parsed.netloc.lower(),
+        parsed.path.rstrip('/'),
+        parsed.params,
+        parsed.query,
+        ''
+    ))
 
 
 @app.post("/feeds/new")
 @login_required
 def feed_add_submit():
-    # FIXME use a forms lib for validations, type coercion, etc
-    values = {k: v.strip() for k, v in flask.request.form.items() if v}
+    form = FeedForm(flask.request.form)
+    folders = db.session.scalars(
+        db.select(models.Feed.folder)
+        .filter(models.Feed.folder.isnot(None), models.Feed.folder.isnot(""))
+        .filter_by(user_id=current_user.id)
+        .distinct()
+    )
 
-    if not values.get("name"):
-        return flask.render_template("feed_edit.html", error_msg="name is required", **values)
+    if not form.validate():
+        return flask.render_template("feed_edit.html", form=form, folders=folders)
 
-    if not values.get("url"):
-        return flask.render_template("feed_edit.html", error_msg="url is required", **values)
+    existing = db.session.scalar(db.select(models.Feed).filter_by(name=form.name.data, user_id=current_user.id))
+    if existing:
+        form.name.errors.append(f"A feed with name '{form.name.data}' already exists")
+        return flask.render_template("feed_edit.html", form=form, folders=folders)
 
-    name = values.get("name")
-    feed = db.session.scalar(db.select(models.Feed).filter_by(name=name, user_id=current_user.id))
-    if feed:
-        return flask.render_template("feed_edit.html", error_msg=f"A feed with name '{name}' already exists", **values)
+    normalized_url = _normalize_url(form.url.data)
+    existing_urls = db.session.scalars(db.select(models.Feed.url).filter_by(user_id=current_user.id))
+    if any(_normalize_url(u) == normalized_url for u in existing_urls):
+        form.url.errors.append("this feed URL is already subscribed")
+        return flask.render_template("feed_edit.html", form=form, folders=folders)
 
     from feedi import tasks
 
+    values = {k: v for k, v in form.data.items() if v}
+    values["type"] = flask.request.form.get("type", "rss")
     new_feed = feeds.add(current_user.id, values)
 
     # trigger a sync of this feed to fetch its entries.
@@ -252,7 +290,8 @@ def feed_edit(feed_id):
         .distinct()
     ).all()
 
-    return flask.render_template("feed_edit.html", feed=feed, folders=folders)
+    form = FeedForm(obj=feed)
+    return flask.render_template("feed_edit.html", feed=feed, form=form, folders=folders)
 
 
 @app.post("/feeds/<feed_id>")
@@ -262,15 +301,32 @@ def feed_edit_submit(feed_id):
     if not feed:
         flask.abort(404, "Feed not found")
 
-    # FIXME fixme use proper form validations
-    values = flask.request.form
-    if not values.get("name") or not values.get("url"):
-        return flask.render_template("feed_edit.html", error_msg="Name and url are required fields", **values)
+    form = FeedForm(flask.request.form)
+
+    def _render_with_errors():
+        folders = db.session.scalars(
+            db.select(models.Feed.folder)
+            .filter(models.Feed.folder.isnot(None), models.Feed.folder.isnot(""))
+            .filter_by(user_id=current_user.id)
+            .distinct()
+        ).all()
+        return flask.render_template("feed_edit.html", feed=feed, form=form, folders=folders)
+
+    if not form.validate():
+        return _render_with_errors()
+
+    normalized_url = _normalize_url(form.url.data)
+    existing_urls = db.session.scalars(
+        db.select(models.Feed.url).filter(models.Feed.user_id == current_user.id, models.Feed.id != feed.id)
+    )
+    if any(_normalize_url(u) == normalized_url for u in existing_urls):
+        form.url.errors.append("this feed URL is already subscribed")
+        return _render_with_errors()
 
     # setting values at the instance level instead of issuing an update on models.Feed
     # so we don't need to explicitly inspect the feed to figure out its subclass
-    for attr, value in values.items():
-        setattr(feed, attr, value.strip())
+    for field in ("name", "url", "folder", "filters"):
+        setattr(feed, field, form[field].data or None)
     db.session.commit()
 
     return flask.redirect(flask.url_for("feed_list"))

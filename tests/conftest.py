@@ -66,9 +66,9 @@ def create_feed(client, domain, items, folder=None):
     return response, feed_id
 
 
-def mock_feed(domain, items):
+def mock_feed(domain, items, query=None):
     base_url = f"http://{domain}"
-    feed_url = f"{base_url}/feed"
+    feed_url = f"{base_url}/feed" + (f"?{query}" if query else "")
 
     fg = feedgen.FeedGenerator()
     fg.id(base_url)
