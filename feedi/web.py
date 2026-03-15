@@ -522,7 +522,6 @@ def kindle_add_submit():
 # Template filters
 
 
-# TODO unit test this
 @app.template_filter("humanize")
 def humanize_date(dt):
     delta = datetime.datetime.utcnow() - dt

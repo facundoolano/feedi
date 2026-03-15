@@ -273,7 +273,6 @@ class RSSParser(CachingRequestsMixin):
         return None
 
 
-# TODO unit test
 def discover_feed(url):
     """
     Given a website URL, try to discover the first rss/atom feed url in it
