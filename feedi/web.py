@@ -630,32 +630,6 @@ def sanitize_content(html, truncate=True):
     return str(soup)
 
 
-# FIXME this wouldn't be necessary if I could figure out the proper CSS
-# to make the text hide on overflow
-@app.template_filter("entry_excerpt")
-def entry_excerpt(entry):
-    if not entry.content_short:
-        return "[click to read]"
-
-    if entry.content_url and entry.title:
-        title = entry.title
-    elif entry.has_distinct_user:
-        title = entry.display_name or entry.username
-    else:
-        title = entry.feed.name
-
-    body_text = BeautifulSoup(entry.content_short, "lxml").text
-
-    # truncate according to display title length so all entries
-    # have aproximately the same length
-    max_length = 100
-    max_body_length = max(0, max_length - len(title))
-    if len(body_text) > max_body_length:
-        return body_text[:max_body_length] + "…"
-
-    return body_text
-
-
 @app.template_filter("feed_name")
 def feed_name(feed_id):
     feed = db.get_or_404(models.Feed, feed_id)

@@ -35,7 +35,7 @@
                   {% elif entry.target_url %}
                   _="on click go to url {{ entry.target_url }} in new window"
                   {% endif %}>
-                <small>{{ entry | entry_excerpt }}</small>
+                <small>{{ ((entry.content_short or "") | striptags) or "[click to read]" }}</small>
             </span>
             <span class="entry-metadata">
                 <br/>
