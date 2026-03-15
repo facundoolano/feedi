@@ -602,15 +602,11 @@ def feed_domain(url):
 
 
 @app.template_filter("sanitize")
-def sanitize_content(html, truncate=True):
+def sanitize_content(html):
     if not html:
         return ""
 
-    # poor man's line truncating: reduce the amount of characters and let bs4 fix the html
     soup = BeautifulSoup(html, "lxml")
-    if len(html) > 500 and truncate:
-        html = html[:500] + "…"
-        soup = BeautifulSoup(html, "lxml")
 
     if soup.html:
         if soup.html.body:

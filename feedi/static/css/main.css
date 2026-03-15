@@ -33,6 +33,21 @@ but we only want it for mobile*/
     font-size: 0.95em;
 }
 
+/* no-image entries and mobile: cap with line clamp */
+.body-container .content {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* desktop with image: show more lines since image sets card height */
+@media screen and (min-width: 769px) {
+    .body-container .media-url-container ~ .column .content {
+        -webkit-line-clamp: 6;
+    }
+}
+
 .body-container .column {
     padding-left: 0;
 }
