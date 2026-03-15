@@ -68,11 +68,18 @@
             data-unfav-url="{{ url_for('entry_unfavorite', id=entry.id) }}"
             {% if entry.favorited %}hx-delete="{{ url_for('entry_unfavorite', id=entry.id) }}"
             {% else %}hx-put="{{ url_for('entry_favorite', id=entry.id) }}"{% endif %}
-            _="on htmx:afterRequest[detail.successful]
+            _="on click
                   for btn in <[data-id='{{entry.id}}'] .fav-button/>
                     toggle .toggled on btn
+                  end
+                on htmx:afterRequest[detail.successful]
+                  for btn in <[data-id='{{entry.id}}'] .fav-button/>
                     if btn matches .toggled set btn @hx-delete to btn @data-unfav-url then remove @hx-put from btn
                     else set btn @hx-put to btn @data-fav-url then remove @hx-delete from btn end
+                  end
+                on htmx:afterRequest[detail.failed]
+                  for btn in <[data-id='{{entry.id}}'] .fav-button/>
+                    toggle .toggled on btn
                   end"
          ><i class="fas fa-star"></i></a>
 
