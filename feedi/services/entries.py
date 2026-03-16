@@ -2,7 +2,6 @@ import datetime
 import io
 import json
 import logging
-import subprocess
 import urllib
 import zipfile
 
@@ -105,60 +104,17 @@ def get_from_url(user_id, url):
     return entry
 
 
-def fetch_content(entry):
-    """Fetch and store the full article content for the given entry."""
-    if entry.content_url and not entry.content_full:
-        try:
-            entry.content_full = _extract(entry.content_url)["content"]
-        except Exception as e:
-            logger.debug("failed to fetch content %s", e)
-
-
-def send_to_kindle(user, url):
-    """Extract the article at url, package it as epub, send to Kindle, and record the entry."""
-    article = _extract(url)
+def send_to_kindle(user, url, article):
+    """Package article as epub and send to Kindle. Records the entry."""
     attach_data = _package_epub(url, article)
     feedi_email.send(user.kindle_email, attach_data, filename=article["title"])
 
-    # save as read entry if not already, to keep track of sent to kindle urls
     entry = get_from_url(user.id, url)
     entry.sent_to_kindle = datetime.datetime.now()
     entry.viewed = entry.viewed or datetime.datetime.utcnow()
     entry.content_full = article["content"]
-
     db.session.add(entry)
     db.session.commit()
-
-
-def _extract(url=None, html=None):
-    # The mozilla/readability npm package shows better results at extracting the
-    # article content than all the python libraries I've tried... even than the readabilipy
-    # one, which is a wrapper of it. so resorting to running a node.js script on a subprocess
-    # for parsing the article sadly this adds a dependency to node and a few npm pacakges
-    if url:
-        html = requests.get(url).content
-    elif not html:
-        raise ValueError("Expected either url or html")
-
-    r = subprocess.run(["feedi/extract_article.js", "--stdin", url], input=html, capture_output=True, check=True)
-
-    article = json.loads(r.stdout)
-
-    # load lazy images by replacing putting the data-src into src and stripping other attrs
-    soup = BeautifulSoup(article["content"], "lxml")
-
-    LAZY_DATA_ATTRS = ["data-src", "data-lazy-src", "data-td-src-property", "data-srcset"]
-    for data_attr in LAZY_DATA_ATTRS:
-        for img in soup.findAll("img", attrs={data_attr: True}):
-            img.attrs = {"src": img[data_attr]}
-
-    # prevent video iframes to force dimensions
-    for iframe in soup.findAll("iframe", height=True):
-        del iframe["height"]
-
-    article["content"] = str(soup)
-
-    return article
 
 
 def _package_epub(url, article):

@@ -378,8 +378,8 @@ def test_view_entry_content(client):
     entry_url = re.search(r"/entries/(\d+)", response.text).group(0)
     response = client.get(entry_url)
 
+    assert response.status_code == 200
     assert "reclaiming-the-web" in response.text
-    assert "I had some ideas of what I wanted" in response.text
 
 
 def test_add_external_entry(client):
@@ -392,7 +392,6 @@ def test_add_external_entry(client):
     response = client.post("/entries/", query_string={"url": content_url, "redirect": 1}, follow_redirects=True)
     assert response.status_code == 200
     assert "reclaiming-the-web" in response.text
-    assert "I had some ideas of what I wanted" in response.text
 
     # add same url again, verify that redirected entry url is the same as before
     previous_entry_url = response.request.path

@@ -72,21 +72,6 @@ def sync_feed(feed_id, _feed_name, force=False):
     db.session.commit()
 
 
-@huey_task(crontab(minute=app.config["CONTENT_PREFETCH_MINUTES"]))
-def content_prefetch():
-    for user_id in db.session.scalars(db.select(models.User.id)):
-        start_at = datetime.datetime.utcnow()
-        query = (
-            models.Entry.filter_by(user_id, start_at, hide_seen=True)
-            .filter(models.Entry.content_full.is_(None), models.Entry.content_url.isnot(None))
-            .limit(15)
-        )
-
-        for entry in db.session.scalars(query):
-            app.logger.debug("Prefetching %s", entry.content_url)
-            entries.fetch_content(entry)
-            db.session.commit()
-
 
 @huey_task(crontab(minute="0", hour=app.config["DELETE_OLD_CRON_HOURS"]))
 def delete_old_entries():
