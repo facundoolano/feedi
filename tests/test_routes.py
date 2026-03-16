@@ -1,5 +1,6 @@
 import datetime as dt
 import re
+from unittest.mock import patch
 
 from tests.conftest import create_feed, create_user, extract_entry_ids, mock_feed, mock_request
 
@@ -358,28 +359,37 @@ def test_entries_not_mixed_between_users(app, client):
 
 
 def test_view_entry_content(client):
-    # create feed with a sample entry
     with open("tests/sample.html") as sample:
         body = sample.read()
     response, _ = create_feed(
         client,
         "olano.dev",
-        [
-            {
-                "title": "reclaiming-the-web",
-                "date": "2023-12-12T00:00:00-03:00",
-                "description": "short content",
-                "body": body,
-            }
-        ],
+        [{"title": "reclaiming-the-web", "date": "2023-12-12T00:00:00-03:00", "description": "short content", "body": body}],
     )
     assert "reclaiming-the-web" in response.text
     assert "short content" in response.text
     entry_url = re.search(r"/entries/(\d+)", response.text).group(0)
-    response = client.get(entry_url)
 
+    # first visit: content not yet cached, page shows a loading spinner
+    response = client.get(entry_url)
     assert response.status_code == 200
     assert "reclaiming-the-web" in response.text
+    assert "is-loading" in response.text
+
+    # /article proxies source HTML for client-side Readability
+    response = client.get(entry_url + "/article")
+    assert response.status_code == 200
+    assert "I had some ideas of what I wanted" in response.text
+
+    # /content caches the client-extracted article
+    response = client.post(entry_url + "/content", json={"content": "<p>extracted article body</p>"})
+    assert response.status_code == 204
+
+    # revisit: cached content rendered directly, no spinner
+    response = client.get(entry_url)
+    assert response.status_code == 200
+    assert "extracted article body" in response.text
+    assert "is-loading" not in response.text
 
 
 def test_add_external_entry(client):
@@ -405,6 +415,29 @@ def test_add_external_entry(client):
     assert "reclaiming-the-web" in response.text
     # short content taken from page meta description
     assert "There’s a kind of zen flow" in response.text
+
+
+def test_send_to_kindle(client):
+    "An article sent to Kindle is recorded in the Kindle log."
+    content_url = "http://olano.dev/my-article"
+    mock_request(content_url, body='<html><head><title>My Article</title></head><body><p>content</p></body></html>')
+
+    client.post("/auth/kindle", data={"kindle_email": "my-kindle@kindle.com"})
+
+    with patch("feedi.email.send"):
+        response = client.post("/entries/kindle", json={
+            "url": content_url,
+            "content": "<p>extracted content</p>",
+            "title": "My Article",
+            "byline": None,
+            "siteName": None,
+            "publishedTime": None,
+            "lang": "en",
+        })
+    assert response.status_code == 204
+
+    response = client.get("/entries/kindle")
+    assert "My Article" in response.text
 
 
 def test_discover_feed(client):
