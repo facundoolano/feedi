@@ -103,18 +103,15 @@
         {{ content | safe }}
         {% else %}
         <div class="buttons is-centered"
-             hx-get="{{url_for('entry_view', id=entry.id, content='true' )}}"
-             hx-trigger="revealed"
-             hx-swap="outerHTML"
-             hx-select=".entry-content"
-             hx-target=".entry-content">
+             _="on load call loadContent('{{ url_for('entry_article', id=entry.id) }}',
+                                          '{{ entry.content_url }}',
+                                          '{{ url_for('entry_save_content', id=entry.id) }}')">
             <br/>
-            <button class="button is-loading is-large is-centered " style="border: none;">
-            Button
-            </button>
+            <button class="button is-loading is-large is-centered" style="border: none;">Button</button>
         </div>
         {% endif %}
     </div>
+
 </div>
 {% endblock content %}
 

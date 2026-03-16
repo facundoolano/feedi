@@ -1,12 +1,4 @@
-FROM node:20-alpine AS node
-
 FROM python:3.11-alpine
-
-# Copy node to python-alpine image
-COPY --from=node /usr/lib /usr/lib
-COPY --from=node /usr/local/lib /usr/local/lib
-COPY --from=node /usr/local/include /usr/local/include
-COPY --from=node /usr/local/bin /usr/local/bin
 
 WORKDIR /app
 
@@ -17,11 +9,6 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 COPY pyproject.toml uv.lock ./
 
 RUN uv sync --frozen --no-dev --no-cache
-
-# Install node dependencies
-COPY package*.json ./
-
-RUN npm ci --omit=dev
 
 COPY . .
 

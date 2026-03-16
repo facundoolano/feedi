@@ -4,7 +4,7 @@ flask=uv run flask --app feedi/app.py
 
 export FLASK_ENV ?= development
 
-all: uv deps node_modules
+all: uv deps
 
 .PHONY: uv
 uv:
@@ -20,8 +20,8 @@ deps:
 deps-dev:
 	uv sync
 
-node_modules:
-	npm install || true
+update-readability:
+	curl -o feedi/static/js/readability.js https://unpkg.com/@mozilla/readability/Readability.js
 
 # make test
 # make test TEST=test_feed_ad

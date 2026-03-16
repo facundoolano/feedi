@@ -7,12 +7,12 @@ import sqlalchemy as sa
 from bs4 import BeautifulSoup
 from flask import current_app as app
 from flask_login import current_user, login_required
-
 from wtforms import Form, StringField
-from wtforms.validators import InputRequired, Optional, URL
+from wtforms.validators import URL, InputRequired, Optional
 
 import feedi.models as models
 from feedi.models import db
+from feedi.parsers.requests import requests
 from feedi.services import entries, feeds
 
 
@@ -119,7 +119,6 @@ def entry_pin(id):
         flask.abort(404)
 
     if not entry.pinned:
-        entries.fetch_content(entry)
         entry.pinned = datetime.datetime.utcnow()
         db.session.commit()
 
@@ -190,9 +189,11 @@ class FeedForm(Form):
         return value.strip() if value else value
 
     # type is not included here because it's immutable after creation (disabled on edit, not submitted)
-    name    = StringField(filters=[_strip], validators=[InputRequired(message="name is required")])
-    url     = StringField(filters=[_strip], validators=[InputRequired(message="url is required"), URL(message="url must be a valid URL")])
-    folder  = StringField(filters=[_strip], validators=[Optional()])
+    name = StringField(filters=[_strip], validators=[InputRequired(message="name is required")])
+    url = StringField(
+        filters=[_strip], validators=[InputRequired(message="url is required"), URL(message="url must be a valid URL")]
+    )
+    folder = StringField(filters=[_strip], validators=[Optional()])
     filters = StringField(filters=[_strip], validators=[Optional()])
 
 
@@ -225,14 +226,9 @@ def feed_add():
 def _normalize_url(url):
     """Normalize a feed URL for duplicate detection: lowercase scheme/host, strip trailing slash and fragment."""
     parsed = urllib.parse.urlparse(url)
-    return urllib.parse.urlunparse((
-        parsed.scheme.lower(),
-        parsed.netloc.lower(),
-        parsed.path.rstrip('/'),
-        parsed.params,
-        parsed.query,
-        ''
-    ))
+    return urllib.parse.urlunparse(
+        (parsed.scheme.lower(), parsed.netloc.lower(), parsed.path.rstrip("/"), parsed.params, parsed.query, "")
+    )
 
 
 @app.post("/feeds/new")
@@ -395,52 +391,79 @@ def entry_add():
 @login_required
 def entry_view(id):
     """
-    Fetch the entry content from the source and display it for reading locally.
+    Display an entry for reading locally.
+
+    Cached: render content directly.
+    Uncached: render spinner → JS fetches /article → runs Readability → renders
+              → POST /content to cache for future visits.
     """
     entry = db.get_or_404(models.Entry, id)
     if entry.user_id != current_user.id:
         flask.abort(404)
-
-    # When requested through htmx (ajax), this page loads layout first, then the content
-    # on a separate request. The reason for this is that article fetching is slow, and we
-    # don't want the view entry action to freeze the UI without loading indication.
-    # Now, the reason for that freezing is that we are using hx-boosting instead of default
-    # browser behavior. I don't like it, but I couldn't figure out how to preserve the feed
-    # page/scrolling position on back button unless I jump to view content via htmx
-
-    if "HX-Request" in flask.request.headers and "content" not in flask.request.args and not entry.content_full:
-        # if ajax/htmx just load the empty UI and load content asynchronously
-        return flask.render_template("entry_content.html", entry=entry, content=None)
-    else:
-        if not entry.content_url and not entry.target_url:
-            # this view can't work if no entry or content url
-            return "Entry not readable", 400
-
-        # if it's a video site, just redirect. TODO add more sites
-        if "youtube.com" in entry.content_url or "vimeo.com" in entry.content_url:
-            return _redirect_response(entry.target_url)
-
-        # if full browser load or explicit content request, fetch the article synchronously
-        entries.fetch_content(entry)
-        if entry.content_full:
-            entry.viewed = entry.viewed or datetime.datetime.utcnow()
-            db.session.commit()
-            return flask.render_template("entry_content.html", entry=entry, content=entry.content_full)
-
+    if not entry.content_url and not entry.target_url:
+        return "Entry not readable", 400
+    if "youtube.com" in entry.content_url or "vimeo.com" in entry.content_url:
         return _redirect_response(entry.target_url)
+    if entry.content_full:
+        entry.viewed = entry.viewed or datetime.datetime.utcnow()
+        db.session.commit()
+    return flask.render_template("entry_content.html", entry=entry, content=entry.content_full)
+
+
+@app.get("/entries/<int:id>/article")
+@login_required
+def entry_article(id):
+    """
+    Proxy the source HTML of the entry URL for client-side Readability processing.
+
+    This is needed because readability runs in the client but the client can't make cross-origin requests.
+    """
+    entry = db.get_or_404(models.Entry, id)
+    if entry.user_id != current_user.id:
+        flask.abort(404)
+    if not entry.content_url:
+        flask.abort(400)
+    response = requests.get(entry.content_url)
+    response.raise_for_status()
+    return flask.Response(response.content, content_type="text/html")
+
+
+@app.post("/entries/<int:id>/content")
+@login_required
+def entry_save_content(id):
+    """
+    Cache the client-processed article content.
+
+    The client builds the cleaned up version of the article (using readability), but
+    that process should only run once, so this caches the result for subsequent visits.
+    """
+    entry = db.get_or_404(models.Entry, id)
+    if entry.user_id != current_user.id:
+        flask.abort(404)
+    if not entry.content_full:
+        entry.content_full = flask.request.json["content"]
+        entry.viewed = entry.viewed or datetime.datetime.utcnow()
+        db.session.commit()
+    return "", 204
 
 
 @app.post("/entries/kindle")
 @login_required
 def send_to_kindle():
     """
-    If the user has a registered device, send the article in the given URL through kindle.
+    Package an article as EPUB and email it to the user's Kindle device.
+
+    JS sends the pre-extracted article as JSON. Two paths to get there:
+    - from reader view: reuses already-extracted article
+    - from list view: JS fetches /article → runs Readability → posts here
     """
     if not current_user.kindle_email:
         return "", 204
 
-    url = flask.request.args["url"]
-    entries.send_to_kindle(current_user, url)
+    data = flask.request.json
+    url = data["url"]
+    article = {k: data.get(k) for k in ["content", "title", "byline", "siteName", "publishedTime", "lang"]}
+    entries.send_to_kindle(current_user, url, article)
 
     return "", 204
 

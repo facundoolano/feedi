@@ -55,7 +55,7 @@ There are different ways to interact with a feed entry:
 
 - If you click on the article title the original website will be open on a new browser tab.
 - In some cases, as with link agreggators like reddit, hacker news or lobste.rs, there will be a separate link for the article discussion.
-- If you click on the content or press Enter when focusing on the entry, the article content will be fetch and displayed on the local reader. This will be a stripped-down version of the article (removing some site links, ads and paywalls) powered by the [mozilla/readability](https://github.com/mozilla/readability) library. Note that for this to work you need node >= 20 installed when setting up the project.
+- If you click on the content or press Enter when focusing on the entry, the article content will be fetch and displayed on the local reader. This will be a stripped-down version of the article (removing some site links, ads and paywalls) powered by the [mozilla/readability](https://github.com/mozilla/readability) library.
   -  The reader can also be used to preview arbitrary articles by dragging their url to the searchbox.
 
 ## Advanced configuration
