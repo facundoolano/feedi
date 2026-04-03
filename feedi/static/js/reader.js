@@ -44,32 +44,6 @@ async function loadContent(articleUrl, contentUrl, saveUrl) {
     }
 }
 
-/** On long-press of a link in reader content, suppress the native callout and instead swap
- *  the mobile navbar to the autocomplete input pre-filled with the link URL, triggering the
- *  URL action options (discover feed, add as entry, etc.). */
-function setupReaderLongPress() {
-    const content = document.querySelector('.entry-content');
-    if (!content) return;
-
-    content.addEventListener('contextmenu', function (e) {
-        const link = e.target.closest('a');
-        if (!link) return;
-        e.preventDefault();
-
-        const autocomplete = document.querySelector('.navbar-autocomplete');
-        const level = document.querySelector('.navbar-brand .level');
-        const input = autocomplete.querySelector('.search');
-
-        autocomplete.classList.remove('is-hidden');
-        level.classList.add('is-hidden');
-        input.value = link.href;
-        input.dispatchEvent(new Event('paste'));
-        input.focus();
-    });
-}
-
-document.addEventListener('DOMContentLoaded', setupReaderLongPress);
-
 /** Extract the article (or reuse it if already loaded in reader view) and send it to Kindle. */
 async function sendToKindle(entryId, contentUrl) {
     let article;
