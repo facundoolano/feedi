@@ -27,6 +27,10 @@
                 </a>
                 {% endif %}
             </b>
+            <span class="entry-metadata">
+                <br/>
+                <small class="has-text-grey-light"><span title="{{ entry.display_date.isoformat() }}">{{ entry.display_date | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.target_url %}· {{ entry.target_url | url_domain}}{% endif %}</small>
+            </span>
             <span class="entry-excerpt-metadata is-hidden {% if entry.content_url or entry.target_url %}is-clickable{% endif %}"
                   {% if entry.content_url %}
                   hx-get="{{ url_for('entry_view', id=entry.id) }}"
@@ -37,10 +41,6 @@
                   _="on click go to url {{ entry.target_url }} in new window"
                   {% endif %}>
                 <small>{{ ((entry.content_short or "") | striptags) or "[click to read]" }}</small>
-            </span>
-            <span class="entry-metadata">
-                <br/>
-                <small class="has-text-grey-light"><span title="{{ entry.display_date.isoformat() }}">{{ entry.display_date | humanize }}</span> {% if entry.username %}· {{ entry.username}}{%endif%} {%if entry.target_url %}· {{ entry.target_url | url_domain}}{% endif %}</small>
             </span>
         </p>
     </div>

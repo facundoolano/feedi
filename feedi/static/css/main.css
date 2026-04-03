@@ -462,6 +462,34 @@ https://github.com/jgthms/bulma/issues/1561#issuecomment-535475428 */
     text-overflow: ellipsis;
 }
 
+/* desktop: title + metadata inline on row 1, excerpt on row 2 */
+@media screen and (min-width: 769px) {
+    #pinned-entry-list .feed-header .level-left p,
+    .feed-entry[data-view=compact] .feed-header .level-left p {
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    #pinned-entry-list .feed-header .level-left p b,
+    .feed-entry[data-view=compact] .feed-header .level-left p b {
+        display: inline;
+    }
+
+    #pinned-entry-list .feed-header .level-left p .entry-metadata,
+    .feed-entry[data-view=compact] .feed-header .level-left p .entry-metadata {
+        display: inline!important;
+    }
+
+    #pinned-entry-list .feed-header .level-left p .entry-metadata br,
+    .feed-entry[data-view=compact] .feed-header .level-left p .entry-metadata br {
+        display: none;
+    }
+}
+
+#pinned-entry-list .feed-header .level-left p .entry-metadata small {
+    color: #a89880!important;
+}
+
 .feed-entry[data-view=text] .media-url-container {
     display: none;
 }
