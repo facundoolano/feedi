@@ -13,6 +13,19 @@
     <link rel="icon" href="data:,">
     <title>feedi {% block title %}{% endblock %}</title>
     <meta name="htmx-config" content='{"refreshOnHistoryMiss": true}'>
+    <script>
+        // On iOS, when the app is backgrounded (e.g. user opens an external link in Safari View Controller),
+        // the WKWebView process can be killed by the OS under memory pressure or after the device sleeps.
+        // Returning to the app ("Listo" button) then shows a blank gray screen with no way to recover.
+        // The pageshow event fires on bfcache restores; if the body is empty the process was killed,
+        // so we redirect to the root instead of leaving the user stuck.
+        // See: https://web.dev/articles/bfcache
+        window.addEventListener('pageshow', function (e) {
+            if (e.persisted && !document.body.children.length) {
+                window.location.href = '/';
+            }
+        });
+    </script>
     </head>
     <body
         _="on htmx:responseError alert('The server responded with an error')">
