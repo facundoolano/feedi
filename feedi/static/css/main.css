@@ -420,7 +420,7 @@ https://github.com/jgthms/bulma/issues/1561#issuecomment-535475428 */
     }
 
     .entry-excerpt-metadata {
-        display: unset!important;
+        display: block!important;
     }
 
     .compact-actions {
@@ -432,7 +432,7 @@ https://github.com/jgthms/bulma/issues/1561#issuecomment-535475428 */
 .feed-entry[data-view=compact] .feed-header.level {
     display: grid!important;
     grid-template-columns: 1fr auto;
-    align-items: center!important;
+    align-items: start!important;
 }
 
 #pinned-entry-list .feed-header .level-left,
@@ -444,6 +444,19 @@ https://github.com/jgthms/bulma/issues/1561#issuecomment-535475428 */
 #pinned-entry-list .feed-header .level-left p,
 .feed-entry[data-view=compact] .feed-header .level-left p {
     min-width: 0;
+    overflow: hidden;
+}
+
+#pinned-entry-list .feed-header .level-left p b,
+.feed-entry[data-view=compact] .feed-header .level-left p b {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#pinned-entry-list .feed-header .level-left p .entry-excerpt-metadata,
+.feed-entry[data-view=compact] .feed-header .level-left p .entry-excerpt-metadata {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
