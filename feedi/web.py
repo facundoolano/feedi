@@ -78,7 +78,7 @@ def autocomplete():
             ("View in reader", flask.url_for("entry_add", url=term, redirect=1), "fas fa-book-reader", "POST"),
         ]
         if current_user.kindle_email:
-            options += [("Send to Kindle", flask.url_for("send_to_kindle", url=term), "fas fa-tablet-alt", "POST")]
+            options += [("Send to Kindle", flask.url_for("entry_add", url=term, kindle=1), "fas fa-tablet-alt", "POST")]
     else:
         matching_feeds = db.session.execute(
             db.select(models.Feed.id, models.Feed.name)
@@ -369,6 +369,7 @@ def entry_add():
     # TODO sanitize?
     url = flask.request.args["url"]
     redirect = flask.request.args.get("redirect")
+    kindle = flask.request.args.get("kindle")
 
     try:
         entry = entries.get_from_url(current_user.id, url)
@@ -383,6 +384,9 @@ def entry_add():
 
     if redirect:
         return _redirect_response(flask.url_for("entry_view", id=entry.id))
+    elif kindle:
+        trigger = flask.json.dumps({"sendToKindle": {"entryId": entry.id, "url": url}})
+        return "", 204, {"HX-Trigger": trigger}
     else:
         return "", 204
 
@@ -426,6 +430,7 @@ def entry_article(id):
     response = requests.get(entry.content_url)
     response.raise_for_status()
     return flask.Response(response.content, content_type="text/html")
+
 
 
 @app.post("/entries/<int:id>/content")

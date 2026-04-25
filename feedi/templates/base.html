@@ -25,6 +25,9 @@
                 window.location.href = '/';
             }
         });
+        document.addEventListener('sendToKindle', function (e) {
+            sendToKindle(e.detail.entryId, e.detail.url);
+        });
     </script>
     </head>
     <body
