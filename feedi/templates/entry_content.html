@@ -23,6 +23,8 @@
 <div class="navbar-brand">
     <div class="is-hidden navbar-item navbar-autocomplete"
          _="on dragstart from elsewhere remove .is-hidden then add .is-hidden to next .level
+                then set theLink to closest <a/> to event.target
+                if theLink set (first <.search/> in me).value to theLink.href then trigger paste on first <.search/> in me end
                 then on click from elsewhere add .is-hidden then remove .is-hidden from next .level">
         {% include "autocomplete.html" %}
         <a class="navbar-item icon"
