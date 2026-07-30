@@ -264,7 +264,7 @@ class RSSParser(CachingRequestsMixin):
         return dt
 
     def parse_sort_date(self, entry):
-        dt = to_datetime(entry.get("updated_parsed", entry.get("published_parsed")))
+        dt = to_datetime(entry.get("updated_parsed") or entry.get("published_parsed"))
         if dt > datetime.datetime.utcnow():
             raise ValueError("publication date is in the future")
         return dt
